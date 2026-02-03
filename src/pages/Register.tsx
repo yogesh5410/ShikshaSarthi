@@ -1,252 +1,370 @@
-import React, { useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
-const API_URL = import.meta.env.VITE_API_URL;
-import {
-  Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,
-} from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Tabs, TabsContent, TabsList, TabsTrigger,
-} from '@/components/ui/tabs';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { BookOpen } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import axios from 'axios';
 
-const Register: React.FC = () => {
-  const [isAdminVerified, setIsAdminVerified] = useState(false);
-  const [adminUsername, setAdminUsername] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const { toast } = useToast();
+const API_URL = import.meta.env.VITE_API_URL;
 
-  // Registration state
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
-  const [name, setName] = useState('');
-  const [id, setId] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [instituteId, setInstituteId] = useState('');
-  const [classLevel, setClassLevel] = useState('');
+const Register: React.FC = () => {
+  const navigate = useNavigate();
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+  const [currentUsername, setCurrentUsername] = useState<string>('');
+  const [currentUserSchoolId, setCurrentUserSchoolId] = useState<string>('');
+  const [roleToRegister, setRoleToRegister] = useState<string>('');
+  const [formData, setFormData] = useState<any>({});
+  const [schools, setSchools] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (adminUsername === '1234' && adminPassword === '1234') {
-      setIsAdminVerified(true);
-    } else {
+  useEffect(() => {
+    // Get current user role
+    const role = localStorage.getItem('userRole');
+    const currentUser = localStorage.getItem('currentUser');
+    
+    if (!role) {
       toast({
-        title: 'Access Denied',
-        description: 'Invalid admin credentials',
-        variant: 'destructive',
+        title: "Access Denied",
+        description: "Please login first",
+        variant: "destructive",
       });
+      navigate('/login');
+      return;
+    }
+
+    if (role === 'student') {
+      toast({
+        title: "Access Denied",
+        description: "Students cannot register other users",
+        variant: "destructive",
+      });
+      navigate('/student');
+      return;
+    }
+
+    setCurrentUserRole(role);
+
+    if (currentUser) {
+      try {
+        const user = JSON.parse(currentUser);
+        setCurrentUsername(user.username || user.teacherId || '');
+        setCurrentUserSchoolId(user.schoolId || '');
+        
+        // If teacher or schooladmin, set default role
+        if (role === 'teacher') {
+          setRoleToRegister('student');
+        }
+      } catch (e) {
+        console.error('Error parsing user', e);
+      }
+    }
+
+    // Fetch schools for superadmin
+    if (role === 'superadmin') {
+      fetchSchools();
+    }
+  }, [navigate]);
+
+  const fetchSchools = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/superadmin/schools`);
+      setSchools(response.data);
+    } catch (error) {
+      console.error('Error fetching schools:', error);
     }
   };
 
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
+  const handleInputChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!id || !name || !phone || !password || !instituteId || (role === 'student' && !classLevel)) {
-      toast({
-        title: 'Error',
-        description: 'Please fill in all required fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Passwords do not match',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const payload = role === 'student'
-      ? {
-          studentId: id,
-          name,
-          phone,
-          password,
-          schoolId: instituteId,
-          class: classLevel,
-        }
-      : {
-          teacherId: id,
-          name,
-          phone,
-          password,
-          schoolId: instituteId,
-        };
-
-    const url = role === 'student'
-      ? `${API_URL}/students`
-      : `${API_URL}/teachers`;
+    setIsLoading(true);
 
     try {
-      setIsLoading(true);
-      await axios.post(url, payload);
+      let endpoint = '';
+      let payload: any = { ...formData };
+
+      // Add creator info and schoolId based on current user role
+      if (currentUserRole === 'teacher') {
+        payload.teacherId = currentUsername;
+        payload.schoolId = currentUserSchoolId; // Auto-assign teacher's school
+        endpoint = `${API_URL}/teachers/register/student`;
+      } else if (currentUserRole === 'schooladmin') {
+        payload.adminUsername = currentUsername;
+        payload.schoolId = currentUserSchoolId; // Auto-assign school admin's school
+        if (roleToRegister === 'teacher') {
+          endpoint = `${API_URL}/schooladmin/register/teacher`;
+        } else if (roleToRegister === 'student') {
+          endpoint = `${API_URL}/schooladmin/register/student`;
+        }
+      } else if (currentUserRole === 'superadmin') {
+        if (roleToRegister === 'school') {
+          endpoint = `${API_URL}/superadmin/register/school`;
+        } else if (roleToRegister === 'schooladmin') {
+          endpoint = `${API_URL}/superadmin/register/schooladmin`;
+        } else if (roleToRegister === 'teacher') {
+          endpoint = `${API_URL}/superadmin/register/teacher`;
+        } else if (roleToRegister === 'student') {
+          endpoint = `${API_URL}/superadmin/register/student`;
+        }
+      }
+
+      const response = await axios.post(endpoint, payload);
 
       toast({
-        title: 'Registration Successful',
-        description: `${role === 'student' ? 'Student' : 'Teacher'} ${id} created successfully.`,
+        title: "Success",
+        description: `${roleToRegister} registered successfully`,
       });
 
-      // Clear form
-      setName('');
-      setId('');
-      setPhone('');
-      setPassword('');
-      setConfirmPassword('');
-      setInstituteId('');
-      setClassLevel('');
+      // Reset form
+      setFormData({});
+      setRoleToRegister('');
     } catch (error: any) {
       toast({
-        title: 'Registration Failed',
-        description: error?.response?.data?.error || 'Something went wrong.',
-        variant: 'destructive',
+        title: "Registration Failed",
+        description: error.response?.data?.error || "An error occurred",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const renderFields = () => {
+    if (!roleToRegister) return null;
+
+    const commonFields = (
+      <>
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Enter name"
+            value={formData.name || ''}
+            onChange={(e) => handleInputChange('name', e.target.value)}
+            required
+          />
+        </div>
+      </>
+    );
+
+    switch (roleToRegister) {
+      case 'school':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="schoolId">School ID</Label>
+              <Input
+                id="schoolId"
+                type="text"
+                placeholder="Enter school ID"
+                value={formData.schoolId || ''}
+                onChange={(e) => handleInputChange('schoolId', e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="schoolName">School Name</Label>
+              <Input
+                id="schoolName"
+                type="text"
+                placeholder="Enter school name"
+                value={formData.schoolName || ''}
+                onChange={(e) => handleInputChange('schoolName', e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                type="text"
+                placeholder="Enter location"
+                value={formData.location || ''}
+                onChange={(e) => handleInputChange('location', e.target.value)}
+                required
+              />
+            </div>
+          </>
+        );
+
+      case 'schooladmin':
+      case 'teacher':
+      case 'student':
+        const isSchoolAdmin = roleToRegister === 'schooladmin';
+        const isTeacher = roleToRegister === 'teacher';
+        const isStudent = roleToRegister === 'student';
+        
+        return (
+          <>
+            {commonFields}
+            
+            {/* School selection for school admin registration */}
+            {isSchoolAdmin && currentUserRole === 'superadmin' && (
+              <div className="space-y-2">
+                <Label htmlFor="schoolId">School</Label>
+                <Select
+                  value={formData.schoolId || ''}
+                  onValueChange={(value) => handleInputChange('schoolId', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schools.map((school) => (
+                      <SelectItem key={school.schoolId} value={school.schoolId}>
+                        {school.schoolName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="username">
+                {isStudent ? 'Student ID' : isTeacher ? 'Teacher ID' : 'Username'}
+              </Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder={`Enter ${isStudent ? 'student ID' : isTeacher ? 'teacher ID' : 'username'}`}
+                value={formData[isStudent ? 'studentId' : isTeacher ? 'teacherId' : 'username'] || ''}
+                onChange={(e) => handleInputChange(
+                  isStudent ? 'studentId' : isTeacher ? 'teacherId' : 'username',
+                  e.target.value
+                )}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter password"
+                value={formData.password || ''}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Enter phone number"
+                value={formData.phone || ''}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+              />
+            </div>
+            
+            {/* School selection for teachers and students when super admin registers */}
+            {currentUserRole === 'superadmin' && (isTeacher || isStudent) && (
+              <div className="space-y-2">
+                <Label htmlFor="schoolId">School</Label>
+                <Select
+                  value={formData.schoolId || ''}
+                  onValueChange={(value) => handleInputChange('schoolId', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schools.map((school) => (
+                      <SelectItem key={school.schoolId} value={school.schoolId}>
+                        {school.schoolName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {isStudent && (
+              <div className="space-y-2">
+                <Label htmlFor="class">Class</Label>
+                <Input
+                  id="class"
+                  type="text"
+                  placeholder="Enter class (e.g., 6, 7, 8)"
+                  value={formData.class || ''}
+                  onChange={(e) => handleInputChange('class', e.target.value)}
+                />
+              </div>
+            )}
+          </>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const getRoleOptions = () => {
+    if (currentUserRole === 'superadmin') {
+      return ['school', 'schooladmin', 'teacher', 'student'];
+    } else if (currentUserRole === 'schooladmin') {
+      return ['teacher', 'student'];
+    } else if (currentUserRole === 'teacher') {
+      return ['student'];
+    }
+    return [];
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <Card className="w-full max-w-md mx-auto">
-        {!isAdminVerified ? (
-          <>
-            <CardHeader className="space-y-1 flex flex-col items-center">
-              <div className="flex items-center justify-center p-2 bg-primary/10 rounded-full mb-2">
-                <BookOpen className="h-10 w-10 text-edu-blue" />
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      
+      <main className="flex-1 flex items-center justify-center py-12 bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Card className="w-full max-w-md shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">Register New User</CardTitle>
+            <CardDescription className="text-center">
+              As a {currentUserRole}, you can register: {getRoleOptions().join(', ')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="roleToRegister">Role to Register</Label>
+                <Select value={roleToRegister} onValueChange={setRoleToRegister}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getRoleOptions().map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role.charAt(0).toUpperCase() + role.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <CardTitle className="text-2xl text-center">Admin Access Required</CardTitle>
-              <CardDescription className="text-center">
-                Please enter admin credentials to proceed
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleAdminLogin}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Username</Label>
-                  <Input
-                    placeholder="Enter username"
-                    value={adminUsername}
-                    onChange={(e) => setAdminUsername(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Password</Label>
-                  <Input
-                    type="password"
-                    placeholder="Enter password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col">
-                <Button className="w-full" type="submit">Enter</Button>
-              </CardFooter>
-            </form>
-          </>
-        ) : (
-          <>
-            <CardHeader className="space-y-1 flex flex-col items-center">
-              <div className="flex items-center justify-center p-2 bg-primary/10 rounded-full mb-2">
-                <BookOpen className="h-10 w-10 text-edu-blue" />
-              </div>
-              <CardTitle className="text-2xl text-center">Create an account</CardTitle>
-              <CardDescription className="text-center">
-                Register to start preparing for NMMS exam
-              </CardDescription>
-            </CardHeader>
 
-            <form onSubmit={handleRegisterSubmit}>
-              <Tabs defaultValue="student" className="w-full" onValueChange={(value) => setRole(value as 'student' | 'teacher')}>
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="student">Student</TabsTrigger>
-                  <TabsTrigger value="teacher">Teacher</TabsTrigger>
-                </TabsList>
+              {renderFields()}
 
-                <TabsContent value="student">
-                  <CardContent className="space-y-4">
-                    <InputBlock label="Student ID" value={id} setValue={setId} />
-                    <InputBlock label="Full Name" value={name} setValue={setName} />
-                    <InputBlock label="Phone" value={phone} setValue={setPhone} type="tel" />
-                    <InputBlock label="Institute ID" value={instituteId} setValue={setInstituteId} />
-                    <div className="space-y-2">
-                      <Label>Class</Label>
-                      <Select value={classLevel} onValueChange={setClassLevel}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="6">Class 6</SelectItem>
-                          <SelectItem value="7">Class 7</SelectItem>
-                          <SelectItem value="8">Class 8</SelectItem>
-                          <SelectItem value="NMMS">NMMS</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <InputBlock label="Password" value={password} setValue={setPassword} type="password" />
-                    <InputBlock label="Confirm Password" value={confirmPassword} setValue={setConfirmPassword} type="password" />
-                  </CardContent>
-                </TabsContent>
-
-                <TabsContent value="teacher">
-                  <CardContent className="space-y-4">
-                    <InputBlock label="Teacher ID" value={id} setValue={setId} />
-                    <InputBlock label="Full Name" value={name} setValue={setName} />
-                    <InputBlock label="Phone" value={phone} setValue={setPhone} type="tel" />
-                    <InputBlock label="Institute ID" value={instituteId} setValue={setInstituteId} />
-                    <InputBlock label="Password" value={password} setValue={setPassword} type="password" />
-                    <InputBlock label="Confirm Password" value={confirmPassword} setValue={setConfirmPassword} type="password" />
-                  </CardContent>
-                </TabsContent>
-              </Tabs>
-
-              <CardFooter className="flex flex-col">
-                <Button className="w-full" type="submit" disabled={isLoading}>
-                  {isLoading ? 'Registering...' : 'Register'}
+              {roleToRegister && (
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Registering...' : `Register ${roleToRegister}`}
                 </Button>
-              </CardFooter>
+              )}
             </form>
-          </>
-        )}
-      </Card>
+          </CardContent>
+        </Card>
+      </main>
+
+      <Footer />
     </div>
   );
 };
-
-const InputBlock = ({
-  label,
-  value,
-  setValue,
-  type = 'text',
-}: {
-  label: string;
-  value: string;
-  setValue: (val: string) => void;
-  type?: string;
-}) => (
-  <div className="space-y-2">
-    <Label>{label}</Label>
-    <Input
-      type={type}
-      placeholder={label}
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      required
-    />
-  </div>
-);
 
 export default Register;

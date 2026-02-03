@@ -36,6 +36,12 @@ import Analytics from "./pages/teacher/Analytics";
 import AddMyQuestion from "./pages/teacher/AddMyquestion";
 import QuizDetails from "./pages/teacher/QuizDetails";
 import QuizAnalyticsPage from "./pages/teacher/QuizAnalyticsPage";
+import ManageClasses from "./pages/teacher/ManageClasses";
+import ClassStudents from "./pages/teacher/ClassStudents";
+
+// Admin Pages
+import SuperAdminDashboard from "./pages/superadmin/Dashboard";
+import SchoolAdminDashboard from "./pages/schooladmin/Dashboard";
 
 //Quiz
 import AttemptQuiz from "./pages/student/AttemptQuiz";
@@ -53,6 +59,10 @@ const AppRoutes = () => {
       <Route path="/about" element={<About />} />
       <Route path="/not-authorized" element={<NotAuthorized />} />
       <Route path="/uploadquestion" element={<Upload_question />} />
+
+      {/* Admin Routes */}
+      <Route path="/superadmin" element={<SuperAdminDashboard />} />
+      <Route path="/schooladmin" element={<SchoolAdminDashboard />} />
 
       {/* Student Routes */}
       <Route path="/student" element={<StudentDashboard />} />
@@ -73,6 +83,8 @@ const AppRoutes = () => {
       <Route path="/teacher" element={<TeacherDashboard />} />
       <Route path="/teacher/create-quiz" element={<CreateQuiz />} />
       <Route path="/teacher/analytics" element={<Analytics />} />
+      <Route path="/teacher/manage-classes" element={<ManageClasses />} />
+      <Route path="/teacher/class/:classId/students" element={<ClassStudents />} />
       <Route path="/addmyquestion"element={<AddMyQuestion></AddMyQuestion>}></Route>
       <Route path="/teacher/quiz-details/:quizId" element={<QuizDetails />} />
       <Route path="/teacher/quiz-analytics/:quizId" element={<QuizAnalyticsPage />} />

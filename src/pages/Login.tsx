@@ -18,8 +18,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 const Login: React.FC = () => {
-  const [role, setRole] = useState<"student" | "teacher">("student");
-  const [id, setId] = useState("");
+  const [role, setRole] = useState<string>("student");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -27,10 +27,10 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id || !password) {
+    if (!username || !password) {
       toast({
         title: "Error",
-        description: "Please enter ID and password",
+        description: "Please enter username and password",
         variant: "destructive",
       });
       return;
@@ -39,34 +39,71 @@ const Login: React.FC = () => {
     try {
       setIsLoading(true);
 
-      const url =
-        role === "student"
-          ? `${API_URL}/students/login`
-          : `${API_URL}/teachers/login`;
+      let endpoint = '';
+      let redirectPath = '';
+      let payload: any = { username, password };
 
-      const payload =
-        role === "student"
-          ? { studentId: id, password }
-          : { teacherId: id, password };
-
-      const response = await axios.post(url, payload);
-
-      if (role === "teacher") {
-        Cookies.set("teacher", JSON.stringify(response.data), {
-          expires: 7,
-          secure: true,
-          sameSite: "strict",
-        });
-      } else {
-        localStorage.setItem("student", JSON.stringify(response.data));
+      switch (role) {
+        case 'superadmin':
+          endpoint = `${API_URL}/superadmin/login`;
+          redirectPath = '/superadmin';
+          break;
+        case 'schooladmin':
+          endpoint = `${API_URL}/schooladmin/login`;
+          redirectPath = '/schooladmin';
+          break;
+        case 'teacher':
+          endpoint = `${API_URL}/teachers/login`;
+          payload = { teacherId: username, password };
+          redirectPath = '/teacher';
+          break;
+        case 'student':
+          endpoint = `${API_URL}/students/login`;
+          payload = { studentId: username, password };
+          redirectPath = '/student';
+          break;
+        default:
+          toast({
+            title: "Error",
+            description: "Please select a valid role",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
       }
 
-      toast({
-        title: "Success",
-        description: `${role === "student" ? "Student" : "Teacher"} login successful`,
-      });
+      const response = await axios.post(endpoint, payload);
 
-      navigate(role === "student" ? "/student" : "/teacher");
+      if (response.data) {
+        const userData = {
+          ...response.data.user,
+          role: role
+        };
+
+        if (role === 'student') {
+          localStorage.setItem('student', JSON.stringify({ student: response.data.student || response.data.user }));
+        } else if (role === 'teacher') {
+          Cookies.set('teacher', JSON.stringify({ teacher: response.data.teacher || response.data.user }), {
+            expires: 7,
+            secure: true,
+            sameSite: "strict",
+          });
+        } else if (role === 'schooladmin') {
+          localStorage.setItem('schooladmin', JSON.stringify({ user: userData }));
+        } else if (role === 'superadmin') {
+          localStorage.setItem('superadmin', JSON.stringify({ user: userData }));
+        }
+
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+
+        toast({
+          title: "Success",
+          description: `Welcome back, ${response.data.user?.name || username}!`,
+        });
+
+        navigate(redirectPath);
+      }
     } catch (error: any) {
       toast({
         title: "Login failed",
@@ -97,22 +134,26 @@ const Login: React.FC = () => {
               <select
                 id="role"
                 value={role}
-                onChange={(e) => setRole(e.target.value as "student" | "teacher")}
+                onChange={(e) => setRole(e.target.value)}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:border-edu-blue"
               >
                 <option value="student">Student</option>
                 <option value="teacher">Teacher</option>
+                <option value="schooladmin">School Admin</option>
+                <option value="superadmin">Super Admin</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="id">{role === "student" ? "Student ID" : "Teacher ID"}</Label>
+              <Label htmlFor="username">
+                {role === "student" ? "Student ID" : role === "teacher" ? "Teacher ID" : "Username"}
+              </Label>
               <Input
-                id="id"
+                id="username"
                 type="text"
-                placeholder={`Enter your ${role === "student" ? "Student" : "Teacher"} ID`}
-                value={id}
-                onChange={(e) => setId(e.target.value)}
+                placeholder={`Enter your ${role === "student" ? "Student ID" : role === "teacher" ? "Teacher ID" : "Username"}`}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>

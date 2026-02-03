@@ -1,16 +1,69 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
 import { 
   Home,
   BookOpen, 
-  LogOut
+  LogOut,
+  UserPlus,
+  Upload
 } from 'lucide-react';
 
 const Header: React.FC = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
+
+  useEffect(() => {
+    // Check for logged in user
+    const role = localStorage.getItem('userRole');
+    const currentUser = localStorage.getItem('currentUser');
+    
+    if (role) {
+      setUserRole(role);
+    }
+    
+    if (currentUser) {
+      try {
+        const user = JSON.parse(currentUser);
+        setUserName(user.name || user.username || '');
+      } catch (e) {
+        console.error('Error parsing user data', e);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    // Clear all storage
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('student');
+    localStorage.removeItem('schooladmin');
+    localStorage.removeItem('superadmin');
+    localStorage.clear();
+    
+    // Clear cookies
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    setUserRole(null);
+    setUserName('');
+    navigate('/login');
+  };
+
+  const getDashboardPath = () => {
+    switch(userRole) {
+      case 'superadmin': return '/superadmin';
+      case 'schooladmin': return '/schooladmin';
+      case 'teacher': return '/teacher';
+      case 'student': return '/student';
+      default: return '/';
+    }
+  };
 
   return (
     <header className="bg-white shadow">
@@ -23,9 +76,9 @@ const Header: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          {isAuthenticated ? (
+          {userRole ? (
             <>
-              <Link to={user?.role === 'student' ? '/student' : '/teacher'}>
+              <Link to={getDashboardPath()}>
                 <Button variant="ghost" size="sm">
                   <Home className="h-4 w-4 mr-2" />
                   Dashboard
@@ -33,10 +86,30 @@ const Header: React.FC = () => {
               </Link>
               
               <span className="text-sm font-medium text-gray-600">
-                {user?.name} ({user?.role})
+                {userName} ({userRole})
               </span>
+
+              {/* Show Register button for admins and teachers */}
+              {(userRole === 'superadmin' || userRole === 'schooladmin' || userRole === 'teacher') && (
+                <Link to="/register">
+                  <Button variant="ghost" size="sm">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Register
+                  </Button>
+                </Link>
+              )}
+
+              {/* Show Upload Question only for superadmin */}
+              {userRole === 'superadmin' && (
+                <Link to="/authorization">
+                  <Button variant="ghost" size="sm">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Question
+                  </Button>
+                </Link>
+              )}
               
-              <Button variant="ghost" size="sm" onClick={logout}>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
@@ -44,13 +117,7 @@ const Header: React.FC = () => {
           ) : (
             <div className="flex space-x-2">
               <Link to="/login">
-                <Button variant="outline" size="sm">Login</Button>
-              </Link>
-              <Link to="/register">
-                <Button size="sm">Register</Button>
-              </Link>
-              <Link to="/authorization">
-                <Button size="sm">upload question</Button>
+                <Button size="sm">Login</Button>
               </Link>
             </div>
           )}

@@ -156,7 +156,7 @@ const TeacherDashboard: React.FC = () => {
           </div>
           
           {/* Main Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <Card className="border-2 border-edu-blue/20 hover:border-edu-blue/40 transition-colors">
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -175,6 +175,30 @@ const TeacherDashboard: React.FC = () => {
               <CardFooter>
                 <Link to="/teacher/create-quiz" className="w-full">
                   <Button className="w-full">Create Quiz</Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
+            <Card className="border-2 border-edu-green/20 hover:border-edu-green/40 transition-colors">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-xl mb-1">Manage Classes</CardTitle>
+                    <CardDescription>Create classes and manage students</CardDescription>
+                  </div>
+                  <Layers className="h-8 w-8 text-edu-green" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-500">
+                  Create and manage your classes by subject. Add or remove students from each class.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Link to="/teacher/manage-classes" className="w-full">
+                  <Button variant="outline" className="w-full border-edu-green text-edu-green hover:bg-edu-green/10">
+                    Manage Classes
+                  </Button>
                 </Link>
               </CardFooter>
             </Card>

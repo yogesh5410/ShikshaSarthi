@@ -10,6 +10,9 @@ const teacherRoutes = require("./routes/teacher");
 const reportRoutes = require("./routes/report");
 const schoolRoutes = require("./routes/school");
 const vocabRoutes = require("./routes/vocabularyRoutes");
+const superAdminRoutes = require("./routes/superadmin");
+const schoolAdminRoutes = require("./routes/schooladmin");
+const classRoutes = require("./routes/class");
 
 const app = express();
 app.use(cors());
@@ -34,6 +37,9 @@ app.use("/teachers", teacherRoutes);
 app.use("/reports", reportRoutes);
 app.use("/schools", schoolRoutes);
 app.use("/vocab", vocabRoutes);
+app.use("/superadmin", superAdminRoutes);
+app.use("/schooladmin", schoolAdminRoutes);
+app.use("/classes", classRoutes);
 // https://shiksha-sarthi-nmms-prep-cn64.vercel.app
 
 

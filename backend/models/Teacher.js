@@ -21,12 +21,15 @@ const embeddedQuestionSchema = new mongoose.Schema(
 
 const teacherSchema = new mongoose.Schema({
   teacherId: { type: String, required: true, unique: true },
+  username: { type: String, required: true, unique: true },
   name: String,
   phone: String,
-  schoolId: { type: String, ref: "School" },
+  schoolId: { type: String, ref: "School", required: true },
   password: String,
+  classes: [{ type: String, ref: "Class" }], // Classes assigned to teacher
   quizzesCreated: [{ type: String, ref: "Quiz" }],
   questionAdded: [embeddedQuestionSchema], // ✅ Embed questions directly
+  createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("Teacher", teacherSchema);

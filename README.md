@@ -1,73 +1,267 @@
-# Welcome to your Lovable project
+# ShikshaSarthi - NMMS Prep Platform
 
-## Project info
+## Overview
+
+ShikshaSarthi is a comprehensive educational platform designed for NMMS (National Means cum Merit Scholarship) exam preparation. The platform implements a complete role-based system with hierarchical user management.
+
+## Project Info
 
 **URL**: https://lovable.dev/projects/72247004-dddd-4e96-a82a-7bb4dca9503a
 
-## How can I edit this code?
+## User Roles
 
-There are several ways of editing your application.
+### 🔐 Four-Tier Role System
 
-**Use Lovable**
+1. **Super Admin**
+   - Manages all schools, school admins, teachers, and students
+   - Full system access and question bank management
+   - Dashboard: `/superadmin`
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/72247004-dddd-4e96-a82a-7bb4dca9503a) and start prompting.
+2. **School Admin**
+   - Manages teachers and students within their school
+   - School-level administration
+   - Dashboard: `/schooladmin`
 
-Changes made via Lovable will be committed automatically to this repo.
+3. **Teacher**
+   - Creates and manages classes (Class + Subject)
+   - Manages student enrollment in classes
+   - Creates quizzes and views analytics
+   - Dashboard: `/teacher`
 
-**Use your preferred IDE**
+4. **Student**
+   - Practices questions by subject/topic
+   - Attempts quizzes and views reports
+   - Dashboard: `/student`
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Quick Start
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites
 
-Follow these steps:
+- Node.js & npm ([install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
+- MongoDB database
+- Gemini API key (for AI-powered hints)
+
+### Installation
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
+cd ShikshaSarthi
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install frontend dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install backend dependencies
+cd backend
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Set up environment variables
+# Create .env in backend directory with:
+# MONGO_URI=your_mongodb_connection_string
+# PORT=5000
+# GEMINI_API_KEY=your_gemini_api_key
+
+# Create .env in root directory with:
+# VITE_API_URL=http://localhost:5000
+```
+
+### Running the Application
+
+```sh
+# Start backend server (from backend directory)
+npm start
+# or with nodemon
+npx nodemon index.js
+
+# Start frontend dev server (from root directory)
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Initial Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+After starting the backend, create the first super admin:
 
-**Use GitHub Codespaces**
+```sh
+node create-superadmin.js
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Default credentials:
+- Username: `admin`
+- Password: `admin123`
 
-## What technologies are used for this project?
+⚠️ **Change these credentials after first login!**
 
-This project is built with:
+## Features
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 🎓 For Students
+- Subject-wise practice (Math, Science, Social Science, Mental Ability)
+- Vocabulary comprehension exercises
+- Quiz attempts with instant scoring
+- Detailed performance reports
+- Hint system for difficult questions
 
-## How can I deploy this project?
+### 👨‍🏫 For Teachers
+- **Class Management**: Create classes (Class + Subject combinations)
+- **Student Management**: Add/remove students from classes
+- **Quiz Creation**: Design custom quizzes with question bank
+- **Analytics**: View student performance and question difficulty
+- **Custom Questions**: Add your own questions
 
-Simply open [Lovable](https://lovable.dev/projects/72247004-dddd-4e96-a82a-7bb4dca9503a) and click on Share -> Publish.
+### 🏫 For School Admins
+- Register teachers and students for their school
+- View all teachers in the school
+- Monitor student enrollment by class
+- School-level statistics
 
-## Can I connect a custom domain to my Lovable project?
+### 👑 For Super Admins
+- Register schools, school admins, teachers, and students
+- System-wide statistics and monitoring
+- View all schools with teacher and student breakdowns
+- Manage question bank
+- Upload bulk questions
 
-Yes, you can!
+## Technology Stack
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- **Frontend**: React + TypeScript + Vite
+- **UI Library**: Shadcn/ui with Tailwind CSS
+- **Backend**: Express.js + Node.js
+- **Database**: MongoDB with Mongoose ODM
+- **State Management**: React Context API
+- **Routing**: React Router v6
+- **HTTP Client**: Axios
+- **AI Integration**: Google Gemini API
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Project Structure
+
+```
+ShikshaSarthi/
+├── backend/
+│   ├── models/          # Database models
+│   │   ├── SuperAdmin.js
+│   │   ├── SchoolAdmin.js
+│   │   ├── School.js
+│   │   ├── Teacher.js
+│   │   ├── Student.js
+│   │   ├── Class.js
+│   │   ├── Question.js
+│   │   ├── Quiz.js
+│   │   └── Report.js
+│   ├── routes/          # API routes
+│   │   ├── superadmin.js
+│   │   ├── schooladmin.js
+│   │   ├── class.js
+│   │   ├── teacher.js
+│   │   ├── student.js
+│   │   ├── question.js
+│   │   ├── quiz.js
+│   │   └── report.js
+│   └── index.js         # Backend entry point
+├── src/
+│   ├── components/      # Reusable components
+│   │   ├── Header.tsx
+│   │   ├── Footer.tsx
+│   │   └── ui/         # Shadcn components
+│   ├── pages/
+│   │   ├── superadmin/ # Super admin pages
+│   │   ├── schooladmin/# School admin pages
+│   │   ├── teacher/    # Teacher pages
+│   │   ├── student/    # Student pages
+│   │   ├── Login.tsx   # Role-based login
+│   │   └── Register.tsx# Role-based registration
+│   └── contexts/       # React contexts
+├── create-superadmin.js # Initial setup script
+├── IMPLEMENTATION_GUIDE.md # Detailed implementation guide
+└── README.md
+
+
+## API Endpoints
+
+### Authentication
+- `POST /superadmin/login` - Super admin login
+- `POST /schooladmin/login` - School admin login
+- `POST /teachers/login` - Teacher login
+- `POST /students/login` - Student login
+
+### Super Admin
+- `POST /superadmin/register/school` - Register school
+- `POST /superadmin/register/schooladmin` - Register school admin
+- `POST /superadmin/register/teacher` - Register teacher
+- `POST /superadmin/register/student` - Register student
+- `GET /superadmin/stats` - Get system statistics
+- `GET /superadmin/schools` - Get all schools
+
+### School Admin
+- `POST /schooladmin/register/teacher` - Register teacher
+- `POST /schooladmin/register/student` - Register student
+- `GET /schooladmin/:username/stats` - Get school stats
+- `GET /schooladmin/:username/teachers` - Get teachers
+- `GET /schooladmin/:username/students` - Get students
+
+### Teacher
+- `POST /teachers/register/student` - Register student
+- `GET /teachers/:teacherId/classes` - Get teacher's classes
+- `POST /classes` - Create new class
+- `POST /classes/:classId/students` - Add student to class
+
+### Questions & Quizzes
+- `GET /questions` - Get all questions
+- `POST /questions` - Create question (with AI hint)
+- `GET /questions/:class/:subject/:topic` - Get questions by topic
+- `POST /quizzes` - Create quiz
+- `GET /quizzes/:id` - Get quiz by ID
+
+## Development
+
+### Project built with Lovable
+
+Visit [Lovable Project](https://lovable.dev/projects/72247004-dddd-4e96-a82a-7bb4dca9503a) to edit via prompts.
+
+### Local Development
+
+```sh
+# Frontend
+npm run dev
+
+# Backend
+cd backend
+npm start
+```
+
+### Building for Production
+
+```sh
+npm run build
+```
+
+## Deployment
+
+### Frontend
+Simply open [Lovable](https://lovable.dev/projects/72247004-dddd-4e96-a82a-7bb4dca9503a) and click Share → Publish.
+
+### Backend
+The backend is configured for Vercel deployment with `backend/vercel.json`.
+
+## Documentation
+
+- **[IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)** - Detailed implementation guide with workflows and examples
+- **[API Documentation](#api-endpoints)** - Complete API reference above
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## Support
+
+For issues, questions, or contributions, please open an issue on GitHub.
+
+---
+
+**Built with ❤️ for NMMS aspirants**

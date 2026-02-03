@@ -65,8 +65,11 @@ router.post("/login", async (req, res) => {
       teacher: {
         _id: teacher._id,
         teacherId: teacher.teacherId,
+        username: teacher.username,
         name: teacher.name,
-        // include any other fields you want
+        schoolId: teacher.schoolId,
+        phone: teacher.phone,
+        classes: teacher.classes
       },
     });
   } catch (err) {
@@ -159,8 +162,34 @@ router.get("/:teacherId/quizzes", async (req, res) => {
   }
 });
 
+// Register Student by Teacher
+router.post("/register/student", async (req, res) => {
+  try {
+    const { teacherId, ...studentData } = req.body;
+    
+    const teacher = await Teacher.findOne({ teacherId });
+    if (!teacher) {
+      return res.status(404).json({ error: "Teacher not found" });
+    }
 
+    const student = new Student({ ...studentData, schoolId: teacher.schoolId });
+    await student.save();
 
+    res.status(201).json(student);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
 
+// Get teacher's classes
+router.get("/:teacherId/classes", async (req, res) => {
+  try {
+    const Class = require("../models/Class");
+    const classes = await Class.find({ teacherId: req.params.teacherId });
+    res.status(200).json(classes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;
