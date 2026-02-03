@@ -24,6 +24,7 @@ import StudentReport from "./pages/student/StudentReport";
 import SingleQuizReport from "./pages/student/SingleQuizReport";
 import SubjectTopics from "./pages/student/SubjectTopics";
 import VocabularyQuizPage from "./pages/student/VocalbularyQuizPage";
+import StudentProfile from "./pages/student/StudentProfile";
 
 // Question Page
 import Upload_question from "./components/questions/Upload_question";
@@ -66,6 +67,8 @@ const AppRoutes = () => {
 
       {/* Student Routes */}
       <Route path="/student" element={<StudentDashboard />} />
+      <Route path="/student/profile/:id" element={<StudentProfile />} />
+      <Route path="/student/assessment/:id" element={<StudentProfile />} />
       <Route path="/student/practice" element={<StudentPractice />} />
       <Route path="/student/practice/:subject" element={<SubjectTopics />} />
       <Route path="/student/practice/vocab" element={<VocabularyQuizPage />} />

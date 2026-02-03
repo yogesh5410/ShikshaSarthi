@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Home,
+  User,
   BookOpen, 
   LogOut,
   UserPlus,
@@ -14,11 +15,13 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
+  const [studentId, setStudentId] = useState<string>('');
 
   useEffect(() => {
     // Check for logged in user
     const role = localStorage.getItem('userRole');
     const currentUser = localStorage.getItem('currentUser');
+    const studentData = localStorage.getItem('student');
     
     if (role) {
       setUserRole(role);
@@ -28,8 +31,25 @@ const Header: React.FC = () => {
       try {
         const user = JSON.parse(currentUser);
         setUserName(user.name || user.username || '');
+        
+        // Try to get studentId from currentUser
+        if (user.studentId) {
+          setStudentId(user.studentId);
+        }
       } catch (e) {
         console.error('Error parsing user data', e);
+      }
+    }
+    
+    // For students, also check the 'student' localStorage entry
+    if (role === 'student' && studentData) {
+      try {
+        const student = JSON.parse(studentData);
+        if (student.student && student.student.studentId) {
+          setStudentId(student.student.studentId);
+        }
+      } catch (e) {
+        console.error('Error parsing student data', e);
       }
     }
   }, []);
@@ -85,9 +105,21 @@ const Header: React.FC = () => {
                 </Button>
               </Link>
               
-              <span className="text-sm font-medium text-gray-600">
-                {userName} ({userRole})
-              </span>
+              {/* User Profile Button - Navigates to profile for students */}
+              {userRole === 'student' && studentId ? (
+                <Link to={`/student/profile/${studentId}`}>
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    {userName} ({userRole})
+                  </Button>
+                </Link>
+              ) : (
+                <Button variant="ghost" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  {userName} ({userRole})
+                </Button>
+              )}
+              
 
               {/* Show Register button for admins and teachers */}
               {(userRole === 'superadmin' || userRole === 'schooladmin' || userRole === 'teacher') && (

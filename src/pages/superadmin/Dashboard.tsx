@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { School, Users, GraduationCap, UserCog, PlusCircle } from 'lucide-react';
+import { School, Users, GraduationCap, UserCog, PlusCircle, Eye } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const SuperAdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     schools: 0,
     teachers: 0,
@@ -204,9 +205,22 @@ const SuperAdminDashboard: React.FC = () => {
                           <p className="text-gray-500">No students found</p>
                         ) : (
                           schoolStudents.map((student) => (
-                            <div key={student.studentId} className="p-3 bg-gray-50 rounded">
-                              <p className="font-medium">{student.name}</p>
-                              <p className="text-sm text-gray-600">ID: {student.studentId} | Class: {student.class}</p>
+                            <div 
+                              key={student.studentId} 
+                              className="p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors cursor-pointer group"
+                              onClick={() => navigate(`/student/profile/${student.studentId}`)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-900 group-hover:text-edu-blue transition-colors">
+                                    {student.name}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    ID: {student.studentId} | Class: {student.class}
+                                  </p>
+                                </div>
+                                <Eye className="h-5 w-5 text-gray-400 group-hover:text-edu-blue transition-colors" />
+                              </div>
                             </div>
                           ))
                         )}
