@@ -12,9 +12,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { BookOpen, ListChecks, Users, Lock } from "lucide-react";
+import { 
+  BookOpen, 
+  ListChecks, 
+  Users, 
+  Lock, 
+  TrendingUp, 
+  Award,
+  Target,
+  Calendar,
+  BarChart3,
+  Zap,
+  Trophy,
+  User,
+  School,
+  Hash
+} from "lucide-react";
 import SubjectIcon from "@/components/SubjectIcon";
 
 const StudentDashboard: React.FC = () => {
@@ -23,8 +40,12 @@ const StudentDashboard: React.FC = () => {
   const [student, setStudent] = useState<null | {
     _id: string;
     studentId: string;
-    class:string;
+    class: string;
     name: string;
+    schoolId: string;
+    phone?: string;
+    username?: string;
+    createdAt?: string;
     quizAttempted: {
       quizId: string;
       score: {
@@ -37,6 +58,7 @@ const StudentDashboard: React.FC = () => {
   }>(null);
 
   const [quizId, setQuizId] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const localData = localStorage.getItem("student");
@@ -44,22 +66,27 @@ const StudentDashboard: React.FC = () => {
     if (localData) {
       try {
         const parsedData = JSON.parse(localData);
-        const studentClass = parsedData.student?.class;
         const studentId = parsedData.student?.studentId;
 
         if (studentId) {
+          setLoading(true);
           axios
             .get(`${API_URL}/students/${studentId}`)
             .then((res) => {
               setStudent(res.data);
+              setLoading(false);
             })
             .catch((error) => {
               console.error("Failed to fetch student data:", error);
+              setLoading(false);
             });
         }
       } catch (e) {
         console.error("Failed to parse student local storage data", e);
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
   }, []);
   
@@ -83,6 +110,53 @@ const StudentDashboard: React.FC = () => {
 
     navigate(`/attemptquiz/${trimmedQuizId}`);
   };
+
+  // Calculate statistics from actual quiz data
+  const calculateStats = () => {
+    if (!student?.quizAttempted || student.quizAttempted.length === 0) {
+      return {
+        totalQuizzes: 0,
+        averageScore: 0,
+        totalCorrect: 0,
+        totalIncorrect: 0,
+        totalUnattempted: 0,
+        totalQuestions: 0,
+        accuracy: 0,
+        streak: 0
+      };
+    }
+
+    const totalQuizzes = student.quizAttempted.length;
+    let totalCorrect = 0;
+    let totalIncorrect = 0;
+    let totalUnattempted = 0;
+
+    student.quizAttempted.forEach(quiz => {
+      totalCorrect += quiz.score.correct;
+      totalIncorrect += quiz.score.incorrect;
+      totalUnattempted += quiz.score.unattempted;
+    });
+
+    const totalQuestions = totalCorrect + totalIncorrect + totalUnattempted;
+    const averageScore = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+
+    // Calculate streak (number of recent quizzes)
+    const recentQuizzes = student.quizAttempted.slice(-7).length;
+
+    return {
+      totalQuizzes,
+      averageScore,
+      totalCorrect,
+      totalIncorrect,
+      totalUnattempted,
+      totalQuestions,
+      accuracy,
+      streak: recentQuizzes
+    };
+  };
+
+  const stats = calculateStats();
   
 
   const subjectProgress = [
@@ -118,13 +192,38 @@ const StudentDashboard: React.FC = () => {
 
   // Create real recent activity from quizAttempted
   const recentActivity =
-  student?.quizAttempted.map((attempt) => ({
-    quizId: attempt.quizId, // ✅ add this line
-    type: "quiz",
-    title: `Quiz ${attempt.quizId}`,
-    score: `${attempt.score.correct} Correct / ${attempt.score.incorrect} Incorrect`,
-    date: attempt.attemptedAt,
-  })) || [];
+    student?.quizAttempted
+      .slice(-5)
+      .reverse()
+      .map((attempt) => ({
+        quizId: attempt.quizId,
+        type: "quiz",
+        title: `Quiz ${attempt.quizId}`,
+        score: `${attempt.score.correct} Correct / ${attempt.score.incorrect} Incorrect`,
+        correct: attempt.score.correct,
+        incorrect: attempt.score.incorrect,
+        unattempted: attempt.score.unattempted,
+        date: attempt.attemptedAt,
+        percentage: Math.round(
+          (attempt.score.correct / 
+          (attempt.score.correct + attempt.score.incorrect + attempt.score.unattempted)) * 100
+        ) || 0
+      })) || [];
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-1 flex justify-center items-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-edu-blue mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your dashboard...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
 
   if (!student) {
@@ -136,18 +235,183 @@ const StudentDashboard: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header />
 
-      <main className="flex-1 py-8 bg-gray-50">
+      <main className="flex-1 py-8">
         <div className="edu-container">
+          {/* Welcome Section with Student Info */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Welcome back, {student.name}!
-            </h1>
-            <p className="text-gray-600">Student ID: {student.studentId}</p>
-            <p className="text-gray-600">Student Class: {student.class}</p>
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="h-16 w-16 bg-gradient-to-br from-edu-blue to-edu-purple rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                {student.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Welcome back, {student.name}! 👋
+                </h1>
+                <p className="text-gray-600">Ready to ace your NMMS preparation today?</p>
+              </div>
+            </div>
+
+            {/* Quick Info Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <Card className="border-l-4 border-l-edu-blue">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Student ID</p>
+                      <p className="text-lg font-bold text-gray-900">{student.studentId}</p>
+                    </div>
+                    <Hash className="h-8 w-8 text-edu-blue/30" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-edu-green">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Class</p>
+                      <p className="text-lg font-bold text-gray-900">{student.class}</p>
+                    </div>
+                    <User className="h-8 w-8 text-edu-green/30" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-edu-purple">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">School ID</p>
+                      <p className="text-lg font-bold text-gray-900 truncate">{student.schoolId}</p>
+                    </div>
+                    <School className="h-8 w-8 text-edu-purple/30" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-edu-yellow">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Member Since</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }) : 'N/A'}
+                      </p>
+                    </div>
+                    <Calendar className="h-8 w-8 text-edu-yellow/30" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
+
+          {/* Performance Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-gradient-to-br from-edu-blue to-blue-600 text-white">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white text-lg">Total Quizzes</CardTitle>
+                  <Trophy className="h-8 w-8" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold mb-2">{stats.totalQuizzes}</p>
+                <p className="text-sm text-blue-100">
+                  {stats.totalQuizzes > 0 ? 'Keep practicing!' : 'Start your journey'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-edu-green to-green-600 text-white">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white text-lg">Average Score</CardTitle>
+                  <Award className="h-8 w-8" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold mb-2">{stats.averageScore}%</p>
+                <Progress value={stats.averageScore} className="bg-white/30 h-2" />
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-edu-purple to-purple-600 text-white">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white text-lg">Accuracy Rate</CardTitle>
+                  <Target className="h-8 w-8" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold mb-2">{stats.accuracy}%</p>
+                <p className="text-sm text-purple-100">
+                  {stats.totalCorrect}/{stats.totalQuestions} correct
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-edu-yellow to-yellow-600 text-white">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white text-lg">Active Days</CardTitle>
+                  <Zap className="h-8 w-8" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-4xl font-bold mb-2">{stats.streak}</p>
+                <p className="text-sm text-yellow-100">Recent activity streak</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Detailed Performance Breakdown */}
+          {stats.totalQuizzes > 0 && (
+            <Card className="mb-8">
+              <CardHeader>
+                <div className="flex items-center space-x-2">
+                  <BarChart3 className="h-6 w-6 text-edu-blue" />
+                  <CardTitle>Performance Breakdown</CardTitle>
+                </div>
+                <CardDescription>Your overall quiz performance statistics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Correct Answers</span>
+                      <Badge className="bg-green-500">{stats.totalCorrect}</Badge>
+                    </div>
+                    <Progress value={(stats.totalCorrect / stats.totalQuestions) * 100} className="h-2" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Incorrect Answers</span>
+                      <Badge className="bg-red-500">{stats.totalIncorrect}</Badge>
+                    </div>
+                    <Progress value={(stats.totalIncorrect / stats.totalQuestions) * 100} className="h-2" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-700">Unattempted</span>
+                      <Badge className="bg-gray-500">{stats.totalUnattempted}</Badge>
+                    </div>
+                    <Progress value={(stats.totalUnattempted / stats.totalQuestions) * 100} className="h-2" />
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-gray-700">
+                    <strong>Total Questions Attempted:</strong> {stats.totalQuestions} questions across {stats.totalQuizzes} quizzes
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -267,52 +531,99 @@ const StudentDashboard: React.FC = () => {
           </div> */}
 
           {/* Real Recent Activity */}
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Recent Activity</h2>
-            {recentActivity.length > 0 ? (
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <Link to={`/singlequiz/${activity.quizId}`}>
-                    <Card key={index}>
-                      <CardHeader className="py-3">
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center space-x-2">
-                            <ListChecks className="h-5 w-5 text-edu-green" />
-                            <CardTitle className="text-base font-medium">
-                              {activity.title}
-                            </CardTitle>
-                          </div>
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium mr-4">
-                              {activity.score}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {new Date(activity.date).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      </CardHeader>
-                    </Card>
-                  </Link>
-                ))}
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="h-6 w-6 text-edu-blue" />
+                <CardTitle>Recent Quiz Activity</CardTitle>
               </div>
-            ) : (
-              <Card>
-                <CardContent className="py-6 flex flex-col items-center justify-center">
-                  <Lock className="h-12 w-12 text-gray-400 mb-4" />
-                  <p className="text-xl font-medium text-gray-500">
-                    No activity yet
+              <CardDescription>Your last 5 quiz attempts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentActivity.length > 0 ? (
+                <div className="space-y-3">
+                  {recentActivity.map((activity, index) => (
+                    <Link 
+                      key={index} 
+                      to={`/singlequiz/${activity.quizId}`}
+                      className="block"
+                    >
+                      <div className="p-4 border rounded-lg hover:shadow-md transition-all hover:border-edu-blue group">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-full ${
+                              activity.percentage >= 75 ? 'bg-green-100' : 
+                              activity.percentage >= 50 ? 'bg-yellow-100' : 'bg-red-100'
+                            }`}>
+                              <ListChecks className={`h-5 w-5 ${
+                                activity.percentage >= 75 ? 'text-green-600' : 
+                                activity.percentage >= 50 ? 'text-yellow-600' : 'text-red-600'
+                              }`} />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 group-hover:text-edu-blue transition-colors">
+                                {activity.title}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(activity.date).toLocaleDateString('en-IN', { 
+                                  day: 'numeric', 
+                                  month: 'short', 
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <Badge className={`${
+                            activity.percentage >= 75 ? 'bg-green-500' : 
+                            activity.percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}>
+                            {activity.percentage}%
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex items-center space-x-6 text-sm">
+                          <span className="flex items-center text-green-600">
+                            <span className="font-semibold mr-1">{activity.correct}</span> Correct
+                          </span>
+                          <span className="flex items-center text-red-600">
+                            <span className="font-semibold mr-1">{activity.incorrect}</span> Incorrect
+                          </span>
+                          <span className="flex items-center text-gray-600">
+                            <span className="font-semibold mr-1">{activity.unattempted}</span> Unattempted
+                          </span>
+                        </div>
+                        
+                        <Progress 
+                          value={activity.percentage} 
+                          className="mt-3 h-2" 
+                        />
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 flex flex-col items-center justify-center text-center">
+                  <div className="p-4 bg-gray-100 rounded-full mb-4">
+                    <Lock className="h-12 w-12 text-gray-400" />
+                  </div>
+                  <p className="text-xl font-semibold text-gray-700 mb-2">
+                    No Quiz Activity Yet
                   </p>
-                  <p className="text-gray-500 mb-4">
-                    Start practicing to build your activity history
+                  <p className="text-gray-500 mb-6 max-w-md">
+                    Start practicing or attempt a quiz to see your performance history here
                   </p>
                   <Link to="/student/practice">
-                    <Button>Start Practice</Button>
+                    <Button className="bg-gradient-to-r from-edu-blue to-edu-purple">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Start Practice Now
+                    </Button>
                   </Link>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
 
