@@ -140,22 +140,6 @@ const Register: React.FC = () => {
   const renderFields = () => {
     if (!roleToRegister) return null;
 
-    const commonFields = (
-      <>
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="Enter name"
-            value={formData.name || ''}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-            required
-          />
-        </div>
-      </>
-    );
-
     switch (roleToRegister) {
       case 'school':
         return (
@@ -197,54 +181,32 @@ const Register: React.FC = () => {
         );
 
       case 'schooladmin':
-      case 'teacher':
-      case 'student':
-        const isSchoolAdmin = roleToRegister === 'schooladmin';
-        const isTeacher = roleToRegister === 'teacher';
-        const isStudent = roleToRegister === 'student';
-        
         return (
           <>
-            {commonFields}
-            
-            {/* School selection for school admin registration */}
-            {isSchoolAdmin && currentUserRole === 'superadmin' && (
-              <div className="space-y-2">
-                <Label htmlFor="schoolId">School</Label>
-                <Select
-                  value={formData.schoolId || ''}
-                  onValueChange={(value) => handleInputChange('schoolId', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select school" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {schools.map((school) => (
-                      <SelectItem key={school.schoolId} value={school.schoolId}>
-                        {school.schoolName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
             <div className="space-y-2">
-              <Label htmlFor="username">
-                {isStudent ? 'Student ID' : isTeacher ? 'Teacher ID' : 'Username'}
-              </Label>
+              <Label htmlFor="name">Name</Label>
               <Input
-                id="username"
+                id="name"
                 type="text"
-                placeholder={`Enter ${isStudent ? 'student ID' : isTeacher ? 'teacher ID' : 'username'}`}
-                value={formData[isStudent ? 'studentId' : isTeacher ? 'teacherId' : 'username'] || ''}
-                onChange={(e) => handleInputChange(
-                  isStudent ? 'studentId' : isTeacher ? 'teacherId' : 'username',
-                  e.target.value
-                )}
+                placeholder="Enter name"
+                value={formData.name || ''}
+                onChange={(e) => handleInputChange('name', e.target.value)}
                 required
               />
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Enter username"
+                value={formData.username || ''}
+                onChange={(e) => handleInputChange('username', e.target.value)}
+                required
+              />
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -256,6 +218,7 @@ const Register: React.FC = () => {
                 required
               />
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
               <Input
@@ -267,8 +230,8 @@ const Register: React.FC = () => {
               />
             </div>
             
-            {/* School selection for teachers and students when super admin registers */}
-            {currentUserRole === 'superadmin' && (isTeacher || isStudent) && (
+            {/* School selection - only for superadmin */}
+            {currentUserRole === 'superadmin' && (
               <div className="space-y-2">
                 <Label htmlFor="schoolId">School</Label>
                 <Select
@@ -288,19 +251,189 @@ const Register: React.FC = () => {
                 </Select>
               </div>
             )}
+          </>
+        );
 
-            {isStudent && (
-              <div className="space-y-2">
-                <Label htmlFor="class">Class</Label>
+      case 'teacher':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Enter name"
+                value={formData.name || ''}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="teacherId">Teacher ID</Label>
+              <Input
+                id="teacherId"
+                type="text"
+                placeholder="Enter teacher ID"
+                value={formData.teacherId || ''}
+                onChange={(e) => handleInputChange('teacherId', e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter password"
+                value={formData.password || ''}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Enter phone number"
+                value={formData.phone || ''}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+              />
+            </div>
+            
+            {/* School selection for all users registering teachers */}
+            <div className="space-y-2">
+              <Label htmlFor="schoolId">School</Label>
+              {currentUserRole === 'superadmin' ? (
+                <Select
+                  value={formData.schoolId || ''}
+                  onValueChange={(value) => handleInputChange('schoolId', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schools.map((school) => (
+                      <SelectItem key={school.schoolId} value={school.schoolId}>
+                        {school.schoolName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
                 <Input
-                  id="class"
+                  id="schoolId"
                   type="text"
-                  placeholder="Enter class (e.g., 6, 7, 8)"
-                  value={formData.class || ''}
-                  onChange={(e) => handleInputChange('class', e.target.value)}
+                  value={currentUserSchoolId}
+                  disabled
+                  className="bg-gray-100"
                 />
-              </div>
-            )}
+              )}
+            </div>
+          </>
+        );
+
+      case 'student':
+        return (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Enter name"
+                value={formData.name || ''}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="studentId">Student ID</Label>
+              <Input
+                id="studentId"
+                type="text"
+                placeholder="Enter student ID"
+                value={formData.studentId || ''}
+                onChange={(e) => handleInputChange('studentId', e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter password"
+                value={formData.password || ''}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Enter phone number"
+                value={formData.phone || ''}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="class">Class</Label>
+              <Select
+                value={formData.class || ''}
+                onValueChange={(value) => handleInputChange('class', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      Class {num}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* School selection for all users registering students */}
+            <div className="space-y-2">
+              <Label htmlFor="schoolId">School</Label>
+              {currentUserRole === 'superadmin' ? (
+                <Select
+                  value={formData.schoolId || ''}
+                  onValueChange={(value) => handleInputChange('schoolId', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schools.map((school) => (
+                      <SelectItem key={school.schoolId} value={school.schoolId}>
+                        {school.schoolName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="schoolId"
+                  type="text"
+                  value={currentUserSchoolId}
+                  disabled
+                  className="bg-gray-100"
+                />
+              )}
+            </div>
           </>
         );
 

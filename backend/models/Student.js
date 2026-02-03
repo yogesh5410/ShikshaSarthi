@@ -2,12 +2,12 @@ const mongoose = require("mongoose");
 
 const studentSchema = new mongoose.Schema({
   studentId: { type: String, required: true, unique: true },
-  username: { type: String, required: true, unique: true },
-  name: String,
+  username: { type: String }, // Make optional, will default to studentId
+  name: { type: String, required: true },
   phone: String,
   schoolId: { type: String, ref: "School", required: true },
-  password: String,
-  class: String,
+  password: { type: String, required: true },
+  class: { type: String, required: true },
   classes: [{ type: String, ref: "Class" }], // Classes enrolled in
   quizAttempted: [
     {
@@ -28,6 +28,14 @@ const studentSchema = new mongoose.Schema({
     }
   ],
   createdAt: { type: Date, default: Date.now }
+});
+
+// Pre-save hook to set username to studentId if not provided
+studentSchema.pre('save', function(next) {
+  if (!this.username) {
+    this.username = this.studentId;
+  }
+  next();
 });
 
 module.exports = mongoose.model("Student", studentSchema);
