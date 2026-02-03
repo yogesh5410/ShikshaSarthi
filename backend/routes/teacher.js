@@ -55,8 +55,10 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid Teacher ID or password." });
     }
 
-    // Plaintext password check for now (replace with hashed password check in production)
-    if (teacher.password !== password) {
+    // Use bcrypt to compare password
+    const isPasswordValid = await teacher.comparePassword(password);
+    
+    if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid Teacher ID or password." });
     }
 

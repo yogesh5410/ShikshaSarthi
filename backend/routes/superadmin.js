@@ -17,7 +17,14 @@ router.post("/login", async (req, res) => {
   try {
     const superAdmin = await SuperAdmin.findOne({ username });
 
-    if (!superAdmin || superAdmin.password !== password) {
+    if (!superAdmin) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+
+    // Use bcrypt to compare password
+    const isPasswordValid = await superAdmin.comparePassword(password);
+    
+    if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid credentials." });
     }
 

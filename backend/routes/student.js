@@ -28,8 +28,15 @@ router.post("/login", async (req, res) => {
     // Find student by studentId
     const student = await Student.findOne({ studentId });
 
-    // If not found or password doesn't match
-    if (!student || student.password !== password) {
+    // If not found
+    if (!student) {
+      return res.status(401).json({ error: "Invalid student ID or password" });
+    }
+
+    // Use bcrypt to compare password
+    const isPasswordValid = await student.comparePassword(password);
+    
+    if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid student ID or password" });
     }
 

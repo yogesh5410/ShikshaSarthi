@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 // Define embedded question schema
 const embeddedQuestionSchema = new mongoose.Schema(
@@ -33,11 +34,31 @@ const teacherSchema = new mongoose.Schema({
 });
 
 // Pre-save hook to set username to teacherId if not provided
-teacherSchema.pre('save', function(next) {
+teacherSchema.pre('save', async function(next) {
   if (!this.username) {
     this.username = this.teacherId;
   }
+  
+  // Hash password if it's modified or new
+  if (this.isModified('password')) {
+    try {
+      const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
+    } catch (error) {
+      return next(error);
+    }
+  }
+  
   next();
 });
+
+// Method to compare password for login
+teacherSchema.methods.comparePassword = async function(candidatePassword) {
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    throw error;
+  }
+};
 
 module.exports = mongoose.model("Teacher", teacherSchema);

@@ -16,7 +16,14 @@ router.post("/login", async (req, res) => {
   try {
     const schoolAdmin = await SchoolAdmin.findOne({ username });
 
-    if (!schoolAdmin || schoolAdmin.password !== password) {
+    if (!schoolAdmin) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+
+    // Use bcrypt to compare password
+    const isPasswordValid = await schoolAdmin.comparePassword(password);
+    
+    if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid credentials." });
     }
 
