@@ -8,7 +8,9 @@ import {
   BookOpen, 
   LogOut,
   UserPlus,
-  Upload
+  Upload,
+  User,
+  LayoutDashboard
 } from 'lucide-react';
 
 const Header: React.FC = () => {
@@ -98,6 +100,7 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-4">
           {userRole ? (
             <>
+<<<<<<< HEAD
               <Link to={getDashboardPath()}>
                 <Button variant="ghost" size="sm">
                   <Home className="h-4 w-4 mr-2" />
@@ -120,6 +123,25 @@ const Header: React.FC = () => {
                 </Button>
               )}
               
+=======
+              {/* Show Dashboard and Profile buttons for teachers */}
+              {userRole === 'teacher' && (
+                <>
+                  <Link to="/teacher">
+                    <Button variant="ghost" size="sm">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/teacher/profile">
+                    <Button variant="ghost" size="sm">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Button>
+                  </Link>
+                </>
+              )}
+>>>>>>> a75c460399bb06bc06e7a9c191c2acf7280acfaf
 
               {/* Show Register button for admins and teachers */}
               {(userRole === 'superadmin' || userRole === 'schooladmin' || userRole === 'teacher') && (
@@ -131,15 +153,6 @@ const Header: React.FC = () => {
                 </Link>
               )}
 
-              {/* Show Upload Question only for superadmin */}
-              {userRole === 'superadmin' && (
-                <Link to="/authorization">
-                  <Button variant="ghost" size="sm">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Question
-                  </Button>
-                </Link>
-              )}
               
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />

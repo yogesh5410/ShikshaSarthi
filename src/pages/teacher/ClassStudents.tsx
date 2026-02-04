@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ArrowLeft, Users, PlusCircle, Trash2, Search } from 'lucide-react';
+import { ArrowLeft, Users, PlusCircle, Trash2, Search, User, Phone, IdCard, Building, Calendar, BookOpen, GraduationCap } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -39,6 +40,8 @@ const ClassStudents: React.FC = () => {
   const [studentToAdd, setStudentToAdd] = useState<string>('');
   const [classFilter, setClassFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
 
   useEffect(() => {
     if (classId) {
@@ -118,6 +121,11 @@ const ClassStudents: React.FC = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleStudentClick = (student: Student) => {
+    setSelectedStudent(student);
+    setIsStudentModalOpen(true);
   };
 
   // Filter available students
@@ -286,21 +294,27 @@ const ClassStudents: React.FC = () => {
                     enrolledStudents.map((student) => (
                       <div
                         key={student.studentId}
-                        className="p-3 bg-gray-50 rounded border flex justify-between items-center hover:bg-gray-100 transition-colors"
+                        className="p-2 bg-gray-50 rounded border flex justify-between items-center hover:bg-green-50 transition-colors group"
                       >
-                        <div>
-                          <p className="font-medium">{student.name}</p>
+                        <div 
+                          className="flex-1 cursor-pointer"
+                          onClick={() => handleStudentClick(student)}
+                        >
+                          <p className="font-medium group-hover:text-green-700 transition-colors">{student.name}</p>
                           <p className="text-sm text-gray-600">
-                            ID: {student.studentId} | Class: {student.class}
+                            ID: {student.studentId}
                           </p>
-                          {student.phone && (
-                            <p className="text-xs text-gray-500">Phone: {student.phone}</p>
-                          )}
+                          <p className="text-xs text-green-600 mt-1 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                            Click to view profile →
+                          </p>
                         </div>
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => handleRemoveStudent(student.studentId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveStudent(student.studentId);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -313,6 +327,104 @@ const ClassStudents: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Student Profile Modal */}
+      <Dialog open={isStudentModalOpen} onOpenChange={setIsStudentModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-green-600">Student Profile</DialogTitle>
+          </DialogHeader>
+          
+          {selectedStudent && (
+            <div className="space-y-6">
+              {/* Header Section */}
+              <div className="flex items-center space-x-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
+                <div className="bg-green-600 p-4 rounded-full">
+                  <GraduationCap className="h-12 w-12 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">{selectedStudent.name}</h2>
+                  <p className="text-gray-600">Student</p>
+                </div>
+              </div>
+
+              {/* Profile Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Personal Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Personal Information</h3>
+                  
+                  <div className="flex items-start space-x-3">
+                    <IdCard className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500">Student ID</p>
+                      <p className="text-gray-800 font-medium">{selectedStudent.studentId || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <User className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500">Full Name</p>
+                      <p className="text-gray-800 font-medium">{selectedStudent.name || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <Phone className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500">Phone</p>
+                      <p className="text-gray-800 font-medium">{selectedStudent.phone || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Academic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Academic Details</h3>
+
+                  <div className="flex items-start space-x-3">
+                    <BookOpen className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500">Class</p>
+                      <p className="text-gray-800 font-medium">{selectedStudent.class || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <Building className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500">Current Class</p>
+                      <p className="text-gray-800 font-medium">{classData?.className || 'N/A'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <BookOpen className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-gray-500">Subject</p>
+                      <p className="text-gray-800 font-medium">{classData?.subject || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Info */}
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-start space-x-3">
+                  <Users className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">Enrollment Status</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      This student is currently enrolled in {classData?.className} - {classData?.subject}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

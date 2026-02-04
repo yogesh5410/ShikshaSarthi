@@ -166,6 +166,16 @@ router.get("/schools/:schoolId/students", async (req, res) => {
   }
 });
 
+// Get school admins by school
+router.get("/schools/:schoolId/admins", async (req, res) => {
+  try {
+    const admins = await SchoolAdmin.find({ schoolId: req.params.schoolId });
+    res.status(200).json(admins);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Get students by school and class
 router.get("/schools/:schoolId/class/:className/students", async (req, res) => {
   try {
