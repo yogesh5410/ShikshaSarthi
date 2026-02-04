@@ -7,7 +7,8 @@ import {
   BookOpen, 
   LogOut,
   UserPlus,
-  Upload
+  Upload,
+  User
 } from 'lucide-react';
 
 const Header: React.FC = () => {
@@ -78,16 +79,15 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-4">
           {userRole ? (
             <>
-              <Link to={getDashboardPath()}>
-                <Button variant="ghost" size="sm">
-                  <Home className="h-4 w-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
-              
-              <span className="text-sm font-medium text-gray-600">
-                {userName} ({userRole})
-              </span>
+              {/* Show Profile icon for teachers */}
+              {userRole === 'teacher' && (
+                <Link to="/teacher/profile">
+                  <Button variant="ghost" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </Button>
+                </Link>
+              )}
 
               {/* Show Register button for admins and teachers */}
               {(userRole === 'superadmin' || userRole === 'schooladmin' || userRole === 'teacher') && (
