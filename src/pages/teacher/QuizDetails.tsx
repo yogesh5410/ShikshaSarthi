@@ -193,7 +193,7 @@ const QuizDetails = () => {
         <div className="edu-container">
           {/* Back Button */}
           <div className="mb-6">
-            <Link to="/teacher/dashboard">
+            <Link to="/teacher">
               <Button variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard
