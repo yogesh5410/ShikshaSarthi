@@ -8,7 +8,8 @@ import {
   LogOut,
   UserPlus,
   Upload,
-  User
+  User,
+  LayoutDashboard
 } from 'lucide-react';
 
 const Header: React.FC = () => {
@@ -79,14 +80,22 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-4">
           {userRole ? (
             <>
-              {/* Show Profile icon for teachers */}
+              {/* Show Dashboard and Profile buttons for teachers */}
               {userRole === 'teacher' && (
-                <Link to="/teacher/profile">
-                  <Button variant="ghost" size="sm">
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
-                  </Button>
-                </Link>
+                <>
+                  <Link to="/teacher">
+                    <Button variant="ghost" size="sm">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/teacher/profile">
+                    <Button variant="ghost" size="sm">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Button>
+                  </Link>
+                </>
               )}
 
               {/* Show Register button for admins and teachers */}
@@ -99,15 +108,6 @@ const Header: React.FC = () => {
                 </Link>
               )}
 
-              {/* Show Upload Question only for superadmin */}
-              {userRole === 'superadmin' && (
-                <Link to="/authorization">
-                  <Button variant="ghost" size="sm">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload Question
-                  </Button>
-                </Link>
-              )}
               
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />

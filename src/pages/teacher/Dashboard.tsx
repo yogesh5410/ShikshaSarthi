@@ -124,14 +124,6 @@ const TeacherDashboard: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900">
               Welcome, {teacherName || user?.name || 'Teacher'}!
             </h1>
-            <p className="text-gray-600">
-              Teacher Dashboard | School ID: {schoolId || user?.instituteId || 'N/A'}
-            </p>
-            {teacherId && (
-              <p className="text-sm text-gray-500 mt-1">
-                Teacher ID: {teacherId}
-              </p>
-            )}
           </div>
 
           
