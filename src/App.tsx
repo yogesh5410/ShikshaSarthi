@@ -39,6 +39,7 @@ import QuizDetails from "./pages/teacher/QuizDetails";
 import QuizAnalyticsPage from "./pages/teacher/QuizAnalyticsPage";
 import ManageClasses from "./pages/teacher/ManageClasses";
 import ClassStudents from "./pages/teacher/ClassStudents";
+import TeacherProfile from "./pages/TeacherProfile";
 
 // Admin Pages
 import SuperAdminDashboard from "./pages/superadmin/Dashboard";
@@ -84,6 +85,7 @@ const AppRoutes = () => {
 
       {/* Teacher Routes */}
       <Route path="/teacher" element={<TeacherDashboard />} />
+      <Route path="/teacher/profile" element={<TeacherProfile />} />
       <Route path="/teacher/create-quiz" element={<CreateQuiz />} />
       <Route path="/teacher/analytics" element={<Analytics />} />
       <Route path="/teacher/manage-classes" element={<ManageClasses />} />
