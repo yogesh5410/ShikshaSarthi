@@ -30,7 +30,11 @@ import {
   Trophy,
   User,
   School,
-  Hash
+  Hash,
+  Headphones,
+  Video,
+  Puzzle,
+  Sparkles
 } from "lucide-react";
 import SubjectIcon from "@/components/SubjectIcon";
 
@@ -309,7 +313,7 @@ const StudentDashboard: React.FC = () => {
           </div>
 
           {/* Actions - Moved to Top */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <Card className="border-2 border-edu-blue/20 hover:border-edu-blue/40 transition-colors">
               <CardHeader>
                 <BookOpen className="h-10 w-10 text-edu-blue mb-2" />
@@ -384,6 +388,32 @@ const StudentDashboard: React.FC = () => {
                     className="w-full border-edu-purple text-edu-purple hover:bg-edu-purple/10"
                   >
                     Start Group Quiz
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
+            <Card className="border-2 border-orange-300/20 hover:border-orange-400/40 transition-colors">
+              <CardHeader>
+                <Sparkles className="h-10 w-10 text-orange-500 mb-2" />
+                <CardTitle>Multimedia Assessment</CardTitle>
+                <CardDescription>
+                  Interactive learning with audio, video & puzzles
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-500">
+                  Explore diverse assessment types including audio, video
+                  questions, puzzles and more.
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Link to="/student/multimedia-assessment" className="w-full">
+                  <Button
+                    variant="outline"
+                    className="w-full border-orange-500 text-orange-500 hover:bg-orange-500/10"
+                  >
+                    Explore Now
                   </Button>
                 </Link>
               </CardFooter>
