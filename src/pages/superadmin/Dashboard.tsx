@@ -5,11 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-<<<<<<< HEAD
-import { School, Users, GraduationCap, UserCog, PlusCircle, Eye } from 'lucide-react';
-=======
+import { Eye } from 'lucide-react';
 import { School, Users, GraduationCap, UserCog, PlusCircle, User, Phone, IdCard, Building, Calendar, BookOpen, X } from 'lucide-react';
->>>>>>> a75c460399bb06bc06e7a9c191c2acf7280acfaf
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -118,7 +115,6 @@ const SuperAdminDashboard: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      
       <main className="flex-1 py-8 bg-gray-50">
         <div className="edu-container">
           <div className="mb-8">
@@ -232,35 +228,7 @@ const SuperAdminDashboard: React.FC = () => {
                         )}
                       </div>
                     </div>
-
-<<<<<<< HEAD
-                    <div>
-                      <h3 className="font-semibold text-lg mb-3">Students ({schoolStudents.length})</h3>
-                      <div className="space-y-2 max-h-96 overflow-y-auto border rounded p-2">
-                        {schoolStudents.length === 0 ? (
-                          <p className="text-gray-500">No students found</p>
-                        ) : (
-                          schoolStudents.map((student) => (
-                            <div 
-                              key={student.studentId} 
-                              className="p-3 bg-gray-50 rounded hover:bg-gray-100 transition-colors cursor-pointer group"
-                              onClick={() => navigate(`/student/profile/${student.studentId}`)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <p className="font-medium text-gray-900 group-hover:text-edu-blue transition-colors">
-                                    {student.name}
-                                  </p>
-                                  <p className="text-sm text-gray-600">
-                                    ID: {student.studentId} | Class: {student.class}
-                                  </p>
-                                </div>
-                                <Eye className="h-5 w-5 text-gray-400 group-hover:text-edu-blue transition-colors" />
-                              </div>
-                            </div>
-                          ))
-                        )}
-=======
+                    
                     {/* Teachers and Students Section - 2 Columns Below */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
@@ -303,7 +271,6 @@ const SuperAdminDashboard: React.FC = () => {
                             ))
                           )}
                         </div>
->>>>>>> a75c460399bb06bc06e7a9c191c2acf7280acfaf
                       </div>
                     </div>
                   </div>
