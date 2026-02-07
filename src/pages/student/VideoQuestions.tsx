@@ -1,81 +1,63 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import {
   Video,
   ArrowLeft,
   Play,
   CheckCircle2,
-  RefreshCw,
-  Clock,
-  FileQuestion
+  Sparkles,
+  ArrowRight
 } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import SubjectIcon from "@/components/SubjectIcon";
+
+const subjectData = [
+  { 
+    id: 'गणित', 
+    name: 'गणित', 
+    description: 'गणना, बीजगणित, ज्यामिति आदि',
+    color: 'from-blue-500 to-cyan-500',
+    bgColor: 'bg-blue-50',
+    iconBg: 'bg-blue-100'
+  },
+  { 
+    id: 'विज्ञान', 
+    name: 'विज्ञान', 
+    description: 'भौतिकी, रसायन, जीव विज्ञान',
+    color: 'from-green-500 to-emerald-500',
+    bgColor: 'bg-green-50',
+    iconBg: 'bg-green-100'
+  },
+  { 
+    id: 'सामाजिक%20विज्ञान', 
+    name: 'सामाजिक विज्ञान', 
+    description: 'इतिहास, भूगोल, नागरिकशास्त्र',
+    color: 'from-purple-500 to-pink-500',
+    bgColor: 'bg-purple-50',
+    iconBg: 'bg-purple-100'
+  },
+  { 
+    id: 'मानसिक%20क्षमता%20परीक्षण', 
+    name: 'मानसिक क्षमता परीक्षण', 
+    description: 'तर्क, विश्लेषण, गणितीय क्षमता',
+    color: 'from-orange-500 to-red-500',
+    bgColor: 'bg-orange-50',
+    iconBg: 'bg-orange-100'
+  },
+];
 
 const VideoQuestions: React.FC = () => {
   const navigate = useNavigate();
-
-  // Placeholder data - Replace with actual video questions from backend
-  const videoQuestions = [
-    {
-      id: 1,
-      title: "Science Experiment Analysis",
-      description: "Watch a science experiment and answer questions about the process",
-      duration: "5:30",
-      difficulty: "Medium",
-      questions: 6,
-      thumbnail: "🧪"
-    },
-    {
-      id: 2,
-      title: "Historical Documentary",
-      description: "Watch a short documentary clip and test your understanding",
-      duration: "8:00",
-      difficulty: "Hard",
-      questions: 10,
-      thumbnail: "📜"
-    },
-    {
-      id: 3,
-      title: "Math Problem Solving",
-      description: "Follow along with a math tutorial and solve problems",
-      duration: "6:15",
-      difficulty: "Medium",
-      questions: 5,
-      thumbnail: "🔢"
-    },
-    {
-      id: 4,
-      title: "Environmental Awareness",
-      description: "Watch a video about environmental issues and answer questions",
-      duration: "4:45",
-      difficulty: "Easy",
-      questions: 4,
-      thumbnail: "🌍"
-    }
-  ];
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy":
-        return "bg-green-100 text-green-700";
-      case "Medium":
-        return "bg-yellow-100 text-yellow-700";
-      case "Hard":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
@@ -83,30 +65,30 @@ const VideoQuestions: React.FC = () => {
 
       <main className="flex-1 py-8">
         <div className="edu-container">
-          {/* Header */}
-          <div className="mb-8">
-            <Button
-              variant="ghost"
-              className="mb-4"
-              onClick={() => navigate('/student/multimedia-assessment')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Multimedia Assessment
-            </Button>
+          {/* Back Button */}
+          <Button
+            variant="ghost"
+            className="mb-4"
+            onClick={() => navigate('/student/multimedia-assessment')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Multimedia Assessment
+          </Button>
 
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="h-16 w-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white">
-                <Video className="h-8 w-8" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Video Questions 🎬
-                </h1>
-                <p className="text-gray-600">
-                  Watch and learn with video-based assessments
-                </p>
-              </div>
+          {/* Hero Section */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <Sparkles className="h-4 w-4" />
+              Learn with Videos
             </div>
+
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              वीडियो <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">प्रश्न</span> 🎬
+            </h1>
+
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              वीडियो देखें और प्रश्नों के उत्तर दें - एक नया सीखने का तरीका
+            </p>
           </div>
 
           {/* Instructions Card */}
@@ -114,95 +96,93 @@ const VideoQuestions: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Video className="h-6 w-6 text-purple-600" />
-                How to Attempt Video Questions
+                वीडियो प्रश्न कैसे हल करें
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Watch the entire video carefully before answering questions</span>
+                  <span>पहले पूरा वीडियो ध्यान से देखें</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>You can pause, rewind, or replay the video as needed</span>
+                  <span>वीडियो को pause, rewind या replay कर सकते हैं</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Pay attention to visual cues, subtitles, and demonstrations</span>
+                  <span>वीडियो के बाद संबंधित प्रश्नों के उत्तर दें</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Take notes if needed during the video playback</span>
+                  <span>आवश्यकता होने पर नोट्स बनाएं</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          {/* Video Questions List */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {videoQuestions.map((question) => (
-              <Card
-                key={question.id}
-                className="border-2 border-purple-200 hover:border-purple-400 transition-all hover:shadow-lg"
+          {/* Subject Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+            {subjectData.map((subject) => (
+              <Card 
+                key={subject.id}
+                className={`group hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-0 shadow-lg overflow-hidden relative ${subject.bgColor}/30 backdrop-blur-sm`}
               >
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-2">
-                    <CardTitle className="text-lg">{question.title}</CardTitle>
-                    <Badge className={getDifficultyColor(question.difficulty)}>
-                      {question.difficulty}
-                    </Badge>
+                {/* Gradient Background */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${subject.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+
+                <CardHeader className="pb-4 relative z-10">
+                  <div className="flex items-start space-x-4">
+                    <div className={`${subject.iconBg} p-3 rounded-xl group-hover:scale-110 transition-transform duration-300`}>
+                      <SubjectIcon subject={subject.id} size={32} />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg font-bold text-gray-900 group-hover:text-gray-800 transition-colors mb-2">
+                        {subject.name}
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 text-sm leading-relaxed">
+                        {subject.description}
+                      </CardDescription>
+                    </div>
                   </div>
-                  <CardDescription>{question.description}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Video Thumbnail Placeholder */}
-                  <div className="relative bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg aspect-video flex items-center justify-center overflow-hidden">
-                    <div className="text-6xl">{question.thumbnail}</div>
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                      <div className="bg-white/90 rounded-full p-4 hover:bg-white transition-colors cursor-pointer">
-                        <Play className="h-8 w-8 text-purple-600" />
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {question.duration}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FileQuestion className="h-4 w-4" />
-                        {question.questions} Questions
-                      </span>
-                    </div>
+                <CardContent className="pb-4 relative z-10">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Video className="h-4 w-4 text-purple-600" />
+                    <span>वीडियो के साथ सीखें</span>
                   </div>
-
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                    <Play className="h-4 w-4 mr-2" />
-                    Start Assessment
-                  </Button>
                 </CardContent>
+
+                <CardFooter className="pt-0 relative z-10">
+                  <Link to={`/student/video-questions/${subject.id}`} className="w-full">
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${subject.color} hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-2.5`}
+                      size="sm"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      वीडियो देखें
+                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                    </Button>
+                  </Link>
+                </CardFooter>
               </Card>
             ))}
           </div>
 
-          {/* Coming Soon */}
-          <Card className="mt-8 border-dashed border-2 border-gray-300">
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center py-6">
-                <RefreshCw className="h-12 w-12 text-gray-400 mb-3" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                  More Video Content Coming Soon!
-                </h3>
-                <p className="text-gray-500 text-sm max-w-md">
-                  We're adding animated lessons, expert lectures, and 
-                  interactive video tutorials across all subjects.
+          {/* Call to Action */}
+          <div className="mt-16 text-center">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white">
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                  वीडियो के माध्यम से सीखने के लिए तैयार हैं?
+                </h2>
+                <p className="text-purple-100 mb-6">
+                  विज़ुअल लर्निंग से अवधारणाओं को बेहतर तरीके से समझें
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </main>
 
