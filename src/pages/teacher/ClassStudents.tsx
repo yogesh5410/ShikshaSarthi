@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from '@/components/ui/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ArrowLeft, Users, PlusCircle, Trash2, Search, User, Phone, IdCard, Building, Calendar, BookOpen, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Users, PlusCircle, Trash2, User, Phone, IdCard, Building, Calendar, BookOpen, GraduationCap } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -39,7 +39,6 @@ const ClassStudents: React.FC = () => {
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [studentToAdd, setStudentToAdd] = useState<string>('');
   const [classFilter, setClassFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
 
@@ -136,15 +135,6 @@ const ClassStudents: React.FC = () => {
     // Class filter
     if (classFilter && classFilter !== 'all' && student.class !== classFilter) return false;
     
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        student.name.toLowerCase().includes(query) ||
-        student.studentId.toLowerCase().includes(query)
-      );
-    }
-    
     return true;
   });
 
@@ -204,37 +194,21 @@ const ClassStudents: React.FC = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Filters */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="classFilter">Filter by Class</Label>
-                    <Select value={classFilter} onValueChange={setClassFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="All classes" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All classes</SelectItem>
-                        {availableClasses.map((cls) => (
-                          <SelectItem key={cls} value={cls}>
-                            Class {cls}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="search">Search Student</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="search"
-                        placeholder="Name or ID"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9"
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="classFilter">Filter by Class</Label>
+                  <Select value={classFilter} onValueChange={setClassFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All classes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All classes</SelectItem>
+                      {availableClasses.map((cls) => (
+                        <SelectItem key={cls} value={cls}>
+                          Class {cls}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Student Selection */}

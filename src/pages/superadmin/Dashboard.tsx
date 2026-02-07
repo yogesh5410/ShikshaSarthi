@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -24,6 +25,7 @@ const SuperAdminDashboard: React.FC = () => {
   const [schoolTeachers, setSchoolTeachers] = useState<any[]>([]);
   const [schoolStudents, setSchoolStudents] = useState<any[]>([]);
   const [schoolAdmins, setSchoolAdmins] = useState<any[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
@@ -56,6 +58,7 @@ const SuperAdminDashboard: React.FC = () => {
 
   const handleSchoolSelect = async (schoolId: string) => {
     setSelectedSchool(schoolId);
+    setSelectedClass('all'); // Reset class filter when school changes
     try {
       const [teachersRes, studentsRes, adminsRes] = await Promise.all([
         axios.get(`${API_URL}/superadmin/schools/${schoolId}/teachers`),
@@ -69,6 +72,32 @@ const SuperAdminDashboard: React.FC = () => {
       console.error('Error fetching school data:', error);
     }
   };
+
+  // Get unique classes from students
+  const availableClasses = [...new Set(schoolStudents.map(s => s.class))].sort((a: any, b: any) => {
+    return parseInt(a) - parseInt(b);
+  });
+
+  // Filter students by class
+  const filteredStudents = selectedClass === 'all' 
+    ? schoolStudents 
+    : schoolStudents.filter(s => s.class === selectedClass);
+
+  // Group students by class for display
+  const studentsByClass = filteredStudents.reduce((acc: any, student) => {
+    const className = student.class || 'Unassigned';
+    if (!acc[className]) {
+      acc[className] = [];
+    }
+    acc[className].push(student);
+    return acc;
+  }, {});
+
+  const sortedClasses = Object.keys(studentsByClass).sort((a, b) => {
+    if (a === 'Unassigned') return 1;
+    if (b === 'Unassigned') return -1;
+    return parseInt(a) - parseInt(b);
+  });
 
   const handleTeacherClick = (teacher: any) => {
     setSelectedTeacher(teacher);
@@ -253,20 +282,44 @@ const SuperAdminDashboard: React.FC = () => {
                       </div>
 
                       <div>
-                        <h3 className="font-semibold text-lg mb-3">Students ({schoolStudents.length})</h3>
-                        <div className="space-y-2 max-h-96 overflow-y-auto border rounded p-2">
-                          {schoolStudents.length === 0 ? (
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="font-semibold text-lg">Students ({filteredStudents.length})</h3>
+                          <Select value={selectedClass} onValueChange={setSelectedClass}>
+                            <SelectTrigger className="w-40">
+                              <SelectValue placeholder="Filter by class" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Classes</SelectItem>
+                              {availableClasses.map((cls) => (
+                                <SelectItem key={cls} value={cls}>
+                                  Class {cls}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-4 max-h-96 overflow-y-auto border rounded p-2">
+                          {filteredStudents.length === 0 ? (
                             <p className="text-gray-500">No students found</p>
                           ) : (
-                            schoolStudents.map((student) => (
-                              <div 
-                                key={student.studentId} 
-                                className="p-3 bg-gray-50 rounded hover:bg-green-50 cursor-pointer transition-colors border border-transparent hover:border-green-300"
-                                onClick={() => handleStudentClick(student)}
-                              >
-                                <p className="font-medium">{student.name}</p>
-                                <p className="text-sm text-gray-600">ID: {student.studentId} | Class: {student.class}</p>
-                                <p className="text-xs text-green-600 mt-1">Click to view profile</p>
+                            sortedClasses.map((className) => (
+                              <div key={className} className="mb-4">
+                                <h4 className="font-medium text-sm text-gray-700 mb-2 sticky top-0 bg-white py-1">
+                                  Class {className} ({studentsByClass[className].length} students)
+                                </h4>
+                                <div className="space-y-2 pl-2">
+                                  {studentsByClass[className].map((student: any) => (
+                                    <div 
+                                      key={student.studentId} 
+                                      className="p-3 bg-gray-50 rounded hover:bg-green-50 cursor-pointer transition-colors border border-transparent hover:border-green-300"
+                                      onClick={() => handleStudentClick(student)}
+                                    >
+                                      <p className="font-medium">{student.name}</p>
+                                      <p className="text-sm text-gray-600">ID: {student.studentId}</p>
+                                      <p className="text-xs text-green-600 mt-1">Click to view profile</p>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             ))
                           )}

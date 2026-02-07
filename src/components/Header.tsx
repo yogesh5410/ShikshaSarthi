@@ -99,7 +99,7 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-4">
           {userRole ? (
             <>
-              <Link to={getDashboardPath()}>
+            <Link to={getDashboardPath()}>
                 <Button variant="ghost" size="sm">
                   <Home className="h-4 w-4 mr-2" />
                   Dashboard
@@ -108,28 +108,22 @@ const Header: React.FC = () => {
               
               {/* User Profile Button - Navigates to profile for students */}
               {userRole === 'student' && studentId ? (
+                <>
+                
                 <Link to={`/student/profile/${studentId}`}>
                   <Button variant="ghost" size="sm">
                     <User className="h-4 w-4 mr-2" />
                     {userName} ({userRole})
                   </Button>
                 </Link>
+                </>
               ) : (
-                <Button variant="ghost" size="sm">
-                  <User className="h-4 w-4 mr-2" />
-                  {userName} ({userRole})
-                </Button>
+                <></>
               )}
               
               {/* Show Dashboard and Profile buttons for teachers */}
               {userRole === 'teacher' && (
                 <>
-                  <Link to="/teacher">
-                    <Button variant="ghost" size="sm">
-                      <LayoutDashboard className="h-4 w-4 mr-2" />
-                      Dashboard
-                    </Button>
-                  </Link>
                   <Link to="/teacher/profile">
                     <Button variant="ghost" size="sm">
                       <User className="h-4 w-4 mr-2" />

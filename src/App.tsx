@@ -25,6 +25,11 @@ import SingleQuizReport from "./pages/student/SingleQuizReport";
 import SubjectTopics from "./pages/student/SubjectTopics";
 import VocabularyQuizPage from "./pages/student/VocalbularyQuizPage";
 import StudentProfile from "./pages/student/StudentProfile";
+import MultimediaAssessment from "./pages/student/MultimediaAssessment";
+import AudioQuestions from "./pages/student/AudioQuestions";
+import VideoQuestions from "./pages/student/VideoQuestions";
+import Puzzles from "./pages/student/Puzzles";
+import Miscellaneous from "./pages/student/Miscellaneous";
 
 // Question Page
 import Upload_question from "./components/questions/Upload_question";
@@ -72,6 +77,7 @@ const AppRoutes = () => {
 
       {/* Student Routes */}
       <Route path="/student" element={<StudentDashboard />} />
+      <Route path="/student/dashboard" element={<StudentDashboard />} />
       <Route path="/student/profile/:id" element={<StudentProfile />} />
       <Route path="/student/assessment/:id" element={<StudentProfile />} />
       <Route path="/student/practice" element={<StudentPractice />} />
@@ -80,6 +86,11 @@ const AppRoutes = () => {
       <Route path="/student/practice/:subject/:topic" element={<PracticeQuiz />} />
       <Route path="/student/quiz" element={<QuizById />} />
       <Route path="/student/group-quiz" element={<GroupQuiz />} />
+      <Route path="/student/multimedia-assessment" element={<MultimediaAssessment />} />
+      <Route path="/student/multimedia/audio-questions" element={<AudioQuestions />} />
+      <Route path="/student/multimedia/video-questions" element={<VideoQuestions />} />
+      <Route path="/student/multimedia/puzzles" element={<Puzzles />} />
+      <Route path="/student/multimedia/miscellaneous" element={<Miscellaneous />} />
       <Route path='/studentreport/:id' element={<StudentReport></StudentReport>}></Route>
       <Route path='/singlequiz/:id' element={<SingleQuizReport></SingleQuizReport>}></Route>
       <Route path='/login/student' element={<LoginStudent></LoginStudent>}></Route>
