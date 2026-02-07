@@ -55,6 +55,8 @@ import SchoolAdminDashboard from "./pages/schooladmin/Dashboard";
 //Quiz
 import AttemptQuiz from "./pages/student/AttemptQuiz";
 import Authorization from "./pages/Authorization";
+import MemoryMatchGrid from "./components/puzzles/memoryMatchGrid/MemoryMatchGrid";
+
 const queryClient = new QueryClient();
 
 const AppRoutes = () => {
@@ -68,6 +70,8 @@ const AppRoutes = () => {
       <Route path="/about" element={<About />} />
       <Route path="/not-authorized" element={<NotAuthorized />} />
       <Route path="/uploadquestion" element={<Upload_question />} />
+      <Route path="/test" element={<MemoryMatchGrid/>} />
+
 
       {/* Admin Routes */}
       <Route path="/superadmin" element={<SuperAdminDashboard />} />
