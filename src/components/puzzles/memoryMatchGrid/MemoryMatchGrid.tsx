@@ -1,8 +1,19 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { Clock, Trophy, Target, Zap, X, Play, BookOpen } from "lucide-react";
+import { Clock, Trophy, Target, Zap, X, Play, Sparkles, ArrowRight, ArrowLeft, Brain, Eye, RotateCcw, ListChecks, Crosshair, Gauge, Timer, BarChart3, LogOut, DoorOpen } from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getMemoryImages } from "./imageUtils";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -42,10 +53,11 @@ const MemoryMatchGrid: React.FC = () => {
 
   const [analysis, setAnalysis] = useState<any>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [showExitAlert, setShowExitAlert] = useState(false);
 
-  const pairCount = mode === "individual" ? 10 : 15; // 20 or 30 cards
-  const gridCols = mode === "individual" ? 5 : 6; // 5x4 or 6x5
-  const gridRows = mode === "individual" ? 4 : 5; // 4 rows or 5 rows
+  const pairCount = mode === "individual" ? 10 : 15;
+  const gridCols = mode === "individual" ? 5 : 6;
+  const gridRows = mode === "individual" ? 4 : 5;
 
   /* ---------------- START GAME ---------------- */
   const startGame = (selectedMode: "individual" | "group") => {
@@ -67,11 +79,10 @@ const MemoryMatchGrid: React.FC = () => {
     setSolveTimer(SOLVE_TIME);
     setStartTime(Date.now());
 
-    // Get images from utility function
     const allImages = getMemoryImages();
     const pairsNeeded = selectedMode === "individual" ? 10 : 15;
     const images = allImages.slice(0, pairsNeeded);
-    
+
     const shuffled = [...images, ...images]
       .map((img, i) => ({
         id: i,
@@ -87,12 +98,10 @@ const MemoryMatchGrid: React.FC = () => {
   /* ---------------- PREVIEW TIMER ---------------- */
   useEffect(() => {
     if (!mode || !previewPhase) return;
-
     if (previewTimer === 0) {
       setPreviewPhase(false);
       return;
     }
-
     const t = setTimeout(() => setPreviewTimer(p => p - 1), 1000);
     return () => clearTimeout(t);
   }, [previewTimer, previewPhase, mode]);
@@ -100,48 +109,32 @@ const MemoryMatchGrid: React.FC = () => {
   /* ---------------- SOLVE TIMER ---------------- */
   useEffect(() => {
     if (!mode || previewPhase || analysis) return;
-
     if (solveTimer === 0) {
       handleSubmit("time_up");
       return;
     }
-
     const t = setTimeout(() => setSolveTimer(s => s - 1), 1000);
     return () => clearTimeout(t);
   }, [solveTimer, previewPhase, mode]);
 
   /* ---------------- HANDLE FLIP ---------------- */
   const handleFlip = (card: CardType) => {
-    if (
-      previewPhase ||
-      flipped.length === 2 ||
-      card.matched ||
-      flipped.includes(card)
-    )
-      return;
-
+    if (previewPhase || flipped.length === 2 || card.matched || flipped.includes(card)) return;
     setTotalClicks(c => c + 1);
     const newFlipped = [...flipped, card];
     setFlipped(newFlipped);
 
     if (newFlipped.length === 2) {
       setMoves(m => m + 1);
-
       if (newFlipped[0].image === newFlipped[1].image) {
-        setCards(prev =>
-          prev.map(c =>
-            c.image === card.image ? { ...c, matched: true } : c
-          )
-        );
+        setCards(prev => prev.map(c => (c.image === card.image ? { ...c, matched: true } : c)));
         setMatches(m => m + 1);
         setFlipped([]);
       } else {
         setIncorrectClicks(i => i + 1);
-
         if (Math.abs(newFlipped[0].index - newFlipped[1].index) <= 2) {
           setNearbyClicks(n => n + 1);
         }
-
         setTimeout(() => setFlipped([]), 700);
       }
     }
@@ -160,12 +153,7 @@ const MemoryMatchGrid: React.FC = () => {
     setSubmitted(true);
     setExitType(type);
 
-    const endReason =
-      type === "completed"
-        ? "COMPLETED"
-        : type === "exited"
-        ? "EXITED"
-        : "TIME_UP";
+    const endReason = type === "completed" ? "COMPLETED" : type === "exited" ? "EXITED" : "TIME_UP";
 
     try {
       const res = await axios.post(`${API_URL}/puzzles/evaluate`, {
@@ -178,18 +166,21 @@ const MemoryMatchGrid: React.FC = () => {
         timeTaken: Math.floor((Date.now() - startTime) / 1000),
         endReason,
       });
-
       setAnalysis(res.data);
       setScreen("results");
     } catch (error) {
       console.error("Evaluation error:", error);
-      alert("Failed to evaluate game. Please try again.");
+      alert("मूल्यांकन विफल हुआ। कृपया पुनः प्रयास करें।");
       setSubmitted(false);
     }
   };
 
-  /* ---------------- EXIT BUTTON ---------------- */
-  const handleExit = () => handleSubmit("exited");
+  /* ---------------- EXIT BUTTON (with alert) ---------------- */
+  const handleExitClick = () => setShowExitAlert(true);
+  const confirmExit = () => {
+    setShowExitAlert(false);
+    handleSubmit("exited");
+  };
 
   /* ---------------- RESET GAME ---------------- */
   const handleReset = () => {
@@ -214,181 +205,275 @@ const MemoryMatchGrid: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const getTimerColor = () => {
-    if (previewPhase) return "text-blue-600";
-    if (solveTimer <= 30) return "text-red-600";
-    if (solveTimer <= 60) return "text-orange-500";
-    return "text-green-600";
-  };
-
   /* ===================== UI ===================== */
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50 overflow-hidden">
       <Header />
-      
-      <div className="flex-1 overflow-hidden flex items-center justify-center">
-      
-        {/* INTRO SCREEN */}
+
+      {/* EXIT CONFIRMATION ALERT DIALOG */}
+      <AlertDialog open={showExitAlert} onOpenChange={setShowExitAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <DoorOpen className="h-5 w-5 text-red-500" />
+              क्या आप बाहर निकलना चाहते हैं?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              गेम अभी पूरा नहीं हुआ है। बाहर निकलने पर आपकी वर्तमान प्रगति के आधार पर मूल्यांकन किया जाएगा।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>रद्द करें</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmExit} className="bg-red-500 hover:bg-red-600">
+              <LogOut className="h-4 w-4 mr-1" />
+              बाहर निकलें
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <main className="flex-1 overflow-hidden">
+
+        {/* =============== INTRO SCREEN =============== */}
         {screen === "intro" && (
-          <div className="max-w-3xl mx-auto px-8">
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-12 text-center">
-            {/* <div className="inline-block p-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mb-6">
-              <BookOpen className="w-16 h-16 text-white" />
-            </div> */}
-            
-            <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Memory Match Challenge
-            </h1>
-            
-            <div className="text-left space-y-4 mb-8 text-gray-700">
-              <p className="text-lg">
-                <span className="font-semibold text-indigo-600">🎯 Objective:</span> Match all pairs of cards before time runs out!
-              </p>
-              
-              <div className="bg-indigo-50 rounded-xl p-4 space-y-2">
-                <p className="font-semibold text-indigo-700">📋 How to Play:</p>
-                <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li><strong>Preview Phase:</strong> Memorize card positions (15 seconds)</li>
-                  <li><strong>Game Phase:</strong> Match all pairs within 3 minutes</li>
-                  <li><strong>Click cards</strong> to flip and find matching pairs</li>
-                  <li><strong>Track your performance:</strong> Moves, matches, and time</li>
-                </ul>
-              </div>
-              
-              <div className="flex gap-4 mt-6">
-                <div className="flex-1 bg-blue-50 rounded-xl p-3 text-center">
-                  <p className="text-sm text-gray-600">Individual Mode</p>
-                  <p className="text-2xl font-bold text-blue-600">20 Cards</p>
-                  <p className="text-xs text-gray-500">10 pairs to match</p>
+          <div className="h-full flex items-center justify-center px-4">
+            <div className="max-w-3xl w-full">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+                  <Sparkles className="h-4 w-4" />
+                  याददाश्त का खेल
                 </div>
-                <div className="flex-1 bg-purple-50 rounded-xl p-3 text-center">
-                  <p className="text-sm text-gray-600">Group Mode</p>
-                  <p className="text-2xl font-bold text-purple-600">30 Cards</p>
-                  <p className="text-xs text-gray-500">15 pairs to match</p>
-                </div>
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                  मेमोरी मैच <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">चैलेंज</span>
+                </h1>
+                <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                  कार्ड्स की स्थिति याद करें और समय से पहले सभी जोड़ियाँ ढूँढें!
+                </p>
               </div>
-            </div>
-            
-            <button
-              onClick={() => setScreen("mode-select")}
-              className="px-12 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xl font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-3 mx-auto"
-            >
-              <Play className="w-4 h-4" />
-              Start Game
-            </button>
-          </div>
-        </div>
-      )}
 
-        {/* MODE SELECTION SCREEN */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-5 transition-opacity duration-500" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <ListChecks className="h-5 w-5 text-indigo-600" />
+                    कैसे खेलें
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <div className="bg-indigo-50 rounded-xl p-4 space-y-2 mb-5">
+                    <ul className="list-disc list-inside space-y-1.5 text-gray-700 ml-1">
+                      <li><strong>प्रीव्यू चरण:</strong> कार्ड्स की स्थिति याद करें (15 सेकंड)</li>
+                      <li><strong>गेम चरण:</strong> 3 मिनट के अंदर सभी जोड़ियाँ मिलाएं</li>
+                      <li><strong>कार्ड पर क्लिक करें</strong> और मिलती-जुलती जोड़ियाँ ढूँढें</li>
+                      <li><strong>प्रदर्शन ट्रैक करें:</strong> चालें, मैच और समय</li>
+                    </ul>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-50 rounded-xl p-3 text-center group hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                      <p className="text-sm text-gray-600">व्यक्तिगत मोड</p>
+                      <p className="text-2xl font-bold text-blue-600">20 कार्ड</p>
+                      <p className="text-xs text-gray-500">10 जोड़ियाँ मिलाएं</p>
+                    </div>
+                    <div className="bg-purple-50 rounded-xl p-3 text-center group hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                      <p className="text-sm text-gray-600">समूह मोड</p>
+                      <p className="text-2xl font-bold text-purple-600">30 कार्ड</p>
+                      <p className="text-xs text-gray-500">15 जोड़ियाँ मिलाएं</p>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    onClick={() => setScreen("mode-select")}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-3"
+                    size="lg"
+                  >
+                    <Play className="h-5 w-5 mr-2" />
+                    खेल शुरू करें
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* =============== MODE SELECTION SCREEN =============== */}
         {screen === "mode-select" && (
-          <div className="max-w-4xl mx-auto px-8">
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-12 text-center">
-            <h2 className="text-3xl font-bold mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Choose Your Mode
-            </h2>
-            
-            <div className="grid grid-cols-2 gap-8">
-              <button
-                onClick={() => startGame("individual")}
-                className="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200"
-              >
-                <div className="text-6xl mb-4">🎯</div>
-                <h3 className="text-2xl font-bold mb-3">Individual Mode</h3>
-                <div className="bg-white/20 rounded-lg p-4 mb-4">
-                  <p className="text-2xl font-bold">20 Cards</p>
-                  <p className="text-sm opacity-90">10 pairs to match</p>
+          <div className="h-full flex items-center justify-center px-4">
+            <div className="max-w-4xl w-full">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+                  <Sparkles className="h-4 w-4" />
+                  अपना मोड चुनें
                 </div>
-                <p className="text-sm opacity-90">Perfect for focused practice</p>
-              </button>
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                  मोड <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">चयन</span>
+                </h1>
+                <p className="text-xl text-gray-600">अपनी पसंद का मोड चुनें और खेल शुरू करें</p>
+              </div>
 
-              <button
-                onClick={() => startGame("group")}
-                className="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-8 text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200"
-              >
-                <div className="text-6xl mb-4">👥</div>
-                <h3 className="text-2xl font-bold mb-3">Group Mode</h3>
-                <div className="bg-white/20 rounded-lg p-4 mb-4">
-                  <p className="text-2xl font-bold">30 Cards</p>
-                  <p className="text-sm opacity-90">15 pairs to match</p>
-                </div>
-                <p className="text-sm opacity-90">Complete the challenge with your friends</p>
-              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Individual Mode Card */}
+                <Card
+                  className="group hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-0 shadow-lg overflow-hidden relative bg-blue-50/30 backdrop-blur-sm cursor-pointer"
+                  onClick={() => startGame("individual")}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
+                  <CardHeader className="pb-4 relative z-10">
+                    <div className="flex items-start space-x-4">
+                      <div className="bg-blue-100 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                        <Target className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-gray-800 transition-colors mb-2">
+                          व्यक्तिगत मोड
+                        </CardTitle>
+                        <CardDescription className="text-gray-600 text-sm leading-relaxed">
+                          एकाग्र अभ्यास के लिए उपयुक्त
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-4 relative z-10">
+                    <div className="bg-white/60 rounded-xl p-4 text-center">
+                      <p className="text-3xl font-bold text-blue-600">20 कार्ड</p>
+                      <p className="text-sm text-gray-500 mt-1">10 जोड़ियाँ मिलाएं</p>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pt-0 relative z-10">
+                    <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-2.5">
+                      <Play className="h-4 w-4 mr-2" />
+                      खेलना शुरू करें
+                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+
+                {/* Group Mode Card */}
+                <Card
+                  className="group hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-0 shadow-lg overflow-hidden relative bg-purple-50/30 backdrop-blur-sm cursor-pointer"
+                  onClick={() => startGame("group")}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
+                  <CardHeader className="pb-4 relative z-10">
+                    <div className="flex items-start space-x-4">
+                      <div className="bg-purple-100 p-3 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                        <Zap className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl font-bold text-gray-900 group-hover:text-gray-800 transition-colors mb-2">
+                          समूह मोड
+                        </CardTitle>
+                        <CardDescription className="text-gray-600 text-sm leading-relaxed">
+                          दोस्तों के साथ चुनौती पूरी करें
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-4 relative z-10">
+                    <div className="bg-white/60 rounded-xl p-4 text-center">
+                      <p className="text-3xl font-bold text-purple-600">30 कार्ड</p>
+                      <p className="text-sm text-gray-500 mt-1">15 जोड़ियाँ मिलाएं</p>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pt-0 relative z-10">
+                    <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-2.5">
+                      <Play className="h-4 w-4 mr-2" />
+                      खेलना शुरू करें
+                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </div>
+
+              <div className="text-center mt-6">
+                <button
+                  onClick={() => setScreen("intro")}
+                  className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors font-medium"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  वापस जाएं
+                </button>
+              </div>
             </div>
-
-            <button
-              onClick={() => setScreen("intro")}
-              className="mt-8 px-6 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-            >
-              ← Back
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
-        {/* GAME SCREEN */}
+        {/* =============== GAME SCREEN =============== */}
         {screen === "game" && mode && (
-          <div className="w-full h-full flex items-center justify-center py-4 px-6">
-            <div className="flex gap-5 max-w-7xl w-full" style={{ height: 'calc(100vh - 200px)', maxHeight: '800px' }}>
-            
+          <div className="h-full flex items-center justify-center p-3">
+            <div className="flex gap-4 w-full max-w-7xl" style={{ height: 'calc(100vh - 80px)' }}>
+
               {/* LEFT: Cards Grid */}
-              <div className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-4 flex flex-col overflow-hidden">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <div className={`px-4 py-2 rounded-lg ${previewPhase ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-                    <p className="text-sm font-semibold">
-                      {previewPhase ? "🧠 Memorize the Positions!" : "🎯 Find the Matches!"}
-                    </p>
+              <div className="flex-1 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-3 flex flex-col overflow-hidden">
+                {/* Phase Banner */}
+                <div className="flex items-center justify-center mb-2">
+                  <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                    previewPhase
+                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                      : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                  }`}>
+                    {previewPhase ? (
+                      <><Eye className="h-4 w-4" /> स्थिति याद करें!</>
+                    ) : (
+                      <><Target className="h-4 w-4" /> जोड़ियाँ ढूँढें!</>
+                    )}
                   </div>
                 </div>
-                
-                <div className="flex-1 flex items-center justify-center p-2">
-                  <div 
-                    className="grid gap-3"
-                    style={{ 
+
+                {/* Card Grid */}
+                <div className="flex-1 flex items-center justify-center">
+                  <div
+                    className="grid gap-2"
+                    style={{
                       gridTemplateColumns: `repeat(${gridCols}, 1fr)`,
                       gridTemplateRows: `repeat(${gridRows}, 1fr)`,
                       width: 'fit-content',
                       height: 'fit-content',
                       maxWidth: '100%',
-                      maxHeight: '100%'
+                      maxHeight: '100%',
                     }}
                   >
                     {cards.map(card => {
                       const visible = previewPhase || flipped.includes(card) || card.matched;
-                      const cardSize = mode === "individual" ? 'w-24 h-24' : 'w-20 h-20';
+                      const cardSize = mode === "individual"
+                        ? 'w-[5.5rem] h-[5.5rem] md:w-24 md:h-24'
+                        : 'w-[4.5rem] h-[4.5rem] md:w-20 md:h-20';
 
                       return (
                         <div
                           key={card.id}
                           onClick={() => handleFlip(card)}
-                          className={`${cardSize} relative cursor-pointer transform transition-all duration-200 rounded-xl overflow-hidden shadow-md
+                          className={`${cardSize} relative cursor-pointer rounded-xl overflow-hidden shadow-md
+                            transform transition-all duration-200
                             ${!visible && !card.matched ? 'hover:scale-105 hover:shadow-xl active:scale-95' : ''}
-                            ${card.matched ? 'opacity-60 scale-95' : ''}`}
+                            ${card.matched ? 'opacity-50 scale-90' : ''}`}
                         >
-                          <div className={`w-full h-full ${ 
-                            visible 
-                              ? 'bg-white border-2 border-indigo-300' 
-                              : 'bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-700'
+                          <div className={`w-full h-full ${
+                            visible
+                              ? 'bg-white border-2 border-indigo-200'
+                              : 'bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500'
                           }`}>
                             {visible ? (
-                              <img 
-                                src={card.image} 
-                                alt="card" 
-                                className="w-full h-full object-cover p-1"
+                              <img
+                                src={card.image}
+                                alt="card"
+                                className="w-full h-full object-cover p-1 rounded-lg"
                                 onError={(e) => {
                                   (e.target as HTMLImageElement).src = `https://via.placeholder.com/150/6366f1/ffffff?text=${card.index + 1}`;
                                 }}
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-white text-4xl font-bold drop-shadow-lg">?</span>
+                                <span className="text-white text-3xl font-bold drop-shadow-lg">?</span>
                               </div>
                             )}
                           </div>
                           {card.matched && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-green-400/50 backdrop-blur-[2px]">
-                              <div className="bg-white rounded-full p-2 shadow-lg">
-                                <Trophy className="w-6 h-6 text-green-600" />
+                            <div className="absolute inset-0 flex items-center justify-center bg-green-400/40 backdrop-blur-[1px]">
+                              <div className="bg-white rounded-full p-1.5 shadow-lg">
+                                <Trophy className="w-5 h-5 text-green-600" />
                               </div>
                             </div>
                           )}
@@ -399,215 +484,222 @@ const MemoryMatchGrid: React.FC = () => {
                 </div>
               </div>
 
-              {/* RIGHT: Stats Panel */}
-              <div className="w-80 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 flex flex-col gap-4">
-                <h3 className="text-xl font-bold text-center text-gray-800">Game Stats</h3>
-                
-                {/* Timer - Large Display */}
-                <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-6 text-center shadow-lg">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <Clock className={`w-7 h-7 text-white ${!previewPhase && solveTimer <= 30 ? 'animate-pulse' : ''}`} />
-                    <span className="text-white text-base font-semibold">
-                      {previewPhase ? "Memorize" : "Time Left"}
+              {/* RIGHT: Stats Sidebar */}
+              <div className="w-72 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-5 flex flex-col">
+                <h3 className="text-lg font-bold text-center text-gray-800 mb-3 flex items-center justify-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-indigo-600" />
+                  गेम स्टेटस
+                </h3>
+
+                {/* Timer */}
+                <div className={`rounded-xl p-4 text-center shadow-md mb-3 ${
+                  previewPhase
+                    ? 'bg-gradient-to-br from-blue-500 to-cyan-500'
+                    : solveTimer <= 30
+                      ? 'bg-gradient-to-br from-red-500 to-orange-500'
+                      : 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                }`}>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Clock className={`w-5 h-5 text-white ${!previewPhase && solveTimer <= 30 ? 'animate-pulse' : ''}`} />
+                    <span className="text-white text-sm font-semibold">
+                      {previewPhase ? "याद करें" : "शेष समय"}
                     </span>
                   </div>
-                  <div className={`text-5xl font-bold text-white`}>
+                  <div className="text-4xl font-bold text-white">
                     {previewPhase ? formatTime(previewTimer) : formatTime(solveTimer)}
                   </div>
                 </div>
 
                 {/* Matches */}
-                <div className="bg-green-50 rounded-xl p-4 flex items-center gap-3 shadow-sm">
-                  <div className="bg-green-500 rounded-lg p-3">
-                    <Target className="w-6 h-6 text-white" />
+                <div className="bg-green-50 rounded-xl p-3 flex items-center gap-3 shadow-sm mb-2">
+                  <div className="bg-green-500 rounded-lg p-2">
+                    <Target className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-600 font-medium">Matches</p>
-                    <p className="text-2xl font-bold text-green-600">{matches} / {pairCount}</p>
+                    <p className="text-xs text-gray-600 font-medium">मिलान</p>
+                    <p className="text-xl font-bold text-green-600">{matches} / {pairCount}</p>
                   </div>
                 </div>
 
                 {/* Moves */}
-                <div className="bg-purple-50 rounded-xl p-4 flex items-center gap-3 shadow-sm">
-                  <div className="bg-purple-500 rounded-lg p-3">
-                    <Zap className="w-6 h-6 text-white" />
+                <div className="bg-purple-50 rounded-xl p-3 flex items-center gap-3 shadow-sm mb-2">
+                  <div className="bg-purple-500 rounded-lg p-2">
+                    <Zap className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-600 font-medium">Moves</p>
-                    <p className="text-2xl font-bold text-purple-600">{moves}</p>
+                    <p className="text-xs text-gray-600 font-medium">चालें</p>
+                    <p className="text-xl font-bold text-purple-600">{moves}</p>
                   </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="bg-gray-50 rounded-xl p-4 shadow-sm">
-                  <p className="text-sm text-gray-600 font-medium mb-2">Progress</p>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div 
+                <div className="bg-gray-50 rounded-xl p-3 shadow-sm mb-3">
+                  <p className="text-xs text-gray-600 font-medium mb-1.5">प्रगति</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div
                       className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 transition-all duration-500 rounded-full"
                       style={{ width: `${(matches / pairCount) * 100}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    {Math.round((matches / pairCount) * 100)}% Complete
+                  <p className="text-xs text-gray-500 mt-1.5 text-center">
+                    {Math.round((matches / pairCount) * 100)}% पूर्ण
                   </p>
                 </div>
 
-                {/* Spacer */}
-                <div className="flex-1"></div>
+                {/* Spacer to push exit button to bottom inside the box */}
+                <div className="flex-1" />
 
-                {/* Exit Button */}
-                <button
-                  onClick={handleExit}
-                  className="w-full bg-red-500 text-white py-3 rounded-xl font-semibold hover:bg-red-600 transition-all hover:shadow-lg flex items-center justify-center gap-2 shadow-md"
+                {/* Exit Button — inside the box */}
+                <Button
+                  onClick={handleExitClick}
+                  variant="destructive"
+                  className="w-full py-3 font-semibold flex items-center justify-center gap-2 shadow-md"
                 >
                   <X className="w-5 h-5" />
-                  Exit Game
-                </button>
+                  बाहर निकलें
+                </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* RESULTS SCREEN */}
+        {/* =============== RESULTS SCREEN =============== */}
         {screen === "results" && analysis && (
-          <div className="w-full h-full flex items-center justify-center py-4 px-6">
-            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 max-w-5xl w-full" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-              <div className="flex gap-8 h-full overflow-y-auto">
-                
-              {/* LEFT: Score Display */}
-              <div className="flex-1 flex flex-col items-center justify-center">
-                <div className="inline-block p-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mb-4">
-                  <Trophy className="w-10 h-10 text-white" />
-                </div>
-                
-                <h2 className="text-3xl font-bold text-gray-800 mb-3">
-                  Assessment Complete!
-                </h2>
+          <div className="h-full flex items-center justify-center px-4 py-4">
+            <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 max-w-5xl w-full max-h-[calc(100vh-100px)] overflow-y-auto">
+              <div className="flex flex-col md:flex-row gap-8">
 
-                {/* Score Circle */}
-                <div className="relative w-44 h-44 mb-6">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle cx="88" cy="88" r="80" stroke="#e5e7eb" strokeWidth="14" fill="none" />
-                    <circle 
-                      cx="88" cy="88" r="80" 
-                      stroke="url(#gradient)" 
-                      strokeWidth="14" 
-                      fill="none"
-                      strokeDasharray={`${2 * Math.PI * 80}`}
-                      strokeDashoffset={`${2 * Math.PI * 80 * (1 - analysis.score / 100)}`}
-                      strokeLinecap="round"
-                      className="transition-all duration-1000"
-                    />
-                    <defs>
-                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#6366f1" />
-                        <stop offset="100%" stopColor="#a855f7" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-5xl font-bold text-gray-800">{analysis.score}</span>
-                    <span className="text-base text-gray-600">/ 100</span>
+                {/* LEFT: Score Display */}
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+                    <Sparkles className="h-4 w-4" />
+                    मूल्यांकन पूर्ण
                   </div>
-                </div>
 
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 w-full text-center mb-3">
-                  <p className="text-xs text-gray-600 mb-1">Memory Level</p>
-                  <p className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                    {analysis.memoryLevel}
+                  <h2 className="text-3xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+                    <Trophy className="h-7 w-7 text-yellow-500" />
+                    <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">परिणाम</span>
+                  </h2>
+
+                  {/* Score Circle */}
+                  <div className="relative w-40 h-40 mb-5">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle cx="80" cy="80" r="72" stroke="#e5e7eb" strokeWidth="12" fill="none" />
+                      <circle
+                        cx="80" cy="80" r="72"
+                        stroke="url(#scoreGrad)"
+                        strokeWidth="12"
+                        fill="none"
+                        strokeDasharray={`${2 * Math.PI * 72}`}
+                        strokeDashoffset={`${2 * Math.PI * 72 * (1 - analysis.score / 100)}`}
+                        strokeLinecap="round"
+                        className="transition-all duration-1000"
+                      />
+                      <defs>
+                        <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="100%" stopColor="#a855f7" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-4xl font-bold text-gray-800">{analysis.score}</span>
+                      <span className="text-sm text-gray-500">/ 100</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 w-full text-center mb-3">
+                    <p className="text-xs text-gray-600 mb-1">याददाश्त स्तर</p>
+                    <p className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                      {analysis.memoryLevel}
+                    </p>
+                  </div>
+
+                  <p className="text-gray-600 text-sm text-center mb-2 px-2">{analysis.feedback}</p>
+                  <p className="text-xs text-gray-400 text-center">
+                    गेम समाप्ति: {analysis.endReason === 'COMPLETED' ? 'पूर्ण' : analysis.endReason === 'EXITED' ? 'बाहर निकले' : 'समय समाप्त'}
                   </p>
                 </div>
 
-                <p className="text-gray-600 text-sm text-center mb-2 px-2">{analysis.feedback}</p>
-                <p className="text-xs text-gray-500 text-center">Game ended: {analysis.endReason}</p>
-              </div>
+                {/* RIGHT: Performance Breakdown */}
+                <div className="flex-1 flex flex-col justify-center">
+                  <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-indigo-600" />
+                    प्रदर्शन विश्लेषण
+                  </h3>
 
-              {/* RIGHT: Performance Breakdown */}
-              <div className="flex-1 flex flex-col justify-center">
-                <h3 className="text-xl font-bold text-gray-800 mb-5">Performance Breakdown</h3>
-                
-                {analysis.breakdown && (
-                  <div className="space-y-4">
-                    {/* Accuracy */}
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="font-medium text-gray-700">Accuracy</span>
-                        <span className="font-bold text-blue-600">{(analysis.breakdown.accuracy * 100).toFixed(0)}%</span>
+                  {analysis.breakdown && (
+                    <div className="space-y-4">
+                      {/* Accuracy */}
+                      <div>
+                        <div className="flex justify-between mb-1.5">
+                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5"><Crosshair className="h-3.5 w-3.5 text-blue-500" />सटीकता</span>
+                          <span className="font-bold text-blue-600 text-sm">{Math.min(100, Math.max(0, Math.round(analysis.breakdown.accuracy * 100)))}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div className="h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, Math.max(0, analysis.breakdown.accuracy * 100))}%` }} />
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full transition-all"
-                          style={{ width: `${analysis.breakdown.accuracy * 100}%` }}
-                        />
+
+                      {/* Efficiency */}
+                      <div>
+                        <div className="flex justify-between mb-1.5">
+                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5"><Gauge className="h-3.5 w-3.5 text-green-500" />कार्यक्षमता</span>
+                          <span className="font-bold text-green-600 text-sm">{Math.min(100, Math.max(0, Math.round(analysis.breakdown.efficiency * 100)))}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div className="h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, Math.max(0, analysis.breakdown.efficiency * 100))}%` }} />
+                        </div>
+                      </div>
+
+                      {/* Speed */}
+                      <div>
+                        <div className="flex justify-between mb-1.5">
+                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5"><Timer className="h-3.5 w-3.5 text-purple-500" />गति</span>
+                          <span className="font-bold text-purple-600 text-sm">{Math.min(100, Math.max(0, Math.round(analysis.breakdown.speed * 100)))}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div className="h-full bg-gradient-to-r from-purple-400 to-purple-600 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, Math.max(0, analysis.breakdown.speed * 100))}%` }} />
+                        </div>
+                      </div>
+
+                      {/* Control */}
+                      <div>
+                        <div className="flex justify-between mb-1.5">
+                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5"><Target className="h-3.5 w-3.5 text-orange-500" />नियंत्रण</span>
+                          <span className="font-bold text-orange-600 text-sm">{Math.min(100, Math.max(0, Math.round(analysis.breakdown.control * 100)))}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-700" style={{ width: `${Math.min(100, Math.max(0, analysis.breakdown.control * 100))}%` }} />
+                        </div>
                       </div>
                     </div>
+                  )}
 
-                    {/* Efficiency */}
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="font-medium text-gray-700">Efficiency</span>
-                        <span className="font-bold text-green-600">{(analysis.breakdown.efficiency * 100).toFixed(0)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="h-full bg-green-500 rounded-full transition-all"
-                          style={{ width: `${analysis.breakdown.efficiency * 100}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Speed */}
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="font-medium text-gray-700">Speed</span>
-                        <span className="font-bold text-purple-600">{(analysis.breakdown.speed * 100).toFixed(0)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="h-full bg-purple-500 rounded-full transition-all"
-                          style={{ width: `${analysis.breakdown.speed * 100}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Control */}
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="font-medium text-gray-700">Control</span>
-                        <span className="font-bold text-orange-600">{(analysis.breakdown.control * 100).toFixed(0)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className="h-full bg-orange-500 rounded-full transition-all"
-                          style={{ width: `${analysis.breakdown.control * 100}%` }}
-                        />
-                      </div>
-                    </div>
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-4 mt-6">
+                    <Button
+                      onClick={() => setScreen("mode-select")}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      दोबारा खेलें
+                    </Button>
+                    <Button
+                      onClick={handleReset}
+                      variant="outline"
+                      className="font-semibold hover:bg-gray-100 transition-colors"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      मुख्य मेनू
+                    </Button>
                   </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <button
-                    onClick={() => setScreen("mode-select")}
-                    className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transform hover:scale-105 transition-all"
-                  >
-                    Play Again
-                  </button>
-                  <button
-                    onClick={handleReset}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-300 transition-colors"
-                  >
-                    Main Menu
-                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
         )}
-      </div>
-      
+      </main>
     </div>
   );
 };
