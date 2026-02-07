@@ -28,6 +28,8 @@ import StudentProfile from "./pages/student/StudentProfile";
 import MultimediaAssessment from "./pages/student/MultimediaAssessment";
 import AudioQuestions from "./pages/student/AudioQuestions";
 import VideoQuestions from "./pages/student/VideoQuestions";
+import VideoSubjectTopics from "./pages/student/VideoSubjectTopics";
+import VideoQuizPlayer from "./pages/student/VideoQuizPlayer";
 import Puzzles from "./pages/student/Puzzles";
 import Miscellaneous from "./pages/student/Miscellaneous";
 
@@ -85,6 +87,9 @@ const AppRoutes = () => {
       <Route path="/student/multimedia-assessment" element={<MultimediaAssessment />} />
       <Route path="/student/multimedia/audio-questions" element={<AudioQuestions />} />
       <Route path="/student/multimedia/video-questions" element={<VideoQuestions />} />
+      <Route path="/student/video-questions" element={<VideoQuestions />} />
+      <Route path="/student/video-questions/:subject" element={<VideoSubjectTopics />} />
+      <Route path="/student/video-quiz/:subject/:topic" element={<VideoQuizPlayer />} />
       <Route path="/student/multimedia/puzzles" element={<Puzzles />} />
       <Route path="/student/multimedia/miscellaneous" element={<Miscellaneous />} />
       <Route path='/studentreport/:id' element={<StudentReport></StudentReport>}></Route>
