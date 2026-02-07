@@ -1,21 +1,40 @@
 /**
- * Memory Match Grid - Cloudinary Image Manager
+` * Memory Match Grid - Cloudinary Image Manager
  * 
- * This utility helps manage Cloudinary images for the memory game.
- * You can either use hardcoded URLs or fetch them from your backend.
+ * This utility manages images for the memory game.
+ * Currently uses local images from public/images folder.
+ * Can be switched to Cloudinary when needed.
  * 
- * 🚀 QUICK START:
- * 1. Upload 10 images to your Cloudinary account
- * 2. Copy the secure URLs
- * 3. Replace the URLs in the CLOUDINARY_IMAGES array below
- * 4. Your images should be in 3:4 ratio (e.g., 300x400px)
+ * 🚀 CURRENT SETUP: Using local images from /images/ folder
+ * 📁 Images: memory_1.png through memory_12.png
  * 
- * 💡 TIP: During development, placeholder images will be used automatically
- * if Cloudinary images are not configured properly.
+ * 💡 TO SWITCH TO CLOUDINARY:
+ * 1. Upload images to Cloudinary
+ * 2. Update CLOUDINARY_IMAGES array with your URLs
+ * 3. Change USE_LOCAL_IMAGES to false
  */
 
-// Default placeholder images (using via.placeholder.com)
-// These will be used in development until you configure your Cloudinary images
+// Set to true to use local images from public/images folder
+const USE_LOCAL_IMAGES = true;
+
+// Local images from public/images folder
+// These are the current images available in your project
+export const LOCAL_IMAGES = [
+  "/images/memory_1.png",
+  "/images/memory_2.png",
+  "/images/memory_3.png",
+  "/images/memory_4.png",
+  "/images/memory_5.png",
+  "/images/memory_6.png",
+  "/images/memory_7.png",
+  "/images/memory_8.png",
+  "/images/memory_9.png",
+  "/images/memory_10.png",
+  "/images/memory_11.png",
+  "/images/memory_12.png",
+];
+
+// Default placeholder images (fallback)
 export const DEFAULT_MEMORY_IMAGES = [
   "https://via.placeholder.com/300x400/FF6B6B/ffffff?text=Image+1",
   "https://via.placeholder.com/300x400/4ECDC4/ffffff?text=Image+2",
@@ -124,18 +143,22 @@ export const validateImageUrl = (url: string): Promise<boolean> => {
 };
 
 /**
- * Get images based on environment
- * Uses Cloudinary in production, placeholders in development
+ * Get images based on configuration
+ * Uses local images from public/images/ when USE_LOCAL_IMAGES is true
+ * Falls back to Cloudinary or placeholder images otherwise
  */
 export const getMemoryImages = (): string[] => {
-  const isDevelopment = import.meta.env.DEV;
-  
-  // In development, check if Cloudinary images are configured
+  // Use local images from public folder if configured
+  if (USE_LOCAL_IMAGES) {
+    return LOCAL_IMAGES;
+  }
+
+  // Check if Cloudinary images are properly configured
   const hasCloudinaryImages = CLOUDINARY_IMAGES.some(url => 
     !url.includes('v1/memory_game')
   );
 
-  if (isDevelopment && !hasCloudinaryImages) {
+  if (!hasCloudinaryImages) {
     console.warn("Using placeholder images. Configure Cloudinary URLs for production.");
     return DEFAULT_MEMORY_IMAGES;
   }
