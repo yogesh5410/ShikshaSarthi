@@ -13,6 +13,7 @@ const vocabRoutes = require("./routes/vocabularyRoutes");
 const superAdminRoutes = require("./routes/superadmin");
 const schoolAdminRoutes = require("./routes/schooladmin");
 const classRoutes = require("./routes/class");
+const puzzlesRoutes = require("./routes/puzzles");
 
 const app = express();
 app.use(cors());
@@ -40,6 +41,7 @@ app.use("/vocab", vocabRoutes);
 app.use("/superadmin", superAdminRoutes);
 app.use("/schooladmin", schoolAdminRoutes);
 app.use("/classes", classRoutes);
+app.use("/puzzles", puzzlesRoutes);
 // https://shiksha-sarthi-nmms-prep-cn64.vercel.app
 
 
