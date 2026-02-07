@@ -14,6 +14,7 @@ const superAdminRoutes = require("./routes/superadmin");
 const schoolAdminRoutes = require("./routes/schooladmin");
 const classRoutes = require("./routes/class");
 const videoQuestionRoutes = require("./routes/videoQuestion");
+const puzzlesRoutes = require("./routes/puzzles");
 
 const app = express();
 app.use(cors());
@@ -45,6 +46,7 @@ app.use("/superadmin", superAdminRoutes);
 app.use("/schooladmin", schoolAdminRoutes);
 app.use("/classes", classRoutes);
 app.use("/video-questions", videoQuestionRoutes);
+app.use("/puzzles", puzzlesRoutes);
 // https://shiksha-sarthi-nmms-prep-cn64.vercel.app
 
 
@@ -52,7 +54,7 @@ app.use("/video-questions", videoQuestionRoutes);
 const PORT = process.env.PORT || 5000;
 
 // Listen on all network interfaces for LAN access
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📡 LAN Access: http://0.0.0.0:${PORT}`);
 });
