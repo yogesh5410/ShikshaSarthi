@@ -21,7 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static video files for offline access
-app.use('/videos', express.static('public/videos'));
+app.use('/videos', express.static('public/videos')); // Serve from public/videos folder
 
 mongoose
   .connect(process.env.MONGO_URI, {
