@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -10,6 +11,7 @@ interface Question {
   options: string[];
   correctAnswer: string;
   questionImage: string;
+  audio?: string;
 }
 
 interface Quiz {
@@ -31,6 +33,9 @@ const AttemptQuiz: React.FC = () => {
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [student, setStudent] = useState<Student | null>(null);
 
+
+
+
   useEffect(() => {
     const studentData = localStorage.getItem("student");
     if (studentData) {
@@ -43,6 +48,7 @@ const AttemptQuiz: React.FC = () => {
     }
   }, []);
 
+  
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
@@ -54,6 +60,7 @@ const AttemptQuiz: React.FC = () => {
     };
     fetchQuiz();
   }, [id]);
+
 
   const handleOptionChange = (questionId: string, selectedOption: string) => {
     setAnswers((prev) => ({
@@ -155,6 +162,14 @@ const AttemptQuiz: React.FC = () => {
               <h3 className="font-bold text-lg text-gray-800 mb-3">
                 Q{index + 1}. {question.question}
               </h3>
+                 {question.audio && (
+                    <div className="mb-3">
+                        <audio controls src={question.audio}>
+                             Your browser does not support audio
+                        </audio>
+                    </div>
+                 )}
+
 
               {question.questionImage && (
                 <div className="mb-4" >
