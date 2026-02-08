@@ -1,5 +1,6 @@
 require("dotenv").config({ path: __dirname + "/../.env" });
-const SUBJECT = process.env.TARGET_SUBJECT || "गणित";
+
+const SUBJECT = process.env.TARGET_SUBJECT || "विज्ञान";
 
 const mongoose = require("mongoose");
 const { exec } = require("child_process");
@@ -19,10 +20,10 @@ mongoose.connect(process.env.MONGO_URI);
 
 // Target topics for गणित (Mathematics)
 const TARGET_TOPICS = [
-  "आँकड़ों का प्रबन्धन",
-  "आयतन तथा पृष्ठीय क्षेत्रफल",
-  "एक चर की रैखिक समीकरण"
-];  
+  "कोशिका" 
+];
+
+
 
 /**
  * Generate MP3 from text using Piper TTS
@@ -78,8 +79,8 @@ const generateMP3 = async (text, tempDir) => {
  */
 const convertAll = async () => {
   console.log("🎵 Starting Audio Question Generation...\n");
-  console.log(`Subject: गणित`);
- 
+ // console.log(`Subject: गणित`);
+ console.log(`Subject: ${SUBJECT}`);
 
   console.log(`Topics: ${TARGET_TOPICS.join(", ")}\n`);
 
@@ -89,12 +90,15 @@ const convertAll = async () => {
 
   try {
     // Find questions matching the criteria
-    const questions = await Question.find({
+    /*const questions = await Question.find({
       subject: "गणित",
       topic: { $in: TARGET_TOPICS }
-    }); 
+    }); */
     
-   
+    const questions = await Question.find({
+  subject: SUBJECT,
+  topic: { $in: TARGET_TOPICS }
+});
 
     console.log(`📚 Found ${questions.length} questions to process\n`);
 
