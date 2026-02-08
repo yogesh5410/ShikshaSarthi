@@ -55,8 +55,8 @@ const MemoryMatchGrid: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [showExitAlert, setShowExitAlert] = useState(false);
 
-  const pairCount = mode === "individual" ? 10 : 15;
-  const gridCols = mode === "individual" ? 5 : 6;
+  const pairCount = mode === "individual" ? 10 : 20;
+  const gridCols = mode === "individual" ? 5 : 8;
   const gridRows = mode === "individual" ? 4 : 5;
 
   /* ---------------- START GAME ---------------- */
@@ -80,7 +80,7 @@ const MemoryMatchGrid: React.FC = () => {
     setStartTime(Date.now());
 
     const allImages = getMemoryImages();
-    const pairsNeeded = selectedMode === "individual" ? 10 : 15;
+    const pairsNeeded = selectedMode === "individual" ? 10 : 20;
     const images = allImages.slice(0, pairsNeeded);
 
     const shuffled = [...images, ...images]
@@ -342,7 +342,7 @@ const MemoryMatchGrid: React.FC = () => {
                     </div>
                   </CardContent>
                   <CardFooter className="pt-0 relative z-10">
-                    <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-2.5">
+                    <Button className="w-full bg-gradient-to-r from-blue-500 to-blue-500 hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-2.5">
                       <Play className="h-4 w-4 mr-2" />
                       खेलना शुरू करें
                       <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
@@ -373,12 +373,12 @@ const MemoryMatchGrid: React.FC = () => {
                   </CardHeader>
                   <CardContent className="pb-4 relative z-10">
                     <div className="bg-white/60 rounded-xl p-4 text-center">
-                      <p className="text-3xl font-bold text-purple-600">30 कार्ड</p>
-                      <p className="text-sm text-gray-500 mt-1">15 जोड़ियाँ मिलाएं</p>
+                      <p className="text-3xl font-bold text-purple-600">40 कार्ड</p>
+                      <p className="text-sm text-gray-500 mt-1">20 जोड़ियाँ मिलाएं</p>
                     </div>
                   </CardContent>
                   <CardFooter className="pt-0 relative z-10">
-                    <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-2.5">
+                    <Button className="w-full bg-gradient-to-r from-purple-500 to-purple-500 hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-2.5">
                       <Play className="h-4 w-4 mr-2" />
                       खेलना शुरू करें
                       <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
@@ -453,7 +453,7 @@ const MemoryMatchGrid: React.FC = () => {
                           <div className={`w-full h-full ${
                             visible
                               ? 'bg-white border-2 border-indigo-200'
-                              : 'bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500'
+                              : 'bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-500'
                           }`}>
                             {visible ? (
                               <img
