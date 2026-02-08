@@ -32,6 +32,15 @@ export const LOCAL_IMAGES = [
   "/images/memory_10.png",
   "/images/memory_11.png",
   "/images/memory_12.png",
+  "/images/memory_13.png",
+  "/images/memory_14.png",
+  "/images/memory_15.png",
+  "/images/memory_16.png",
+  "/images/memory_17.png",
+  "/images/memory_18.png",
+  "/images/memory_19.png",
+  "/images/memory_20.png",
+  "/images/memory_21.png",
 ];
 
 // Default placeholder images (fallback)
@@ -143,14 +152,27 @@ export const validateImageUrl = (url: string): Promise<boolean> => {
 };
 
 /**
+ * Shuffle an array using Fisher-Yates algorithm
+ */
+const shuffleArray = <T>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+/**
  * Get images based on configuration
  * Uses local images from public/images/ when USE_LOCAL_IMAGES is true
  * Falls back to Cloudinary or placeholder images otherwise
+ * Returns a shuffled copy so random images are picked each game
  */
 export const getMemoryImages = (): string[] => {
   // Use local images from public folder if configured
   if (USE_LOCAL_IMAGES) {
-    return LOCAL_IMAGES;
+    return shuffleArray(LOCAL_IMAGES);
   }
 
   // Check if Cloudinary images are properly configured
@@ -160,10 +182,10 @@ export const getMemoryImages = (): string[] => {
 
   if (!hasCloudinaryImages) {
     console.warn("Using placeholder images. Configure Cloudinary URLs for production.");
-    return DEFAULT_MEMORY_IMAGES;
+    return shuffleArray(DEFAULT_MEMORY_IMAGES);
   }
 
-  return CLOUDINARY_IMAGES;
+  return shuffleArray(CLOUDINARY_IMAGES);
 };
 
 /**
