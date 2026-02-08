@@ -55,8 +55,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(JSON.parse(storedUser));
     }
     setIsLoading(false);
-  }, []);
+  }, []); 
 
+ 
   const login = async (email: string, password: string, role: UserRole) => {
     setIsLoading(true);
     
