@@ -92,8 +92,6 @@ const AppRoutes = () => {
       <Route path="/student/multimedia/audio-questions" element={<AudioQuestions />} />
       <Route path="/student/multimedia/video-questions" element={<VideoQuestions />} />
       <Route path="/student/multimedia/puzzles" element={<Puzzles />} />
-      <Route path="/student/multimedia/puzzles/memorygame" element={<MemoryMatchGrid />} />
-      <Route path="/student/multimedia/puzzles/match" element={<MatchPieces />} />
       <Route path="/student/multimedia/miscellaneous" element={<Miscellaneous />} />
       <Route path='/studentreport/:id' element={<StudentReport></StudentReport>}></Route>
       <Route path='/singlequiz/:id' element={<SingleQuizReport></SingleQuizReport>}></Route>
