@@ -31,7 +31,11 @@ import VideoQuestions from "./pages/student/VideoQuestions";
 import VideoSubjectTopics from "./pages/student/VideoSubjectTopics";
 import VideoQuizPlayer from "./pages/student/VideoQuizPlayer";
 import Puzzles from "./pages/student/Puzzles";
-import Miscellaneous from "./pages/student/Miscellaneous";
+import MAT from "./pages/student/MAT";
+import MATPractice from "./pages/student/MATPractice";
+import MATTopicTest from "./pages/student/MATTopicTest";
+import MATTestResults from "./pages/student/MATTestResults";
+import DemoTest from "./pages/DemoTest";
 
 // Question Page
 import Upload_question from "./components/questions/Upload_question";
@@ -73,6 +77,7 @@ const AppRoutes = () => {
       <Route path="/uploadquestion" element={<Upload_question />} />
       <Route path="/test" element={<MemoryMatchGrid/>} />
       <Route path="/math" element={<MatchPieces/>} />
+      <Route path="/demo-test" element={<DemoTest />} />
 
 
       {/* Admin Routes */}
@@ -97,7 +102,11 @@ const AppRoutes = () => {
       <Route path="/student/video-questions/:subject" element={<VideoSubjectTopics />} />
       <Route path="/student/video-quiz/:subject/:topic" element={<VideoQuizPlayer />} />
       <Route path="/student/multimedia/puzzles" element={<Puzzles />} />
-      <Route path="/student/multimedia/miscellaneous" element={<Miscellaneous />} />
+      <Route path="/student/multimedia/miscellaneous" element={<MAT />} />
+      <Route path="/student/mat" element={<MAT />} />
+      <Route path="/student/mat/:module" element={<MATPractice />} />
+      <Route path="/student/mat-test/:module" element={<MATTopicTest />} />
+      <Route path="/student/mat-test-results/:testId" element={<MATTestResults />} />
       <Route path='/studentreport/:id' element={<StudentReport></StudentReport>}></Route>
       <Route path='/singlequiz/:id' element={<SingleQuizReport></SingleQuizReport>}></Route>
       <Route path='/login/student' element={<LoginStudent></LoginStudent>}></Route>

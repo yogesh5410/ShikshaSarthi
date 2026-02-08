@@ -15,6 +15,8 @@ const schoolAdminRoutes = require("./routes/schooladmin");
 const classRoutes = require("./routes/class");
 const videoQuestionRoutes = require("./routes/videoQuestion");
 const puzzlesRoutes = require("./routes/puzzles");
+const matRoutes = require("./routes/mat");
+const matTestRoutes = require("./routes/matTest");
 
 const app = express();
 app.use(cors());
@@ -47,6 +49,8 @@ app.use("/schooladmin", schoolAdminRoutes);
 app.use("/classes", classRoutes);
 app.use("/video-questions", videoQuestionRoutes);
 app.use("/puzzles", puzzlesRoutes);
+app.use("/mat", matRoutes);
+app.use("/mat-test", matTestRoutes);
 // https://shiksha-sarthi-nmms-prep-cn64.vercel.app
 
 

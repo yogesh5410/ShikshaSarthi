@@ -77,19 +77,19 @@ const MultimediaAssessment: React.FC = () => {
       route: "/student/multimedia/puzzles"
     },
     {
-      id: "miscellaneous",
-      title: "Miscellaneous",
-      description: "Explore other interactive assessment types",
-      icon: Sparkles,
+      id: "mat",
+      title: "MAT - Mental Ability Test",
+      description: "Interactive practice for NMMSE Mental Ability",
+      icon: Brain,
       color: "orange",
       bgColor: "bg-orange-50",
       borderColor: "border-orange-200",
       iconColor: "text-orange-600",
       hoverBorder: "hover:border-orange-400",
-      details: "Various other interactive formats including image-based questions, drag-and-drop, and more.",
-      count: "40 Questions",
+      details: "Master all 14 NMMSE MAT topics through interactive practice with instant feedback.",
+      count: "14 Modules",
       difficulty: "Mixed",
-      route: "/student/multimedia/miscellaneous"
+      route: "/student/mat"
     }
   ];
 
