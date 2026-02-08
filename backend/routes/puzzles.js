@@ -126,4 +126,173 @@ router.post("/evaluate", async (req, res) => {
   }
 });
 
+/* ============================================================
+   MATCH PIECES — Visual Recognition Evaluation
+   ============================================================
+   Evaluates how well a student can reassemble 3 images from
+   their 9-piece (3×3) puzzle pieces. Measures visual recognition,
+   spatial reasoning, efficiency, and speed.
+   ============================================================ */
+
+router.post("/evaluate-pieces", async (req, res) => {
+  try {
+    const {
+      totalImages,       // 3
+      imagesCompleted,   // 0-3
+      perImage,          // [{ imageIndex, correctPlacements, totalPieces, swapCount, timeTakenMs }]
+      totalMoves,        // total drag/click moves across all images
+      timeTaken,         // seconds total
+      endReason,         // COMPLETED | EXITED | TIME_UP
+    } = req.body;
+
+    const MAX_TIME = 180;
+    const TOTAL_PIECES = 27; // 3 images × 9 pieces
+
+    /* ---- Guard: no gameplay ---- */
+    const totalCorrect = (perImage || []).reduce((sum, img) => sum + (img.correctPlacements || 0), 0);
+    if (totalCorrect === 0 && totalMoves <= 1) {
+      return res.status(200).json({
+        score: 0,
+        recognitionLevel: "मूल्यांकन नहीं हुआ",
+        feedback: "कोई वास्तविक गेमप्ले नहीं हुआ। कृपया खेल पूरा करने का प्रयास करें।",
+        endReason,
+        perImageSummary: [],
+        breakdown: {
+          accuracy: 0,
+          completion: 0,
+          efficiency: 0,
+          speed: 0,
+          spatialReasoning: 0,
+          penaltyApplied: 0,
+        },
+      });
+    }
+
+    /* ================================================================
+       1. ACCURACY (0-1)
+       Fraction of all pieces placed correctly across all images.
+       ================================================================ */
+    const accuracy = clamp01(totalCorrect / TOTAL_PIECES);
+
+    /* ================================================================
+       2. COMPLETION (0-1)
+       How many full images were completed (all 9 correct).
+       ================================================================ */
+    const completion = clamp01(imagesCompleted / totalImages);
+
+    /* ================================================================
+       3. EFFICIENCY (0-1)
+       Ideal moves = 9 per image (pick and place each piece once).
+       Fewer extra moves = higher efficiency.
+       ================================================================ */
+    const idealMoves = totalCorrect; // 1 move per correct placement ideally
+    const extraMoves = Math.max(0, totalMoves - idealMoves);
+    const maxExtraMoves = TOTAL_PIECES * 3; // generous normalizer
+    const efficiency = clamp01(1 - extraMoves / maxExtraMoves);
+
+    /* ================================================================
+       4. SPEED (0-1)
+       Faster completion = higher score.
+       ================================================================ */
+    const speed = clamp01(1 - timeTaken / MAX_TIME);
+
+    /* ================================================================
+       5. SPATIAL REASONING (0-1)
+       Based on how few swaps (rearrangements within grid) were needed.
+       Fewer swaps = student placed pieces more accurately on first try.
+       Also considers the pattern: completing images sequentially vs
+       leaving many partially done.
+       ================================================================ */
+    const totalSwaps = (perImage || []).reduce((sum, img) => sum + (img.swapCount || 0), 0);
+    const maxSwaps = TOTAL_PIECES * 2;
+    const swapEfficiency = clamp01(1 - totalSwaps / maxSwaps);
+
+    // Bonus for sequential completion (completing each image fully before moving)
+    let sequentialBonus = 0;
+    if (imagesCompleted >= 1) sequentialBonus += 0.1;
+    if (imagesCompleted >= 2) sequentialBonus += 0.1;
+    if (imagesCompleted >= 3) sequentialBonus += 0.15;
+
+    const spatialReasoning = clamp01(swapEfficiency * 0.7 + sequentialBonus + accuracy * 0.15);
+
+    /* ================================================================
+       COMPOSITE SCORE
+       ================================================================ */
+    let fitnessScore =
+      0.30 * accuracy +
+      0.25 * completion +
+      0.15 * efficiency +
+      0.15 * speed +
+      0.15 * spatialReasoning;
+
+    /* ---- Termination penalties ---- */
+    let penalty = 0;
+    if (endReason === "EXITED") {
+      const completionRatio = totalCorrect / TOTAL_PIECES;
+      penalty = 0.25 * (1 - completionRatio);
+    } else if (endReason === "TIME_UP") {
+      penalty = 0.08;
+    }
+
+    fitnessScore = clamp01(fitnessScore - penalty);
+    fitnessScore = Number(fitnessScore.toFixed(2));
+
+    /* ================================================================
+       CLASSIFICATION
+       ================================================================ */
+    let recognitionLevel, feedback;
+
+    if (fitnessScore >= 0.85) {
+      recognitionLevel = "उत्कृष्ट (Exceptional)";
+      feedback = "शानदार दृश्य पहचान! आपने तेजी और सटीकता से चित्र पूरे किए।";
+    } else if (fitnessScore >= 0.70) {
+      recognitionLevel = "उच्च (High)";
+      feedback = "अच्छी पहचान क्षमता! चित्रों को सही ढंग से जोड़ा।";
+    } else if (fitnessScore >= 0.55) {
+      recognitionLevel = "सामान्य (Average)";
+      feedback = "ठीक प्रदर्शन। रंगों और किनारों पर अधिक ध्यान दें।";
+    } else if (fitnessScore >= 0.40) {
+      recognitionLevel = "कमजोर (Below Average)";
+      feedback = "पहचान क्षमता में सुधार की जरूरत है। मूल चित्र का संकेत उपयोग करें।";
+    } else {
+      recognitionLevel = "कम (Low)";
+      feedback = "अभ्यास जारी रखें। टुकड़ों के रंग और बनावट पर ध्यान दें।";
+    }
+
+    /* ================================================================
+       PER-IMAGE SUMMARY
+       ================================================================ */
+    const perImageSummary = (perImage || []).map((img, i) => ({
+      imageIndex: i,
+      correct: img.correctPlacements || 0,
+      total: 9,
+      moves: img.moveCount || img.swapCount || 0,
+      completed: (img.correctPlacements || 0) === 9,
+      timeMs: img.timeTakenMs || 0,
+    }));
+
+    /* ================================================================
+       RESPONSE
+       ================================================================ */
+    res.status(200).json({
+      score: Math.round(fitnessScore * 100),
+      recognitionLevel,
+      feedback,
+      endReason,
+      perImageSummary,
+      breakdown: {
+        accuracy: clamp01(accuracy),
+        completion: clamp01(completion),
+        efficiency: clamp01(efficiency),
+        speed: clamp01(speed),
+        spatialReasoning: clamp01(spatialReasoning),
+        penaltyApplied: penalty,
+      },
+    });
+  } catch (err) {
+    console.error("Pieces Evaluation Error:", err);
+    res.status(500).json({ error: "Pieces evaluation failed" });
+  }
+});
+
 module.exports = router;
