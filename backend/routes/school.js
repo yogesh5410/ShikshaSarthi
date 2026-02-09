@@ -34,6 +34,17 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// Get school by schoolId (custom ID)
+router.get("/by-school-id/:schoolId", async (req, res) => {
+  try {
+    const school = await School.findOne({ schoolId: req.params.schoolId });
+    if (!school) return res.status(404).json({ message: "School not found" });
+    res.status(200).json(school);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Update school by ID
 router.put("/:id", async (req, res) => {
   try {

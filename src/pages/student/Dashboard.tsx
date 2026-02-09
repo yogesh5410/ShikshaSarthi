@@ -367,6 +367,43 @@ const StudentDashboard: React.FC = () => {
               </CardFooter>
             </Card>
 
+            <Card className="border-2 border-blue-300/20 hover:border-blue-400/40 transition-colors bg-gradient-to-br from-blue-50 to-white">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <ListChecks className="h-10 w-10 text-blue-600 mb-2" />
+                    <CardTitle className="flex items-center gap-2">
+                      Take Advanced Quiz
+                      <Badge className="bg-gradient-to-r from-blue-500 to-purple-500">NEW</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Multi-format quiz with MCQ, Audio, Video & Puzzles
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-500 mb-2">
+                  Take comprehensive quizzes that include multiple question types:
+                </p>
+                <ul className="text-xs text-gray-600 space-y-1 ml-4">
+                  <li>• Multiple Choice Questions (MCQ)</li>
+                  <li>• Audio-based Questions</li>
+                  <li>• Video Questions</li>
+                  <li>• Interactive Puzzles</li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Link to="/student/take-advanced-quiz" className="w-full">
+                  <Button
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                  >
+                    Start Advanced Quiz
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
             <Card className="border-2 border-edu-purple/20 hover:border-edu-purple/40 transition-colors">
               <CardHeader>
                 <Users className="h-10 w-10 text-edu-purple mb-2" />

@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/use-toast';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -17,10 +18,12 @@ const Register: React.FC = () => {
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
   const [currentUsername, setCurrentUsername] = useState<string>('');
   const [currentUserSchoolId, setCurrentUserSchoolId] = useState<string>('');
+  const [currentUserSchoolName, setCurrentUserSchoolName] = useState<string>('');
   const [roleToRegister, setRoleToRegister] = useState<string>('');
   const [formData, setFormData] = useState<any>({});
   const [schools, setSchools] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSchoolName, setIsLoadingSchoolName] = useState(false);
 
   useEffect(() => {
     // Get current user role
@@ -52,12 +55,49 @@ const Register: React.FC = () => {
     if (currentUser) {
       try {
         const user = JSON.parse(currentUser);
-        setCurrentUsername(user.username || user.teacherId || '');
-        setCurrentUserSchoolId(user.schoolId || '');
         
-        // If teacher or schooladmin, set default role
+        // For teachers, also check the cookie as a fallback
         if (role === 'teacher') {
+          const teacherCookie = Cookies.get('teacher');
+          let teacherData = user;
+          
+          if (teacherCookie) {
+            try {
+              const cookieData = JSON.parse(teacherCookie);
+              teacherData = cookieData.teacher || user;
+            } catch (e) {
+              console.error('Error parsing teacher cookie', e);
+            }
+          }
+          
+          console.log('Teacher data:', teacherData); // Debug log
+          
+          // Store the actual teacherId or _id for API calls
+          const username = teacherData.teacherId || teacherData._id || teacherData.username || '';
+          const schoolId = teacherData.schoolId || '';
+          
+          console.log('Setting teacher username:', username, 'schoolId:', schoolId); // Debug log
+          
+          setCurrentUsername(username);
+          setCurrentUserSchoolId(schoolId);
           setRoleToRegister('student');
+          
+          if (schoolId) {
+            console.log('Fetching school name for:', schoolId); // Debug log
+            fetchSchoolName(schoolId);
+          } else {
+            console.warn('No schoolId found for teacher'); // Debug log
+          }
+        } else {
+          // For non-teachers
+          setCurrentUsername(user.teacherId || user._id || user.username || '');
+          setCurrentUserSchoolId(user.schoolId || '');
+          
+          if (role === 'schooladmin') {
+            if (user.schoolId) {
+              fetchSchoolName(user.schoolId);
+            }
+          }
         }
       } catch (e) {
         console.error('Error parsing user', e);
@@ -76,6 +116,23 @@ const Register: React.FC = () => {
       setSchools(response.data);
     } catch (error) {
       console.error('Error fetching schools:', error);
+    }
+  };
+
+  const fetchSchoolName = async (schoolId: string) => {
+    try {
+      setIsLoadingSchoolName(true);
+      console.log('Fetching school for ID:', schoolId); // Debug log
+      const response = await axios.get(`${API_URL}/schools/by-school-id/${schoolId}`);
+      console.log('School response:', response.data); // Debug log
+      const schoolName = response.data.schoolName || schoolId;
+      setCurrentUserSchoolName(schoolName);
+      console.log('School name set to:', schoolName); // Debug log
+    } catch (error) {
+      console.error('Error fetching school name:', error);
+      setCurrentUserSchoolName(schoolId); // Fallback to ID if fetch fails
+    } finally {
+      setIsLoadingSchoolName(false);
     }
   };
 
@@ -327,7 +384,7 @@ const Register: React.FC = () => {
                 <Input
                   id="schoolId"
                   type="text"
-                  value={currentUserSchoolId}
+                  value={currentUserSchoolName || currentUserSchoolId}
                   disabled
                   className="bg-gray-100"
                 />
@@ -428,9 +485,10 @@ const Register: React.FC = () => {
                 <Input
                   id="schoolId"
                   type="text"
-                  value={currentUserSchoolId}
+                  value={isLoadingSchoolName ? 'Loading school...' : (currentUserSchoolName || currentUserSchoolId || 'School not found')}
                   disabled
                   className="bg-gray-100"
+                  placeholder={isLoadingSchoolName ? 'Loading...' : 'Your school'}
                 />
               )}
             </div>

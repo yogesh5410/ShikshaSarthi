@@ -75,22 +75,35 @@ const Login: React.FC = () => {
       const response = await axios.post(endpoint, payload);
 
       if (response.data) {
-        const userData = {
-          ...response.data.user,
-          role: role
-        };
-
+        // Get the correct user data based on role
+        let userData;
         if (role === 'student') {
-          localStorage.setItem('student', JSON.stringify({ student: response.data.student || response.data.user }));
+          userData = {
+            ...(response.data.student || response.data.user),
+            role: role
+          };
+          localStorage.setItem('student', JSON.stringify({ student: userData }));
         } else if (role === 'teacher') {
-          Cookies.set('teacher', JSON.stringify({ teacher: response.data.teacher || response.data.user }), {
+          userData = {
+            ...(response.data.teacher || response.data.user),
+            role: role
+          };
+          Cookies.set('teacher', JSON.stringify({ teacher: userData }), {
             expires: 7,
             secure: true,
             sameSite: "strict",
           });
         } else if (role === 'schooladmin') {
+          userData = {
+            ...(response.data.user),
+            role: role
+          };
           localStorage.setItem('schooladmin', JSON.stringify({ user: userData }));
         } else if (role === 'superadmin') {
+          userData = {
+            ...(response.data.user),
+            role: role
+          };
           localStorage.setItem('superadmin', JSON.stringify({ user: userData }));
         }
 

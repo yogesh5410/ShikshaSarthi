@@ -1,6 +1,18 @@
 const express = require("express");
 const router = express.Router();
 
+// Get all puzzles (currently puzzles are frontend-only, return empty or mock data)
+router.get("/", async (req, res) => {
+  try {
+    // Puzzles are currently handled on the frontend
+    // Return empty array or mock puzzle data if needed
+    res.status(200).json([]);
+  } catch (error) {
+    console.error("Error fetching puzzles:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 /**
  * Heuristic-based Cognitive Evaluation
  * All metrics clamped to [0, 1] range.

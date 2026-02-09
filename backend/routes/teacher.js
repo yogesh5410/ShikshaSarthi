@@ -1,9 +1,11 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Teacher = require("../models/Teacher");
 const Quiz = require("../models/Quiz");
 const Question = require("../models/Question");
 const School = require("../models/School");
+const Student = require("../models/Student");
 
 // Create a new teacher
 router.post("/", async (req, res) => {
@@ -15,11 +17,23 @@ router.post("/", async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+// Helper: find a teacher by either their custom teacherId or their MongoDB _id
+async function findTeacherByIdentifier(identifier) {
+  if (!identifier) return null;
+  // if it's a valid ObjectId, try by _id first
+  if (mongoose.isValidObjectId(identifier)) {
+    const byId = await Teacher.findById(identifier);
+    if (byId) return byId;
+  }
+  // fallback to teacherId field
+  return await Teacher.findOne({ teacherId: identifier });
+}
+
 router.post("/addquestion", async (req, res) => {
   const { teacherId, questionData } = req.body;
 
   try {
-    const teacher = await Teacher.findOne({ teacherId });
+    const teacher = await findTeacherByIdentifier(teacherId);
     if (!teacher) {
       return res.status(404).json({ error: "Teacher not found" });
     }
@@ -49,7 +63,8 @@ router.post("/login", async (req, res) => {
   }
 
   try {
-    const teacher = await Teacher.findOne({ teacherId });
+    // support logging in by either teacherId or _id
+    const teacher = await findTeacherByIdentifier(teacherId);
 
     if (!teacher) {
       return res.status(401).json({ error: "Invalid Teacher ID or password." });
@@ -93,7 +108,8 @@ router.get("/", async (req, res) => {
 // Get teacher by ID (with quizzesCreated populated)
 router.get("/:id", async (req, res) => {
   try {
-    const teacher = await Teacher.findOne({ teacherId: req.params.id }).populate("quizzesCreated");
+    const teacher = await findTeacherByIdentifier(req.params.id);
+    if (teacher) await teacher.populate("quizzesCreated");
     if (!teacher) return res.status(404).json({ message: "Teacher not found" });
     res.status(200).json(teacher);
   } catch (err) {
@@ -104,7 +120,12 @@ router.get("/:id", async (req, res) => {
 // Update teacher by ID
 router.put("/:id", async (req, res) => {
   try {
-    const updated = await Teacher.findOneAndUpdate({ teacherId: req.params.id }, req.body, {
+    const identifier = req.params.id;
+    // try update by _id or teacherId
+    const query = mongoose.isValidObjectId(identifier)
+      ? { _id: identifier }
+      : { teacherId: identifier };
+    const updated = await Teacher.findOneAndUpdate(query, req.body, {
       new: true,
       runValidators: true,
     });
@@ -118,7 +139,11 @@ router.put("/:id", async (req, res) => {
 // Delete teacher by ID
 router.delete("/:id", async (req, res) => {
   try {
-    const deleted = await Teacher.findOneAndDelete({ teacherId: req.params.id });
+    const identifier = req.params.id;
+    const query = mongoose.isValidObjectId(identifier)
+      ? { _id: identifier }
+      : { teacherId: identifier };
+    const deleted = await Teacher.findOneAndDelete(query);
     if (!deleted) return res.status(404).json({ message: "Teacher not found" });
     res.status(200).json({ message: "Teacher deleted successfully" });
   } catch (err) {
@@ -128,12 +153,12 @@ router.delete("/:id", async (req, res) => {
 
 router.post("/:teacherId/create-quiz", async (req, res) => {
   try {
-    const teacher = await Teacher.findOne({ teacherId: req.params.teacherId });
+    const teacher = await findTeacherByIdentifier(req.params.teacherId);
     if (!teacher) return res.status(404).json({ message: "Teacher not found" });
 
     const quizData = {
       ...req.body,
-      teacherId: req.params.teacherId,
+      teacherId: teacher.teacherId || teacher._id.toString(),
     };
 
     const quiz = new Quiz(quizData);
@@ -151,11 +176,11 @@ router.post("/:teacherId/create-quiz", async (req, res) => {
 // GET /teachers/:teacherId/quizzes
 router.get("/:teacherId/quizzes", async (req, res) => {
   try {
-    const teacher = await Teacher.findOne({ teacherId: req.params.teacherId }).populate("quizzesCreated");
-
+    const teacher = await findTeacherByIdentifier(req.params.teacherId);
     if (!teacher) {
       return res.status(404).json({ error: "Teacher not found" });
     }
+    await teacher.populate("quizzesCreated");
 
     res.status(200).json(teacher.quizzesCreated);
   } catch (err) {
@@ -169,7 +194,7 @@ router.post("/register/student", async (req, res) => {
   try {
     const { teacherId, ...studentData } = req.body;
     
-    const teacher = await Teacher.findOne({ teacherId });
+    const teacher = await findTeacherByIdentifier(teacherId);
     if (!teacher) {
       return res.status(404).json({ error: "Teacher not found" });
     }

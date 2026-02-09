@@ -38,6 +38,8 @@ import MAT from "./pages/student/MAT";
 import MATPractice from "./pages/student/MATPractice";
 import MATTopicTest from "./pages/student/MATTopicTest";
 import MATTestResults from "./pages/student/MATTestResults";
+import TakeAdvancedQuiz from "./pages/student/TakeAdvancedQuiz";
+import AdvancedQuizPlayer from "./pages/student/AdvancedQuizPlayer";
 import DemoTest from "./pages/DemoTest";
 
 // Question Page
@@ -47,6 +49,8 @@ import LoginStudent from "./pages/LoginStudent";
 // Teacher Pages
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import CreateQuiz from "./pages/teacher/CreateQuiz";
+import CreateQuizNew from "./pages/teacher/CreateQuizNew";
+import QuizAnalytics from "./pages/teacher/QuizAnalytics";
 import Analytics from "./pages/teacher/Analytics";
 import AddMyQuestion from "./pages/teacher/AddMyquestion";
 import QuizDetails from "./pages/teacher/QuizDetails";
@@ -113,6 +117,8 @@ const AppRoutes = () => {
       <Route path="/student/mat/:module" element={<MATPractice />} />
       <Route path="/student/mat-test/:module" element={<MATTopicTest />} />
       <Route path="/student/mat-test-results/:testId" element={<MATTestResults />} />
+      <Route path="/student/take-advanced-quiz" element={<TakeAdvancedQuiz />} />
+      <Route path="/student/advanced-quiz-player" element={<AdvancedQuizPlayer />} />
       <Route path='/studentreport/:id' element={<StudentReport></StudentReport>}></Route>
       <Route path='/singlequiz/:id' element={<SingleQuizReport></SingleQuizReport>}></Route>
       <Route path='/login/student' element={<LoginStudent></LoginStudent>}></Route>
@@ -124,6 +130,8 @@ const AppRoutes = () => {
       <Route path="/teacher" element={<TeacherDashboard />} />
       <Route path="/teacher/profile" element={<TeacherProfile />} />
       <Route path="/teacher/create-quiz" element={<CreateQuiz />} />
+      <Route path="/teacher/create-quiz-new" element={<CreateQuizNew />} />
+      <Route path="/teacher/quiz-analytics" element={<QuizAnalytics />} />
       <Route path="/teacher/analytics" element={<Analytics />} />
       <Route path="/teacher/manage-classes" element={<ManageClasses />} />
       <Route path="/teacher/class/:classId/students" element={<ClassStudents />} />

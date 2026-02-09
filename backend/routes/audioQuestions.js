@@ -45,6 +45,17 @@ router.post("/test-attempt", async (req, res) => {
   }
 });
 
+// Get all audio questions
+router.get("/", async (req, res) => {
+  try {
+    const audioQuestions = await AudioQuestion.find();
+    res.status(200).json(audioQuestions);
+  } catch (error) {
+    console.error("Error fetching all audio questions:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all audio questions topics for a class
 router.get("/topics/:class", async (req, res) => {
   try {

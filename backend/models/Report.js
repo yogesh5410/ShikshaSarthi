@@ -8,7 +8,13 @@ const questionReportSchema = new mongoose.Schema({
   unattemptedCount: { type: Number, default: 0 }
 });
 
-const studentReportSchema = new mongoose.Schema({
+const quizReportSchema = new mongoose.Schema({
+  quizId: { type: String, required: true, unique: true },
+  questionStats: [questionReportSchema],
+});
+
+// Use existing models or create new ones (avoid OverwriteModelError)
+export const StudentReport = mongoose.models.StudentReport || mongoose.model("StudentReport", new mongoose.Schema({
   quizId: { type: String, required: true },
   studentId: { type: String, required: true },
   correct: { type: Number, required: true },
@@ -21,12 +27,6 @@ const studentReportSchema = new mongoose.Schema({
       isCorrect: Boolean,
     }
   ]
-});
+}));
 
-const quizReportSchema = new mongoose.Schema({
-  quizId: { type: String, required: true, unique: true },
-  questionStats: [questionReportSchema],
-});
-
-export const StudentReport = mongoose.model("StudentReport", studentReportSchema);
-export const QuizReport = mongoose.model("QuizReport", quizReportSchema);
+export const QuizReport = mongoose.models.QuizReport || mongoose.model("QuizReport", quizReportSchema);

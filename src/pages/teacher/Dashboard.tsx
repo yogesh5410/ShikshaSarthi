@@ -220,6 +220,98 @@ const TeacherDashboard: React.FC = () => {
             </Card>
           </div>
           
+          {/* Enhanced Quiz System - New Features */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 rounded-full text-sm">NEW</span>
+              Enhanced Quiz System
+            </h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <Card className="border-2 border-blue-500/30 hover:border-blue-500/50 transition-colors bg-gradient-to-br from-blue-50 to-white">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-xl mb-1 flex items-center gap-2">
+                      <PlusCircle className="h-6 w-6 text-blue-600" />
+                      Advanced Quiz Creator
+                    </CardTitle>
+                    <CardDescription>Create comprehensive quizzes with multiple question types</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Contest-style with start/end times
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Mix MCQ, Audio, Video, Puzzle questions
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Question ordering & filtering
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Update existing quizzes
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Link to="/teacher/create-quiz-new" className="w-full">
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                    Create Advanced Quiz
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+
+            <Card className="border-2 border-purple-500/30 hover:border-purple-500/50 transition-colors bg-gradient-to-br from-purple-50 to-white">
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-xl mb-1 flex items-center gap-2">
+                      <BarChart className="h-6 w-6 text-purple-600" />
+                      Comprehensive Analytics
+                    </CardTitle>
+                    <CardDescription>Detailed student performance analysis</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Student-wise performance metrics
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Comparative analysis & rankings
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Performance distribution charts
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    Time taken & submission stats
+                  </li>
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Link to="/teacher/quiz-analytics" className="w-full">
+                  <Button variant="outline" className="w-full border-purple-600 text-purple-600 hover:bg-purple-50">
+                    View Analytics
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          </div>
+          
           {/* Subject Stats */}
           {/* <div className="mb-12">
             <h2 className="text-2xl font-bold mb-4">Subject Performance</h2>
