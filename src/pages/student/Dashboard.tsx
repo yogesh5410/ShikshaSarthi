@@ -418,6 +418,8 @@ const StudentDashboard: React.FC = () => {
                 </Link>
               </CardFooter>
             </Card>
+
+            {/* Audio Quiz History card removed as requested */}
           </div>
 
           {/* All Quizzes List with Scrolling - Shows 8 at a time */}

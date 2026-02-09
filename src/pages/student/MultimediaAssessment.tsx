@@ -175,15 +175,39 @@ const MultimediaAssessment: React.FC = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Link to={assessment.route} className="w-full">
-                      <Button
-                        className={`w-full ${assessment.iconColor} hover:opacity-90`}
-                        variant="outline"
-                      >
-                        <PlayCircle className="h-4 w-4 mr-2" />
-                        Start Assessment
-                      </Button>
-                    </Link>
+                    {assessment.id === "audio" ? (
+                      <div className="w-full flex items-center gap-3">
+                        <Link to={assessment.route} className="flex-1">
+                          <Button
+                            className={`w-full ${assessment.iconColor} hover:opacity-90`}
+                            variant="outline"
+                          >
+                            <PlayCircle className="h-4 w-4 mr-2" />
+                            Start Assessment
+                          </Button>
+                        </Link>
+
+                        <Link to="/student/audio-quiz-history" className="w-40">
+                          <Button
+                            className={`w-full ${assessment.iconColor} hover:opacity-90`}
+                            variant="outline"
+                          >
+                            {/* <PlayCircle className="h-4 w-4 mr-2" /> */}
+                            History
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <Link to={assessment.route} className="w-full">
+                        <Button
+                          className={`w-full ${assessment.iconColor} hover:opacity-90`}
+                          variant="outline"
+                        >
+                          <PlayCircle className="h-4 w-4 mr-2" />
+                          Start Assessment
+                        </Button>
+                      </Link>
+                    )}
                   </CardFooter>
                 </Card>
               );
