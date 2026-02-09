@@ -27,6 +27,9 @@ import VocabularyQuizPage from "./pages/student/VocalbularyQuizPage";
 import StudentProfile from "./pages/student/StudentProfile";
 import MultimediaAssessment from "./pages/student/MultimediaAssessment";
 import AudioQuestions from "./pages/student/AudioQuestions";
+import AudioSubjectTopics from "./pages/student/AudioSubjectTopics";
+import AudioQuizPlayer from "./pages/student/AudioQuizPlayer";
+import AudioQuizHistory from "./pages/student/AudioQuizHistory";
 import VideoQuestions from "./pages/student/VideoQuestions";
 import VideoSubjectTopics from "./pages/student/VideoSubjectTopics";
 import VideoQuizPlayer from "./pages/student/VideoQuizPlayer";
@@ -92,6 +95,9 @@ const AppRoutes = () => {
       <Route path="/student/group-quiz" element={<GroupQuiz />} />
       <Route path="/student/multimedia-assessment" element={<MultimediaAssessment />} />
       <Route path="/student/multimedia/audio-questions" element={<AudioQuestions />} />
+      <Route path="/student/audio-questions/:subject" element={<AudioSubjectTopics />} />
+      <Route path="/student/multimedia/audio-quiz/:subject/:topic" element={<AudioQuizPlayer />} />
+      <Route path="/student/audio-quiz-history" element={<AudioQuizHistory />} />
       <Route path="/student/multimedia/video-questions" element={<VideoQuestions />} />
       <Route path="/student/video-questions" element={<VideoQuestions />} />
       <Route path="/student/video-questions/:subject" element={<VideoSubjectTopics />} />

@@ -1,227 +1,183 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import {
-  Headphones,
+  Volume2,
   ArrowLeft,
   Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  RefreshCw,
   CheckCircle2,
-  XCircle
+  Sparkles,
+  ArrowRight,
+  Headphones
 } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import SubjectIcon from "@/components/SubjectIcon";
+
+const subjectData = [
+  { 
+    id: 'गणित', 
+    name: 'गणित', 
+    description: 'गणना, बीजगणित, ज्यामिति आदि',
+    color: 'from-blue-500 to-cyan-500',
+    bgColor: 'bg-blue-50',
+    iconBg: 'bg-blue-100'
+  },
+  { 
+    id: 'विज्ञान', 
+    name: 'विज्ञान', 
+    description: 'भौतिकी, रसायन, जीव विज्ञान',
+    color: 'from-green-500 to-emerald-500',
+    bgColor: 'bg-green-50',
+    iconBg: 'bg-green-100'
+  },
+  { 
+    id: 'सामाजिक%20विज्ञान', 
+    name: 'सामाजिक विज्ञान', 
+    description: 'इतिहास, भूगोल, नागरिकशास्त्र',
+    color: 'from-purple-500 to-pink-500',
+    bgColor: 'bg-purple-50',
+    iconBg: 'bg-purple-100'
+  },
+  { 
+    id: 'मानसिक%20क्षमता%20परीक्षण', 
+    name: 'मानसिक क्षमता परीक्षण', 
+    description: 'तर्क, विश्लेषण, गणितीय क्षमता',
+    color: 'from-orange-500 to-red-500',
+    bgColor: 'bg-orange-50',
+    iconBg: 'bg-orange-100'
+  },
+];
 
 const AudioQuestions: React.FC = () => {
   const navigate = useNavigate();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-
-  // Placeholder data - Replace with actual audio questions from backend
-  const audioQuestions = [
-    {
-      id: 1,
-      title: "Listening Comprehension - Story",
-      description: "Listen to a short story and answer questions",
-      duration: "3:45",
-      difficulty: "Medium",
-      questions: 5
-    },
-    {
-      id: 2,
-      title: "Audio Instructions",
-      description: "Follow audio instructions to complete the task",
-      duration: "2:30",
-      difficulty: "Easy",
-      questions: 4
-    },
-    {
-      id: 3,
-      title: "Dialogue Understanding",
-      description: "Listen to a conversation and answer questions",
-      duration: "4:20",
-      difficulty: "Hard",
-      questions: 6
-    },
-    {
-      id: 4,
-      title: "News Report Analysis",
-      description: "Listen to a news report and identify key points",
-      duration: "5:00",
-      difficulty: "Hard",
-      questions: 8
-    }
-  ];
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy":
-        return "bg-green-100 text-green-700";
-      case "Medium":
-        return "bg-yellow-100 text-yellow-700";
-      case "Hard":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50">
       <Header />
 
       <main className="flex-1 py-8">
         <div className="edu-container">
-          {/* Header */}
-          <div className="mb-8">
-            <Button
-              variant="ghost"
-              className="mb-4"
-              onClick={() => navigate('/student/multimedia-assessment')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Multimedia Assessment
-            </Button>
+          <Button
+            variant="ghost"
+            className="mb-4"
+            onClick={() => navigate('/student/multimedia-assessment')}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Multimedia Assessment
+          </Button>
 
-            <div className="flex items-center space-x-4 mb-4">
-              <div className="h-16 w-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white">
-                <Headphones className="h-8 w-8" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Audio Questions 🎧
-                </h1>
-                <p className="text-gray-600">
-                  Test your listening comprehension skills
-                </p>
-              </div>
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
+              <Sparkles className="h-4 w-4" />
+              Learn with Audio
             </div>
+
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              ऑडियो <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">प्रश्न</span> 🎧
+            </h1>
+
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              ऑडियो सुनें और प्रश्नों के उत्तर दें - श्रवण कौशल विकसित करें
+            </p>
           </div>
 
-          {/* Instructions Card */}
           <Card className="mb-8 bg-blue-50 border-blue-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Volume2 className="h-6 w-6 text-blue-600" />
-                How to Attempt Audio Questions
+                <Headphones className="h-6 w-6 text-blue-600" />
+                ऑडियो प्रश्न कैसे हल करें
               </CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Make sure your device volume is turned on before starting</span>
+                  <span>प्रत्येक प्रश्न में ऑडियो बटन दिया जाएगा</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Listen carefully to the audio clip - you can replay it if needed</span>
+                  <span>ऑडियो को जितनी बार चाहें उतनी बार सुन सकते हैं</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Answer the questions based on what you heard in the audio</span>
+                  <span>ऑडियो सुनने के बाद सही उत्तर चुनें</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <span>Take notes if necessary while listening</span>
+                  <span>आवश्यकता होने पर नोट्स बनाएं</span>
                 </li>
               </ul>
             </CardContent>
           </Card>
 
-          {/* Audio Questions List */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {audioQuestions.map((question) => (
-              <Card
-                key={question.id}
-                className="border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-lg"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8">
+            {subjectData.map((subject) => (
+              <Card 
+                key={subject.id}
+                className={`group hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border-0 shadow-lg overflow-hidden relative ${subject.bgColor}/30 backdrop-blur-sm`}
               >
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-2">
-                    <CardTitle className="text-lg">{question.title}</CardTitle>
-                    <Badge className={getDifficultyColor(question.difficulty)}>
-                      {question.difficulty}
-                    </Badge>
+                <div className={`absolute inset-0 bg-gradient-to-br ${subject.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
+
+                <CardHeader className="pb-4 relative z-10">
+                  <div className="flex items-start space-x-4">
+                    <div className={`${subject.iconBg} p-3 rounded-xl group-hover:scale-110 transition-transform duration-300`}>
+                      <SubjectIcon subject={subject.id} size={32} />
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg font-bold text-gray-900 group-hover:text-gray-800 transition-colors mb-2">
+                        {subject.name}
+                      </CardTitle>
+                      <CardDescription className="text-gray-600 text-sm leading-relaxed">
+                        {subject.description}
+                      </CardDescription>
+                    </div>
                   </div>
-                  <CardDescription>{question.description}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between text-sm text-gray-600">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <Volume2 className="h-4 w-4" />
-                        {question.duration}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <CheckCircle2 className="h-4 w-4" />
-                        {question.questions} Questions
-                      </span>
-                    </div>
-                  </div>
 
-                  {/* Audio Player Placeholder */}
-                  <div className="bg-gray-100 rounded-lg p-4 flex items-center justify-center space-x-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsPlaying(!isPlaying)}
-                    >
-                      {isPlaying ? (
-                        <Pause className="h-6 w-6 text-blue-600" />
-                      ) : (
-                        <Play className="h-6 w-6 text-blue-600" />
-                      )}
-                    </Button>
-                    <div className="flex-1 h-2 bg-gray-300 rounded-full">
-                      <div className="h-full w-0 bg-blue-600 rounded-full"></div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsMuted(!isMuted)}
-                    >
-                      {isMuted ? (
-                        <VolumeX className="h-5 w-5 text-gray-600" />
-                      ) : (
-                        <Volume2 className="h-5 w-5 text-gray-600" />
-                      )}
-                    </Button>
+                <CardContent className="pb-4 relative z-10">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Volume2 className="h-4 w-4 text-blue-600" />
+                    <span>ऑडियो के साथ सीखें</span>
                   </div>
-
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                    <Play className="h-4 w-4 mr-2" />
-                    Start Assessment
-                  </Button>
                 </CardContent>
+
+                <CardFooter className="pt-0 relative z-10">
+                  <Link to={`/student/audio-questions/${subject.id}`} className="w-full">
+                    <Button 
+                      className={`w-full bg-gradient-to-r ${subject.color} hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white font-semibold py-2.5`}
+                      size="sm"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      प्रश्न देखें
+                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                    </Button>
+                  </Link>
+                </CardFooter>
               </Card>
             ))}
           </div>
 
-          {/* Coming Soon */}
-          <Card className="mt-8 border-dashed border-2 border-gray-300">
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center py-6">
-                <RefreshCw className="h-12 w-12 text-gray-400 mb-3" />
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                  More Audio Questions Coming Soon!
-                </h3>
-                <p className="text-gray-500 text-sm max-w-md">
-                  We're adding more diverse audio content including podcasts, 
-                  interviews, and educational lectures.
+          <div className="mt-16 text-center">
+            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-8 text-white">
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                  ऑडियो के माध्यम से सीखने के लिए तैयार हैं?
+                </h2>
+                <p className="text-blue-100 mb-6">
+                  सुनकर सीखें और अपने श्रवण कौशल को बेहतर बनाएं
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </main>
 
