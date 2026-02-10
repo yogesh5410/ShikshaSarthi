@@ -8,7 +8,7 @@ const studentReportSchema = new mongoose.Schema({
   unattempted: { type: Number, required: true },
   answers: [
     {
-      questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
+      questionId: { type: String },
       selectedAnswer: String,
       isCorrect: Boolean,
     },

@@ -94,7 +94,7 @@
   router.get("/student/:studentId", async (req, res) => {
     const { studentId } = req.params;
     try {
-      const reports = await StudentReport.find({ studentId }).populate("answers.questionId");
+      const reports = await StudentReport.find({ studentId });
       res.json(reports);
     } catch (err) {
       res.status(500).json({ error: "Error fetching student report" });

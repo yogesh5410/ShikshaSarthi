@@ -1,14 +1,59 @@
 const express = require("express");
 const router = express.Router();
+const PuzzleResult = require("../models/PuzzleResult");
 
-// Get all puzzles (currently puzzles are frontend-only, return empty or mock data)
+// Available puzzle games for quiz creation
+const AVAILABLE_PUZZLES = [
+  {
+    _id: "puzzle_memory_match",
+    puzzleType: "memory_match",
+    title: "मेमोरी मैच",
+    description: "कार्ड्स की स्थिति याद करें और जोड़ियाँ ढूँढें। याददाश्त और ध्यान का परीक्षण।",
+    route: "/test",
+    duration: "3 मिनट",
+    type: "puzzle",
+    subject: "संज्ञानात्मक",
+    class: "सभी",
+    topic: "स्मृति",
+    modes: [
+      { id: "individual", label: "व्यक्तिगत", pairs: 10, cards: 20 },
+      { id: "group", label: "समूह", pairs: 20, cards: 40 }
+    ]
+  },
+  {
+    _id: "puzzle_match_pieces",
+    puzzleType: "match_pieces",
+    title: "मैच पीसेज़",
+    description: "चित्र के टुकड़ों को जोड़कर मूल चित्र बनाएं। दृश्य पहचान और स्थानिक तर्क का परीक्षण।",
+    route: "/math",
+    duration: "3 मिनट",
+    type: "puzzle",
+    subject: "संज्ञानात्मक",
+    class: "सभी",
+    topic: "दृश्य पहचान",
+    modes: [
+      { id: "standard", label: "मानक", images: 3, piecesPerImage: 9 }
+    ]
+  }
+];
+
+// Get available puzzles for quiz creation & puzzle listing
 router.get("/", async (req, res) => {
   try {
-    // Puzzles are currently handled on the frontend
-    // Return empty array or mock puzzle data if needed
-    res.status(200).json([]);
+    res.status(200).json(AVAILABLE_PUZZLES);
   } catch (error) {
     console.error("Error fetching puzzles:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single puzzle by ID (for quiz loading)
+router.get("/single/:puzzleId", async (req, res) => {
+  try {
+    const puzzle = AVAILABLE_PUZZLES.find(p => p._id === req.params.puzzleId);
+    if (!puzzle) return res.status(404).json({ error: "Puzzle not found" });
+    res.status(200).json(puzzle);
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
@@ -119,7 +164,7 @@ router.post("/evaluate", async (req, res) => {
     }
 
     /* ---------------- Response ---------------- */
-    res.status(200).json({
+    const responseData = {
       score: Math.round(fitnessScore * 100), // 0-100
       memoryLevel,
       feedback,
@@ -131,7 +176,34 @@ router.post("/evaluate", async (req, res) => {
         control: clamp01(control),
         penaltyApplied: penalty,
       },
-    });
+    };
+
+    // Save to DB if studentId is provided
+    const { studentId } = req.body;
+    if (studentId) {
+      try {
+        await PuzzleResult.create({
+          studentId,
+          puzzleType: "memory_match",
+          score: responseData.score,
+          timeTaken: timeTaken,
+          endReason,
+          mode,
+          totalPairs,
+          correctPairs,
+          totalClicks,
+          incorrectClicks,
+          nearbyClicks,
+          memoryLevel,
+          breakdown: responseData.breakdown,
+          feedback,
+        });
+      } catch (saveErr) {
+        console.error("Error saving memory match result:", saveErr);
+      }
+    }
+
+    res.status(200).json(responseData);
   } catch (err) {
     console.error("Evaluation Error:", err);
     res.status(500).json({ error: "Evaluation failed" });
@@ -286,7 +358,7 @@ router.post("/evaluate-pieces", async (req, res) => {
     /* ================================================================
        RESPONSE
        ================================================================ */
-    res.status(200).json({
+    const responseData = {
       score: Math.round(fitnessScore * 100),
       recognitionLevel,
       feedback,
@@ -300,10 +372,78 @@ router.post("/evaluate-pieces", async (req, res) => {
         spatialReasoning: clamp01(spatialReasoning),
         penaltyApplied: penalty,
       },
-    });
+    };
+
+    // Save to DB if studentId is provided
+    const { studentId } = req.body;
+    if (studentId) {
+      try {
+        await PuzzleResult.create({
+          studentId,
+          puzzleType: "match_pieces",
+          score: responseData.score,
+          timeTaken,
+          endReason,
+          totalImages,
+          imagesCompleted,
+          totalMoves,
+          recognitionLevel,
+          perImageSummary,
+          breakdown: responseData.breakdown,
+          feedback,
+        });
+      } catch (saveErr) {
+        console.error("Error saving match pieces result:", saveErr);
+      }
+    }
+
+    res.status(200).json(responseData);
   } catch (err) {
     console.error("Pieces Evaluation Error:", err);
     res.status(500).json({ error: "Pieces evaluation failed" });
+  }
+});
+
+/* ============================================================
+   GET: Puzzle history for a student
+   ============================================================ */
+
+// Get all puzzle results for a student
+router.get("/history/:studentId", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { type } = req.query; // optional: "memory_match" or "match_pieces"
+
+    const filter = { studentId };
+    if (type) filter.puzzleType = type;
+
+    const results = await PuzzleResult.find(filter)
+      .sort({ attemptedAt: -1 })
+      .limit(50);
+
+    res.status(200).json(results);
+  } catch (err) {
+    console.error("Error fetching puzzle history:", err);
+    res.status(500).json({ error: "Failed to fetch puzzle history" });
+  }
+});
+
+// Get latest puzzle result for a student by type
+router.get("/history/:studentId/latest", async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { type } = req.query;
+
+    const filter = { studentId };
+    if (type) filter.puzzleType = type;
+
+    const latest = await PuzzleResult.findOne(filter)
+      .sort({ attemptedAt: -1 });
+
+    res.status(200).json(latest);
+  } catch (err) {
+    console.error("Error fetching latest result:", err);
+    res.status(500).json({ error: "Failed to fetch latest result" });
   }
 });
 

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const MATTest = require('../models/MATTest');
 const MATQuestion = require('../models/MATQuestion');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 // GET: Start a new MAT topic test
 // Creates test session and returns questions for the module

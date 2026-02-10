@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Header from "@/components/Header";
-import { Clock, Trophy, Target, Zap, X, Play, Sparkles, ArrowRight, ArrowLeft, Brain, Eye, RotateCcw, ListChecks, Crosshair, Gauge, Timer, BarChart3, LogOut, DoorOpen } from "lucide-react";
+import { Clock, Trophy, Target, Zap, X, Play, Sparkles, ArrowRight, ArrowLeft, Brain, Eye, RotateCcw, ListChecks, Crosshair, Gauge, Timer, BarChart3, LogOut, DoorOpen, History } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +40,11 @@ const MemoryMatchGrid: React.FC = () => {
   const [matches, setMatches] = useState(0);
   const [startTime, setStartTime] = useState<number>(0);
 
+  // Student
+  const [studentId, setStudentId] = useState<string>("");
+  const [pastResults, setPastResults] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   // timers
   const [previewTimer, setPreviewTimer] = useState(PREVIEW_TIME);
   const [solveTimer, setSolveTimer] = useState(SOLVE_TIME);
@@ -58,6 +63,37 @@ const MemoryMatchGrid: React.FC = () => {
   const pairCount = mode === "individual" ? 10 : 20;
   const gridCols = mode === "individual" ? 5 : 8;
   const gridRows = mode === "individual" ? 4 : 5;
+
+  /* ---------------- LOAD STUDENT & HISTORY ---------------- */
+  useEffect(() => {
+    const studentData = localStorage.getItem("student");
+    if (studentData) {
+      try {
+        const parsed = JSON.parse(studentData);
+        if (parsed.student && parsed.student.studentId) {
+          setStudentId(parsed.student.studentId);
+        }
+      } catch (e) {
+        console.error("Error parsing student data:", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!studentId) return;
+    const fetchHistory = async () => {
+      setLoadingHistory(true);
+      try {
+        const res = await axios.get(`${API_URL}/puzzles/history/${studentId}?type=memory_match`);
+        setPastResults(res.data);
+      } catch (err) {
+        console.error("Error fetching puzzle history:", err);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+    fetchHistory();
+  }, [studentId, screen]);
 
   /* ---------------- START GAME ---------------- */
   const startGame = (selectedMode: "individual" | "group") => {
@@ -157,6 +193,7 @@ const MemoryMatchGrid: React.FC = () => {
 
     try {
       const res = await axios.post(`${API_URL}/puzzles/evaluate`, {
+        studentId: studentId || undefined,
         mode,
         totalPairs: pairCount,
         totalClicks,
@@ -294,6 +331,48 @@ const MemoryMatchGrid: React.FC = () => {
                   </Button>
                 </CardFooter>
               </Card>
+
+              {/* PAST RESULTS */}
+              {studentId && pastResults.length > 0 && (
+                <Card className="mt-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                      <History className="h-5 w-5 text-indigo-600" />
+                      पिछले परिणाम
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pb-4">
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {pastResults.slice(0, 10).map((r: any, i: number) => (
+                        <div key={r._id || i} className="flex items-center justify-between bg-gray-50 rounded-lg p-3 text-sm">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                              r.score >= 70 ? 'bg-green-500' : r.score >= 40 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}>
+                              {r.score}
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-800">
+                                {r.mode === 'individual' ? 'व्यक्तिगत' : 'समूह'} मोड
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {r.memoryLevel} • {r.endReason === 'COMPLETED' ? 'पूर्ण' : r.endReason === 'EXITED' ? 'बाहर निकले' : 'समय समाप्त'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">
+                              {new Date(r.attemptedAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                            <p className="text-xs text-gray-400">{r.timeTaken}s</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {loadingHistory && <p className="text-center text-sm text-gray-400 mt-2">लोड हो रहा है...</p>}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         )}

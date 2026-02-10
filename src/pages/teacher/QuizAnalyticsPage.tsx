@@ -913,14 +913,28 @@ export default function QuizAnalyticsPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [studentRes, quizRes] = await Promise.all([
-          axios.get(`${API_URL}/reports/student-quiz/${quizId}`),
-          axios.get(`${API_URL}/reports/quiz/${quizId}`)
-        ]);
 
-        const studentReportsData = studentRes.data;
+        // Fetch student reports and quiz reports independently
+        // QuizReport may not exist if quiz was submitted via advanced player
+        let studentReportsData = [];
+        let questionStatsData = [];
+
+        try {
+          const studentRes = await axios.get(`${API_URL}/reports/student-quiz/${quizId}`);
+          studentReportsData = studentRes.data || [];
+        } catch (err) {
+          console.warn("Could not fetch student reports:", err.message);
+        }
+
+        try {
+          const quizRes = await axios.get(`${API_URL}/reports/quiz/${quizId}`);
+          questionStatsData = quizRes.data?.questionStats || [];
+        } catch (err) {
+          console.warn("QuizReport not found (may not exist for advanced quizzes):", err.message);
+        }
+
         setStudentReports(studentReportsData);
-        setQuestionStats(quizRes.data.questionStats);
+        setQuestionStats(questionStatsData);
 
         // Fetch student names for all unique student IDs
         const uniqueStudentIds = [...new Set(studentReportsData.map(report => report.studentId))];

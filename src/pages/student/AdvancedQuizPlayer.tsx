@@ -167,7 +167,7 @@ const AdvancedQuizPlayer: React.FC = () => {
           }
         } else {
           type = 'puzzle';
-          endpoint = `${API_URL}/puzzles/${questionId}`;
+          endpoint = `${API_URL}/puzzles/single/${questionId}`;
         }
 
         console.log(`Loading question ${index} (${type}):`, questionId, 'from:', endpoint);
@@ -815,14 +815,32 @@ const AdvancedQuizPlayer: React.FC = () => {
   };
 
   const renderPuzzleQuestion = (data: any) => {
+    const puzzleRoute = data?.puzzleRoute || (data?.puzzleType === 'memory_match' ? '/test' : data?.puzzleType === 'match_pieces' ? '/math' : '');
+    const puzzleTitle = data?.puzzleTitle || (data?.puzzleType === 'memory_match' ? 'मेमोरी मैच चैलेंज' : data?.puzzleType === 'match_pieces' ? 'मैच पीसेज़' : 'पहेली गेम');
+    const puzzleDesc = data?.puzzleDescription || 'इस पहेली गेम को खेलें और अपना स्कोर प्राप्त करें।';
+    const puzzleDuration = data?.puzzleDuration || '3 मिनट';
+    const isMemory = data?.puzzleType === 'memory_match';
+
     return (
-      <div className="p-4 bg-orange-50 rounded-lg text-center">
-        <Puzzle className="h-12 w-12 mx-auto mb-4 text-orange-600" />
-        <h3 className="text-lg font-semibold mb-2">Puzzle Game</h3>
-        <p className="text-gray-600">Puzzle questions are interactive and scored separately.</p>
-        <Button className="mt-4" onClick={() => handleAnswerSelect('completed')}>
-          Mark as Completed
-        </Button>
+      <div className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl text-center border border-indigo-200">
+        <div className={`h-16 w-16 mx-auto mb-4 rounded-xl flex items-center justify-center text-white shadow-md ${isMemory ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-cyan-500 to-teal-600'}`}>
+          <Puzzle className="h-8 w-8" />
+        </div>
+        <h3 className="text-xl font-bold mb-2 text-gray-900">{puzzleTitle}</h3>
+        <p className="text-gray-600 mb-1 text-sm">{puzzleDesc}</p>
+        <p className="text-xs text-gray-500 mb-4">अवधि: {puzzleDuration}</p>
+        {puzzleRoute ? (
+          <Button
+            className={`${isMemory ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-cyan-600 hover:bg-cyan-700'} text-white font-semibold px-8`}
+            onClick={() => window.open(puzzleRoute, '_blank')}
+          >
+            गेम खोलें
+          </Button>
+        ) : (
+          <Button className="mt-2" onClick={() => handleAnswerSelect('completed')}>
+            पूर्ण के रूप में चिह्नित करें
+          </Button>
+        )}
       </div>
     );
   };

@@ -55,10 +55,16 @@ router.get("/", async (req, res) => {
 // Get quiz by ID
 router.get("/:id", async (req, res) => {
   try {
-    const quiz = await Quiz.findOne({ quizId: req.params.id }).populate(
-      "questions"
-    );
+    const quiz = await Quiz.findOne({ quizId: req.params.id });
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+
+    // Try to populate questions (may fail if mixed ID types like puzzle IDs)
+    try {
+      await quiz.populate("questions");
+    } catch (popErr) {
+      console.log("Question populate skipped (mixed ID types):", popErr.message);
+    }
+
     res.status(200).json(quiz);
   } catch (err) {
     res.status(500).json({ error: err.message });
