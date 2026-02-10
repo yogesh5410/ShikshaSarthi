@@ -77,6 +77,47 @@ router.get("/single/:id", async (req, res) => {
   }
 });
 
+// Get a specific question from a video question set by parent ID and question index
+// Format: /video-questions/single/:parentId/question/:questionIndex
+router.get("/single/:parentId/question/:questionIndex", async (req, res) => {
+  try {
+    const { parentId, questionIndex } = req.params;
+    const index = parseInt(questionIndex);
+    
+    const videoQuestion = await VideoQuestion.findById(parentId);
+    if (!videoQuestion) {
+      return res.status(404).json({ message: "Video question set not found" });
+    }
+    
+    if (!videoQuestion.questions || index < 0 || index >= videoQuestion.questions.length) {
+      return res.status(404).json({ message: "Question index out of range" });
+    }
+    
+    // Return the specific question with video metadata
+    const specificQuestion = {
+      _id: `${parentId}_q${index}`,
+      parentVideoId: parentId,
+      questionIndex: index,
+      subject: videoQuestion.subject,
+      class: videoQuestion.class,
+      topic: videoQuestion.topic,
+      videoUrl: videoQuestion.videoUrl,
+      videoTitle: videoQuestion.videoTitle,
+      videoDescription: videoQuestion.videoDescription,
+      videoDuration: videoQuestion.videoDuration,
+      question: videoQuestion.questions[index].question,
+      options: videoQuestion.questions[index].options,
+      correctAnswer: videoQuestion.questions[index].correctAnswer,
+      hint: videoQuestion.questions[index].hint,
+      type: 'video'
+    };
+    
+    res.status(200).json(specificQuestion);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Update video question
 router.put("/:id", async (req, res) => {
   try {

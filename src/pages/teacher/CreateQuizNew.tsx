@@ -44,6 +44,14 @@ interface Question {
       image?: string;
     };
   }>;
+  
+  // Individual video question fields (for hierarchical selection)
+  parentVideoId?: string;
+  questionIndex?: number;
+  hint?: {
+    text?: string;
+    image?: string;
+  };
 }
 
 interface QuizConfig {
@@ -65,6 +73,32 @@ interface QuestionSlot {
 }
 
 export default function CreateQuizNew() {
+  // YouTube URL helper functions
+  const isYouTubeUrl = (url: string): boolean => {
+    if (!url) return false;
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+  
+  const getYouTubeVideoId = (url: string): string | null => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+    ];
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    return null;
+  };
+  
+  const getYouTubeEmbedUrl = (url: string): string => {
+    const videoId = getYouTubeVideoId(url);
+    if (!videoId) return url;
+    return `https://www.youtube.com/embed/${videoId}`;
+  };
+
   const [showQuestionPalette, setShowQuestionPalette] = useState(false);
   const [config, setConfig] = useState<QuizConfig>({
     quizId: '',
@@ -92,6 +126,14 @@ export default function CreateQuizNew() {
     class: '',
     difficulty: ''
   });
+  
+  // Video question hierarchical selection states
+  const [videoSelectionStep, setVideoSelectionStep] = useState<'subject' | 'topic' | 'questions'>('subject');
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
+  const [availableTopics, setAvailableTopics] = useState<string[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [selectedTopic, setSelectedTopic] = useState<string>('');
+  const [videoQuestionSets, setVideoQuestionSets] = useState<any[]>([]);
   
   const [teacherId, setTeacherId] = useState('');
   const [isUpdateMode, setIsUpdateMode] = useState(false);
@@ -293,45 +335,106 @@ export default function CreateQuizNew() {
     
     try {
       let endpoint = '';
+      let questions: Question[] = [];
       
       switch (slot.type) {
         case 'mcq':
           endpoint = `${API_URL}/questions/`;
+          const mcqResponse = await axios.get(endpoint);
+          questions = mcqResponse.data.map((q: any) => ({
+            _id: q._id || q.id,
+            questionId: q.questionId || q.id,
+            subject: q.subject || 'N/A',
+            class: q.class || 'N/A',
+            topic: q.topic || 'N/A',
+            subtopic: q.subtopic || '',
+            question: q.question || q.questionText || '',
+            options: q.options || [],
+            correctAnswer: q.correctAnswer || q.answer || '',
+            questionImage: q.questionImage || q.image || '',
+            difficulty: q.difficulty || '',
+            type: 'mcq'
+          }));
+          setAvailableQuestions(questions);
+          setFilteredQuestions(questions);
+          setIsFilterDialogOpen(true);
           break;
+          
         case 'audio':
           endpoint = `${API_URL}/audio-questions/`;
+          const audioResponse = await axios.get(endpoint);
+          questions = audioResponse.data.map((q: any) => ({
+            _id: q._id || q.id,
+            questionId: q.questionId || q.id,
+            subject: q.subject || 'N/A',
+            class: q.class || 'N/A',
+            topic: q.topic || 'N/A',
+            subtopic: q.subtopic || '',
+            question: q.question || q.questionText || '',
+            options: q.options || [],
+            correctAnswer: q.correctAnswer || q.answer || '',
+            audio: q.audio || q.audioUrl || '',
+            questionImage: q.questionImage || q.image || '',
+            difficulty: q.difficulty || '',
+            type: 'audio'
+          }));
+          setAvailableQuestions(questions);
+          setFilteredQuestions(questions);
+          setIsFilterDialogOpen(true);
           break;
+          
         case 'video':
+          // For video questions, load all data and start hierarchical selection
           endpoint = `${API_URL}/video-questions/`;
+          const videoResponse = await axios.get(endpoint);
+          
+          // Store all video question sets
+          setVideoQuestionSets(videoResponse.data);
+          
+          // Extract unique subjects
+          const subjects = [...new Set(videoResponse.data.map((vq: any) => vq.subject))].filter(Boolean) as string[];
+          setAvailableSubjects(subjects);
+          
+          // Reset selection state
+          setVideoSelectionStep('subject');
+          setSelectedSubject('');
+          setSelectedTopic('');
+          setAvailableTopics([]);
+          setFilteredQuestions([]);
+          
+          setIsFilterDialogOpen(true);
+          console.log('Video subjects loaded:', subjects);
           break;
+          
         case 'puzzle':
           endpoint = `${API_URL}/puzzles/`;
+          const puzzleResponse = await axios.get(endpoint);
+          questions = puzzleResponse.data.map((q: any) => ({
+            _id: q._id || q.id,
+            questionId: q.questionId || q.id,
+            subject: q.subject || 'N/A',
+            class: q.class || 'N/A',
+            topic: q.topic || 'N/A',
+            subtopic: q.subtopic || '',
+            question: q.question || q.questionText || '',
+            options: q.options || [],
+            correctAnswer: q.correctAnswer || q.answer || '',
+            questionImage: q.questionImage || q.image || '',
+            difficulty: q.difficulty || '',
+            type: 'puzzle'
+          }));
+          setAvailableQuestions(questions);
+          setFilteredQuestions(questions);
+          setIsFilterDialogOpen(true);
           break;
       }
       
-      const response = await axios.get(endpoint);
-      const questions = response.data.map((q: any) => ({
-        _id: q._id || q.id,
-        questionId: q.questionId || q.id,
-        subject: q.subject || 'N/A',
-        class: q.class || 'N/A',
-        topic: q.topic || 'N/A',
-        subtopic: q.subtopic || '',
-        question: q.question || q.questionText || '',
-        options: q.options || [],
-        correctAnswer: q.correctAnswer || q.answer || '',
-        questionImage: q.questionImage || q.image || '',
-        difficulty: q.difficulty || '',
-        type: slot.type
-      }));
-      
-      setAvailableQuestions(questions);
-      setFilteredQuestions(questions);
-      setIsFilterDialogOpen(true);
-    } catch (error) {
+      console.log(`Loaded ${questions.length} ${slot.type} questions`);
+    } catch (error: any) {
+      console.error('Error loading questions:', error);
       toast({
         title: "Error",
-        description: "Failed to load questions",
+        description: error.response?.data?.message || "Failed to load questions",
         variant: "destructive"
       });
     }
@@ -360,6 +463,70 @@ export default function CreateQuizNew() {
     setFilteredQuestions(filtered);
   };
 
+  // Handle subject selection for video questions
+  const handleSubjectSelect = (subject: string) => {
+    setSelectedSubject(subject);
+    
+    // Get topics for this subject
+    const topics = [...new Set(
+      videoQuestionSets
+        .filter((vq: any) => vq.subject === subject)
+        .map((vq: any) => vq.topic)
+    )].filter(Boolean);
+    
+    setAvailableTopics(topics);
+    setVideoSelectionStep('topic');
+    console.log('Topics for subject', subject, ':', topics);
+  };
+  
+  // Handle topic selection for video questions
+  const handleTopicSelect = (topic: string) => {
+    setSelectedTopic(topic);
+    
+    // Get the video question set for this subject + topic
+    const videoSet = videoQuestionSets.find(
+      (vq: any) => vq.subject === selectedSubject && vq.topic === topic
+    );
+    
+    if (videoSet && videoSet.questions) {
+      // Flatten individual questions for selection
+      const individualQuestions = videoSet.questions.map((q: any, idx: number) => ({
+        _id: `${videoSet._id}_q${idx}`, // Unique ID for each question
+        parentVideoId: videoSet._id,
+        questionIndex: idx,
+        subject: videoSet.subject,
+        class: videoSet.class,
+        topic: videoSet.topic,
+        videoUrl: videoSet.videoUrl,
+        videoTitle: videoSet.videoTitle,
+        videoDescription: videoSet.videoDescription,
+        videoDuration: videoSet.videoDuration,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        hint: q.hint,
+        type: 'video'
+      }));
+      
+      setFilteredQuestions(individualQuestions);
+      setVideoSelectionStep('questions');
+      console.log('Individual questions loaded:', individualQuestions.length);
+    }
+  };
+  
+  // Go back in video selection hierarchy
+  const handleVideoSelectionBack = () => {
+    if (videoSelectionStep === 'questions') {
+      setVideoSelectionStep('topic');
+      setSelectedTopic('');
+      setFilteredQuestions([]);
+    } else if (videoSelectionStep === 'topic') {
+      setVideoSelectionStep('subject');
+      setSelectedSubject('');
+      setAvailableTopics([]);
+    }
+  };
+  
   // Select question for a slot
   const selectQuestion = (question: Question) => {
     if (selectedSlot === null) return;
@@ -371,6 +538,14 @@ export default function CreateQuizNew() {
     setIsFilterDialogOpen(false);
     setSelectedSlot(null);
     setFilters({ subject: '', topic: '', subtopic: '', class: '', difficulty: '' });
+    
+    // Reset video selection states
+    setVideoSelectionStep('subject');
+    setSelectedSubject('');
+    setSelectedTopic('');
+    setAvailableSubjects([]);
+    setAvailableTopics([]);
+    setVideoQuestionSets([]);
     
     toast({
       title: "Question Selected",
@@ -412,13 +587,31 @@ export default function CreateQuizNew() {
     }
     
     try {
-      // Only include questions that are actually filled
-      const questionIds = filledSlots.map(slot => slot.question!._id);
+      // Process questions - for video questions, use parent ID
+      const questionIds = filledSlots.map(slot => {
+        const q = slot.question!;
+        // For video questions from hierarchical selection, use parent video ID
+        if (slot.type === 'video' && q.parentVideoId) {
+          return q.parentVideoId;
+        }
+        return q._id;
+      });
+      
+      // Store question metadata for video questions (to know which specific question was selected)
+      const videoQuestionMetadata = filledSlots
+        .filter(slot => slot.type === 'video' && slot.question?.parentVideoId)
+        .map(slot => ({
+          slotIndex: slot.index,
+          parentVideoId: slot.question!.parentVideoId,
+          questionIndex: slot.question!.questionIndex,
+          questionText: slot.question!.question
+        }));
       
       const quizData = {
         quizId: config.quizId,
         teacherId,
         questions: questionIds,
+        videoQuestionMetadata, // Include metadata for video questions
         timeLimit: config.timeLimit,
         totalQuestions: questionIds.length, // Use actual filled count
         questionTypes: {
@@ -432,6 +625,7 @@ export default function CreateQuizNew() {
       };
       
       console.log('Quiz data being sent:', quizData);
+      console.log('Video question metadata:', videoQuestionMetadata);
       
       if (isUpdateMode && quizToUpdate) {
         await axios.put(`${API_URL}/quizzes/update/${quizToUpdate}`, quizData);
@@ -855,77 +1049,342 @@ export default function CreateQuizNew() {
               </DialogHeader>
 
               <div className="space-y-4">
-                {/* Filters */}
-                <div className="grid grid-cols-5 gap-2">
-                  <Input
-                    placeholder="Subject"
-                    value={filters.subject}
-                    onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
-                  />
-                  <Input
-                    placeholder="Topic"
-                    value={filters.topic}
-                    onChange={(e) => setFilters({ ...filters, topic: e.target.value })}
-                  />
-                  <Input
-                    placeholder="Subtopic"
-                    value={filters.subtopic}
-                    onChange={(e) => setFilters({ ...filters, subtopic: e.target.value })}
-                  />
-                  <Input
-                    placeholder="Class"
-                    value={filters.class}
-                    onChange={(e) => setFilters({ ...filters, class: e.target.value })}
-                  />
-                  <Button onClick={applyFilters}>Apply Filters</Button>
-                </div>
-
-                {/* Questions List */}
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {filteredQuestions.map((question) => {
-                    // Determine question type and render accordingly
-                    const isVideoQuestion = question.type === 'video' || question.videoUrl;
-                    const isAudioQuestion = question.type === 'audio' || question.audio;
+                {/* Video Question Hierarchical Selection */}
+                {selectedSlot !== null && questionSlots[selectedSlot].type === 'video' ? (
+                  <>
+                    {/* Breadcrumb */}
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                      <span className="cursor-pointer hover:text-purple-600" onClick={() => {
+                        if (videoSelectionStep !== 'subject') handleVideoSelectionBack();
+                      }}>
+                        📚 Subject
+                      </span>
+                      {videoSelectionStep !== 'subject' && (
+                        <>
+                          <span>→</span>
+                          <span className={`${videoSelectionStep === 'topic' ? 'font-bold text-purple-700' : 'cursor-pointer hover:text-purple-600'}`}
+                                onClick={() => {
+                                  if (videoSelectionStep === 'questions') handleVideoSelectionBack();
+                                }}>
+                            📖 {selectedSubject || 'Topic'}
+                          </span>
+                        </>
+                      )}
+                      {videoSelectionStep === 'questions' && (
+                        <>
+                          <span>→</span>
+                          <span className="font-bold text-purple-700">📝 {selectedTopic}</span>
+                        </>
+                      )}
+                    </div>
                     
-                    return (
-                      <Card 
-                        key={question._id} 
-                        className="cursor-pointer hover:bg-gray-50 transition-colors"
-                        onClick={() => selectQuestion(question)}
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              {/* Video Question Display */}
-                              {isVideoQuestion && (
-                                <>
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Badge className="bg-purple-500">Video</Badge>
-                                    <p className="font-bold text-lg">{question.videoTitle || 'Video Question'}</p>
-                                  </div>
-                                  {question.videoDescription && (
-                                    <p className="text-sm text-gray-600 mb-2">{question.videoDescription}</p>
-                                  )}
-                                  {question.videoUrl && (
-                                    <div className="text-xs text-blue-600 mb-2">
-                                      📹 Video URL: {question.videoUrl.substring(0, 50)}...
+                    {/* Step 1: Subject Selection */}
+                    {videoSelectionStep === 'subject' && (
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-purple-700">Select Subject</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {availableSubjects.map((subject) => (
+                            <Card 
+                              key={subject}
+                              className="cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition-all"
+                              onClick={() => handleSubjectSelect(subject)}
+                            >
+                              <CardContent className="p-6 text-center">
+                                <div className="text-2xl mb-2">📚</div>
+                                <div className="font-bold text-lg">{subject}</div>
+                                <div className="text-sm text-gray-600 mt-1">
+                                  {videoQuestionSets.filter((vq: any) => vq.subject === subject).length} topics
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Step 2: Topic Selection */}
+                    {videoSelectionStep === 'topic' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-purple-700">Select Topic from {selectedSubject}</h3>
+                          <Button variant="outline" size="sm" onClick={handleVideoSelectionBack}>← Back</Button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          {availableTopics.map((topic) => {
+                            const videoSet = videoQuestionSets.find(
+                              (vq: any) => vq.subject === selectedSubject && vq.topic === topic
+                            );
+                            return (
+                              <Card 
+                                key={topic}
+                                className="cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition-all"
+                                onClick={() => handleTopicSelect(topic)}
+                              >
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xl">📖</span>
+                                        <span className="font-bold text-lg">{topic}</span>
+                                      </div>
+                                      {videoSet?.videoTitle && (
+                                        <div className="text-sm text-gray-600">📹 {videoSet.videoTitle}</div>
+                                      )}
+                                      {videoSet?.videoDuration && (
+                                        <div className="text-xs text-gray-500">⏱️ {videoSet.videoDuration}</div>
+                                      )}
                                     </div>
-                                  )}
-                                  {question.questions && question.questions.length > 0 && (
-                                    <div className="mt-2 p-2 bg-gray-50 rounded">
-                                      <p className="text-sm font-semibold mb-1">Questions in this video: {question.questions.length}</p>
-                                      <div className="space-y-2">
-                                        {question.questions.slice(0, 2).map((q: any, idx: number) => (
-                                          <div key={idx} className="text-xs text-gray-700 border-l-2 border-purple-300 pl-2">
-                                            <p className="font-medium">{idx + 1}. {q.question}</p>
+                                    <div className="text-right">
+                                      <Badge className="bg-purple-500 text-white text-lg px-3 py-1">
+                                        {videoSet?.questions?.length || 0} Questions
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Step 3: Individual Question Selection */}
+                    {videoSelectionStep === 'questions' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-purple-700">
+                            Select Question from {selectedTopic}
+                          </h3>
+                          <Button variant="outline" size="sm" onClick={handleVideoSelectionBack}>← Back to Topics</Button>
+                        </div>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {filteredQuestions.map((question, qIdx) => (
+                            <Card 
+                              key={question._id}
+                              className="cursor-pointer hover:bg-purple-50 hover:border-purple-400 transition-all"
+                              onClick={() => selectQuestion(question)}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300 font-bold px-3 py-1 text-base">
+                                    Q{qIdx + 1}
+                                  </Badge>
+                                  <div className="flex-1">
+                                    <p className="font-medium text-base mb-3 text-gray-800 leading-relaxed">
+                                      {question.question}
+                                    </p>
+                                    
+                                    {/* Options */}
+                                    {question.options && question.options.length > 0 && (
+                                      <div className="grid grid-cols-2 gap-2 mt-2">
+                                        {question.options.map((opt: string, optIdx: number) => (
+                                          <div 
+                                            key={optIdx} 
+                                            className={`text-sm px-3 py-2 rounded-md flex items-center gap-2 ${
+                                              opt === question.correctAnswer 
+                                                ? 'bg-green-100 text-green-900 font-semibold border-2 border-green-400' 
+                                                : 'bg-gray-50 text-gray-700 border border-gray-200'
+                                            }`}
+                                          >
+                                            <span className="font-bold bg-white px-2 py-0.5 rounded">
+                                              {String.fromCharCode(65 + optIdx)}
+                                            </span>
+                                            <span>{opt}</span>
+                                            {opt === question.correctAnswer && (
+                                              <span className="ml-auto text-green-700">✓</span>
+                                            )}
                                           </div>
                                         ))}
-                                        {question.questions.length > 2 && (
-                                          <p className="text-xs text-gray-500">...and {question.questions.length - 2} more</p>
-                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Hint */}
+                                    {question.hint && (question.hint as any).text && (
+                                      <div className="mt-2 p-2 bg-amber-50 border-l-3 border-amber-400 rounded">
+                                        <p className="text-xs text-amber-900">
+                                          <span className="font-semibold">💡 Hint:</span> {(question.hint as any).text}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Regular Filters for MCQ, Audio, Puzzle */}
+                    <div className="grid grid-cols-5 gap-2">
+                      <Input
+                        placeholder="Subject"
+                        value={filters.subject}
+                        onChange={(e) => setFilters({ ...filters, subject: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Topic"
+                        value={filters.topic}
+                        onChange={(e) => setFilters({ ...filters, topic: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Subtopic"
+                        value={filters.subtopic}
+                        onChange={(e) => setFilters({ ...filters, subtopic: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Class"
+                        value={filters.class}
+                        onChange={(e) => setFilters({ ...filters, class: e.target.value })}
+                      />
+                      <Button onClick={applyFilters}>Apply Filters</Button>
+                    </div>
+
+                    {/* Questions List */}
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {filteredQuestions.map((question) => {
+                        // Determine question type and render accordingly
+                        const isVideoQuestion = question.type === 'video' || question.videoUrl;
+                        const isAudioQuestion = question.type === 'audio' || question.audio;
+                        
+                        return (
+                          <Card 
+                            key={question._id} 
+                            className="cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => selectQuestion(question)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  {/* Audio Question Display */}
+                                  {isAudioQuestion && (
+                                <>
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <Badge className="bg-purple-500 text-white">📹 Video Set</Badge>
+                                    <p className="font-bold text-lg">{question.videoTitle || 'Video Question Set'}</p>
+                                  </div>
+                                  
+                                  {/* Video Preview */}
+                                  {question.videoUrl && (
+                                    <div className="mb-3">
+                                      {isYouTubeUrl(question.videoUrl) ? (
+                                        <div className="relative w-full rounded-lg overflow-hidden mb-3" style={{ paddingBottom: '56.25%' }}>
+                                          <iframe
+                                            className="absolute top-0 left-0 w-full h-full rounded-lg"
+                                            src={getYouTubeEmbedUrl(question.videoUrl)}
+                                            title={question.videoTitle || 'Video Question'}
+                                            frameBorder="0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                          />
+                                        </div>
+                                      ) : (
+                                        <video controls className="w-full rounded-lg mb-3">
+                                          <source src={question.videoUrl} type="video/mp4" />
+                                          Your browser does not support the video tag.
+                                        </video>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Video Metadata */}
+                                  <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                    <div className="text-sm">
+                                      <span className="font-semibold text-purple-700">Duration:</span> 
+                                      <span className="ml-1">{question.videoDuration || 'N/A'}</span>
+                                    </div>
+                                    <div className="text-sm">
+                                      <span className="font-semibold text-purple-700">Total Questions:</span> 
+                                      <span className="ml-1 font-bold text-purple-900">{question.questions?.length || 0}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {question.videoDescription && (
+                                    <div className="mb-3 p-2 bg-blue-50 rounded border-l-4 border-blue-400">
+                                      <p className="text-sm text-gray-700 italic">
+                                        📝 {question.videoDescription}
+                                      </p>
+                                    </div>
+                                  )}
+                                  
+                                  {/* All Questions in this Video Set */}
+                                  {question.questions && question.questions.length > 0 && (
+                                    <div className="mt-4 border-2 border-purple-300 rounded-lg p-4 bg-gradient-to-br from-purple-50 to-white">
+                                      <div className="flex items-center justify-between mb-3">
+                                        <p className="text-sm font-bold text-purple-800 flex items-center gap-2">
+                                          <span className="bg-purple-200 px-2 py-1 rounded">
+                                            📚 All {question.questions.length} Questions in this Video
+                                          </span>
+                                        </p>
+                                      </div>
+                                      
+                                      <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                                        {question.questions.map((q: any, idx: number) => (
+                                          <div 
+                                            key={idx} 
+                                            className="border-l-4 border-purple-500 pl-4 py-3 bg-white rounded-r-lg shadow-sm hover:shadow-md transition-shadow"
+                                          >
+                                            <div className="flex items-start gap-3">
+                                              <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300 font-bold px-3 py-1">
+                                                Q{idx + 1}
+                                              </Badge>
+                                              <div className="flex-1">
+                                                <p className="font-medium text-sm mb-2 text-gray-800 leading-relaxed">
+                                                  {q.question}
+                                                </p>
+                                                
+                                                {/* Options */}
+                                                {q.options && q.options.length > 0 && (
+                                                  <div className="grid grid-cols-1 gap-2 mt-3">
+                                                    {q.options.map((opt: string, optIdx: number) => (
+                                                      <div 
+                                                        key={optIdx} 
+                                                        className={`text-xs px-3 py-2 rounded-md flex items-center gap-2 ${
+                                                          opt === q.correctAnswer 
+                                                            ? 'bg-green-100 text-green-900 font-semibold border-2 border-green-400' 
+                                                            : 'bg-gray-50 text-gray-700 border border-gray-200'
+                                                        }`}
+                                                      >
+                                                        <span className="font-bold bg-white px-2 py-0.5 rounded">
+                                                          {String.fromCharCode(65 + optIdx)}
+                                                        </span>
+                                                        <span>{opt}</span>
+                                                        {opt === q.correctAnswer && (
+                                                          <span className="ml-auto text-green-700">✓ Correct</span>
+                                                        )}
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                )}
+                                                
+                                                {/* Hint if available */}
+                                                {q.hint && q.hint.text && (
+                                                  <div className="mt-3 p-2 bg-amber-50 border-l-3 border-amber-400 rounded">
+                                                    <p className="text-xs text-amber-900">
+                                                      <span className="font-semibold">💡 Hint:</span> {q.hint.text}
+                                                    </p>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
                                     </div>
                                   )}
+                                  
+                                  <div className="mt-4 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-lg">
+                                    <p className="text-sm text-yellow-900 flex items-start gap-2">
+                                      <span className="font-bold text-lg">⚠️</span>
+                                      <span>
+                                        <span className="font-semibold">Important:</span> Selecting this video will include 
+                                        <span className="font-bold text-yellow-900"> all {question.questions?.length || 0} questions</span> in your quiz.
+                                        Students will watch the video first, then answer these questions.
+                                      </span>
+                                    </p>
+                                  </div>
                                 </>
                               )}
                               
@@ -956,8 +1415,8 @@ export default function CreateQuizNew() {
                                 </>
                               )}
                               
-                              {/* MCQ/Regular Question Display */}
-                              {!isVideoQuestion && !isAudioQuestion && (
+                                  {/* MCQ/Regular Question Display */}
+                                  {!isVideoQuestion && !isAudioQuestion && (
                                 <>
                                   <div className="flex items-center gap-2 mb-2">
                                     <Badge className="bg-blue-500">MCQ</Badge>
@@ -975,29 +1434,30 @@ export default function CreateQuizNew() {
                                       ))}
                                     </div>
                                   )}
-                                </>
-                              )}
-                            </div>
-                            <div className="ml-4 text-right text-sm text-gray-500">
-                              <div>Subject: {question.subject || 'N/A'}</div>
-                              <div>Topic: {question.topic || 'N/A'}</div>
-                              <div>Class: {question.class || 'N/A'}</div>
-                              {question.subtopic && <div>Subtopic: {question.subtopic}</div>}
-                              {question.difficulty && <div>Difficulty: {question.difficulty}</div>}
-                              {question.videoDuration && <div>Duration: {question.videoDuration}</div>}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                  
-                  {filteredQuestions.length === 0 && (
-                    <div className="text-center text-gray-500 py-8">
-                      No questions found. Try adjusting your filters.
+                                    </>
+                                  )}
+                                </div>
+                                <div className="ml-4 text-right text-sm text-gray-500">
+                                  <div>Subject: {question.subject || 'N/A'}</div>
+                                  <div>Topic: {question.topic || 'N/A'}</div>
+                                  <div>Class: {question.class || 'N/A'}</div>
+                                  {question.subtopic && <div>Subtopic: {question.subtopic}</div>}
+                                  {question.difficulty && <div>Difficulty: {question.difficulty}</div>}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                      
+                      {filteredQuestions.length === 0 && (
+                        <div className="text-center text-gray-500 py-8">
+                          No questions found. Try adjusting your filters.
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             </DialogContent>
           </Dialog>

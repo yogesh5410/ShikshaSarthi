@@ -15,7 +15,13 @@ import {
   Video,
   Puzzle,
   TrendingUp,
-  Users
+  Users,
+  Play,
+  Pause,
+  FastForward,
+  Eye,
+  Brain,
+  Target
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -165,6 +171,133 @@ const AdvancedQuizResults: React.FC = () => {
       : parseFloat(results.score.percentage);
   };
 
+  // Calculate video-specific analytics
+  const calculateVideoAnalytics = () => {
+    if (!results?.answers) return null;
+    
+    const videoQuestions = results.answers.filter(a => a.questionType === 'video');
+    if (videoQuestions.length === 0) return null;
+
+    let totalWatchPercentage = 0;
+    let totalPauseCount = 0;
+    let totalSeekCount = 0;
+    let totalTimeSpent = 0;
+    let questionsWatched = 0;
+    let correctAnswers = 0;
+
+    const videoDetails = videoQuestions.map(q => {
+      const analytics = q.videoAnalytics;
+      if (analytics) {
+        totalWatchPercentage += analytics.watchPercentage;
+        totalPauseCount += analytics.pauseCount;
+        totalSeekCount += analytics.seekCount;
+        if (analytics.watchPercentage > 0) questionsWatched++;
+      }
+      totalTimeSpent += q.timeSpent;
+      if (q.isCorrect) correctAnswers++;
+
+      return {
+        questionId: q.questionId,
+        timeSpent: q.timeSpent,
+        isCorrect: q.isCorrect,
+        watchPercentage: analytics?.watchPercentage || 0,
+        pauseCount: analytics?.pauseCount || 0,
+        seekCount: analytics?.seekCount || 0
+      };
+    });
+
+    const avgWatchPercentage = videoQuestions.length > 0 ? totalWatchPercentage / videoQuestions.length : 0;
+    const avgTimeSpent = videoQuestions.length > 0 ? totalTimeSpent / videoQuestions.length : 0;
+    const accuracy = (correctAnswers / videoQuestions.length) * 100;
+
+    // Determine learning behavior category
+    let behaviorCategory = '';
+    let behaviorDescription = '';
+    let behaviorIcon = '';
+    let behaviorColor = '';
+    
+    // Calculate behavior based on watch percentage, time, and accuracy
+    const veryQuickAnswers = videoQuestions.filter(q => q.timeSpent < 5).length;
+    const skippedVideos = videoQuestions.filter(q => !q.videoAnalytics || q.videoAnalytics.watchPercentage < 20).length;
+    
+    if (avgWatchPercentage >= 70 && avgTimeSpent >= 20 && veryQuickAnswers <= 1) {
+      behaviorCategory = 'Engaged Learner';
+      behaviorDescription = 'Student is watching videos attentively and taking time to understand the content before answering questions.';
+      behaviorIcon = '🎓';
+      behaviorColor = 'green';
+    } else if (avgWatchPercentage >= 50 && avgTimeSpent >= 10) {
+      behaviorCategory = 'Moderate Engagement';
+      behaviorDescription = 'Student is partially watching videos but could benefit from more careful attention to the content.';
+      behaviorIcon = '📚';
+      behaviorColor = 'blue';
+    } else if (skippedVideos >= videoQuestions.length / 2 || veryQuickAnswers >= videoQuestions.length / 2) {
+      behaviorCategory = 'Needs Attention';
+      behaviorDescription = 'Student is skipping videos or answering too quickly without proper engagement. Individual support recommended.';
+      behaviorIcon = '⚠️';
+      behaviorColor = 'red';
+    } else {
+      behaviorCategory = 'Developing Habits';
+      behaviorDescription = 'Student is still developing effective video learning habits. Guidance on proper study techniques would be beneficial.';
+      behaviorIcon = '🌱';
+      behaviorColor = 'yellow';
+    }
+
+    // Generate specific recommendations
+    const recommendations = [];
+    if (avgWatchPercentage < 60) {
+      recommendations.push({
+        type: 'critical',
+        title: 'Watch Complete Videos',
+        message: 'Student is not watching videos fully. Encourage watching at least 70% of each video for better understanding.'
+      });
+    }
+    if (veryQuickAnswers > 2) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Take More Time',
+        message: 'Multiple questions answered in less than 5 seconds. Student should spend more time thinking through answers.'
+      });
+    }
+    if (accuracy < 50 && avgWatchPercentage >= 60) {
+      recommendations.push({
+        type: 'info',
+        title: 'Comprehension Support',
+        message: 'Student is watching videos but struggling with questions. Additional explanations or practice may help.'
+      });
+    }
+    if (accuracy >= 70 && avgWatchPercentage >= 70) {
+      recommendations.push({
+        type: 'success',
+        title: 'Excellent Performance',
+        message: 'Student demonstrates strong video learning habits and good comprehension. Keep up the good work!'
+      });
+    }
+    if (skippedVideos > 0) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Video Engagement Required',
+        message: `${skippedVideos} out of ${videoQuestions.length} videos were skipped or barely watched. All videos should be viewed for complete learning.`
+      });
+    }
+
+    return {
+      totalVideoQuestions: videoQuestions.length,
+      questionsWatched,
+      avgWatchPercentage,
+      avgTimeSpent,
+      accuracy,
+      correctAnswers,
+      behaviorCategory,
+      behaviorDescription,
+      behaviorIcon,
+      behaviorColor,
+      recommendations,
+      videoDetails
+    };
+  };
+
+  const videoAnalytics = calculateVideoAnalytics();
+
   if (loading || !results) {
     return (
       <div className="container mx-auto p-6 flex items-center justify-center min-h-screen">
@@ -304,6 +437,212 @@ const AdvancedQuizResults: React.FC = () => {
           })}
         </CardContent>
       </Card>
+
+      {/* Video Learning Analytics Section */}
+      {videoAnalytics && videoAnalytics.totalVideoQuestions > 0 && (
+        <Card className="mb-6 border-2 border-purple-200">
+          <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
+            <CardTitle className="flex items-center gap-2 text-purple-900">
+              <Video className="h-6 w-6" />
+              Video Learning Report
+            </CardTitle>
+            <p className="text-sm text-purple-700">
+              Analysis of video engagement and learning behavior
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6 pt-6">
+            
+            {/* Learning Behavior Category */}
+            <div className={`p-6 rounded-lg border-2 ${
+              videoAnalytics.behaviorColor === 'green' ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' :
+              videoAnalytics.behaviorColor === 'blue' ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300' :
+              videoAnalytics.behaviorColor === 'yellow' ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300' :
+              'bg-gradient-to-r from-red-50 to-orange-50 border-red-300'
+            }`}>
+              <div className="flex items-start gap-4">
+                <div className="text-5xl">{videoAnalytics.behaviorIcon}</div>
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold mb-2">
+                    Learning Behavior: {videoAnalytics.behaviorCategory}
+                  </h3>
+                  <p className={`text-base ${
+                    videoAnalytics.behaviorColor === 'green' ? 'text-green-800' :
+                    videoAnalytics.behaviorColor === 'blue' ? 'text-blue-800' :
+                    videoAnalytics.behaviorColor === 'yellow' ? 'text-yellow-800' :
+                    'text-red-800'
+                  }`}>
+                    {videoAnalytics.behaviorDescription}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Performance Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Video Performance */}
+              <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Video className="h-5 w-5 text-purple-600" />
+                  <span className="font-semibold text-gray-800">Video Performance</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Accuracy:</span>
+                    <span className="text-lg font-bold text-purple-600">
+                      {videoAnalytics.accuracy.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Correct:</span>
+                    <span className="text-sm font-semibold">
+                      {videoAnalytics.correctAnswers}/{videoAnalytics.totalVideoQuestions}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Engagement Level */}
+              <div className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Eye className="h-5 w-5 text-blue-600" />
+                  <span className="font-semibold text-gray-800">Video Engagement</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Avg Watched:</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {videoAnalytics.avgWatchPercentage.toFixed(0)}%
+                    </span>
+                  </div>
+                  <Progress value={videoAnalytics.avgWatchPercentage} className="h-2" />
+                  <p className="text-xs text-gray-600">
+                    {videoAnalytics.avgWatchPercentage >= 70 ? '✅ Good engagement' :
+                     videoAnalytics.avgWatchPercentage >= 50 ? '⚠️ Moderate engagement' :
+                     '❌ Low engagement'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Time Management */}
+              <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="h-5 w-5 text-green-600" />
+                  <span className="font-semibold text-gray-800">Time Management</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Avg per Q:</span>
+                    <span className="text-lg font-bold text-green-600">
+                      {videoAnalytics.avgTimeSpent.toFixed(0)}s
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    {videoAnalytics.avgTimeSpent >= 20 && videoAnalytics.avgTimeSpent <= 90 
+                      ? '✅ Good pacing' :
+                     videoAnalytics.avgTimeSpent < 20 
+                      ? '⚠️ Too quick' :
+                      '⚠️ Too slow'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recommendations for Student/Teacher */}
+            {videoAnalytics.recommendations.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Brain className="h-5 w-5 text-purple-600" />
+                  Action Items & Recommendations
+                </h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {videoAnalytics.recommendations.map((rec, index) => (
+                    <div 
+                      key={index}
+                      className={`p-4 rounded-lg border-l-4 ${
+                        rec.type === 'success' ? 'bg-green-50 border-green-500' :
+                        rec.type === 'critical' ? 'bg-red-50 border-red-500' :
+                        rec.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
+                        'bg-blue-50 border-blue-500'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="text-2xl">
+                          {rec.type === 'success' ? '✅' :
+                           rec.type === 'critical' ? '🚨' :
+                           rec.type === 'warning' ? '⚠️' :
+                           '💡'}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold mb-1">{rec.title}</h4>
+                          <p className="text-sm text-gray-700">{rec.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Individual Video Question Performance */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Target className="h-5 w-5 text-purple-600" />
+                Question-wise Video Engagement
+              </h3>
+              <div className="space-y-2">
+                {videoAnalytics.videoDetails.map((detail, index) => (
+                  <div 
+                    key={detail.questionId} 
+                    className={`p-3 rounded-lg border ${
+                      detail.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Badge className={detail.isCorrect ? 'bg-green-600' : 'bg-red-600'}>
+                          Q{index + 1}
+                        </Badge>
+                        <span className="text-sm font-medium">
+                          {detail.isCorrect ? '✅ Correct' : '❌ Incorrect'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-gray-600">
+                          Watched: <span className="font-semibold text-blue-600">{detail.watchPercentage.toFixed(0)}%</span>
+                        </span>
+                        <span className="text-gray-600">
+                          Time: <span className="font-semibold text-purple-600">{detail.timeSpent}s</span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <Progress value={detail.watchPercentage} className="h-1" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Teacher's Note Section */}
+            <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-2 border-amber-300">
+              <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                For Teacher
+              </h4>
+              <p className="text-sm text-amber-800">
+                {videoAnalytics.behaviorColor === 'green' 
+                  ? '✅ This student demonstrates excellent video learning habits. They are engaged, thoughtful, and achieving good results. Minimal intervention needed.'
+                  : videoAnalytics.behaviorColor === 'blue'
+                  ? '📘 This student shows moderate engagement. Consider encouraging them to watch videos more completely and take more time with questions.'
+                  : videoAnalytics.behaviorColor === 'yellow'
+                  ? '🔔 This student is developing their learning approach. They would benefit from guidance on effective video learning strategies and study habits.'
+                  : '🚨 This student needs immediate attention. They are not engaging with video content properly. Individual support, parent communication, and study habit coaching recommended.'}
+              </p>
+            </div>
+
+          </CardContent>
+        </Card>
+      )}
 
       {/* Comparative Analysis */}
       {results.allStudentsStats && (
