@@ -135,6 +135,14 @@ export default function CreateQuizNew() {
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [videoQuestionSets, setVideoQuestionSets] = useState<any[]>([]);
   
+  // MCQ and Audio question hierarchical selection states
+  const [mcqAudioSelectionStep, setMcqAudioSelectionStep] = useState<'subject' | 'topic' | 'questions'>('subject');
+  const [mcqAudioAvailableSubjects, setMcqAudioAvailableSubjects] = useState<string[]>([]);
+  const [mcqAudioAvailableTopics, setMcqAudioAvailableTopics] = useState<string[]>([]);
+  const [mcqAudioSelectedSubject, setMcqAudioSelectedSubject] = useState<string>('');
+  const [mcqAudioSelectedTopic, setMcqAudioSelectedTopic] = useState<string>('');
+  const [currentQuestionType, setCurrentQuestionType] = useState<'mcq' | 'audio' | null>(null);
+  
   const [teacherId, setTeacherId] = useState('');
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [quizToUpdate, setQuizToUpdate] = useState<string>('');
@@ -334,58 +342,54 @@ export default function CreateQuizNew() {
     setSelectedSlot(slotIndex);
     
     try {
-      let endpoint = '';
-      let questions: Question[] = [];
-      
       switch (slot.type) {
-        case 'mcq':
-          endpoint = `${API_URL}/questions/`;
-          const mcqResponse = await axios.get(endpoint);
-          questions = mcqResponse.data.map((q: any) => ({
-            _id: q._id || q.id,
-            questionId: q.questionId || q.id,
-            subject: q.subject || 'N/A',
-            class: q.class || 'N/A',
-            topic: q.topic || 'N/A',
-            subtopic: q.subtopic || '',
-            question: q.question || q.questionText || '',
-            options: q.options || [],
-            correctAnswer: q.correctAnswer || q.answer || '',
-            questionImage: q.questionImage || q.image || '',
-            difficulty: q.difficulty || '',
-            type: 'mcq'
-          }));
-          setAvailableQuestions(questions);
-          setFilteredQuestions(questions);
-          setIsFilterDialogOpen(true);
-          break;
+        case 'mcq': {
+          setCurrentQuestionType('mcq');
+          // For MCQ questions, load all subjects first (similar to video questions)
+          const subjectsResponse = await axios.get(`${API_URL}/questions/`);
+          const allQuestions = subjectsResponse.data;
           
-        case 'audio':
-          endpoint = `${API_URL}/audio-questions/`;
-          const audioResponse = await axios.get(endpoint);
-          questions = audioResponse.data.map((q: any) => ({
-            _id: q._id || q.id,
-            questionId: q.questionId || q.id,
-            subject: q.subject || 'N/A',
-            class: q.class || 'N/A',
-            topic: q.topic || 'N/A',
-            subtopic: q.subtopic || '',
-            question: q.question || q.questionText || '',
-            options: q.options || [],
-            correctAnswer: q.correctAnswer || q.answer || '',
-            audio: q.audio || q.audioUrl || '',
-            questionImage: q.questionImage || q.image || '',
-            difficulty: q.difficulty || '',
-            type: 'audio'
-          }));
-          setAvailableQuestions(questions);
-          setFilteredQuestions(questions);
-          setIsFilterDialogOpen(true);
-          break;
+          // Extract unique subjects
+          const subjects = [...new Set(allQuestions.map((q: any) => q.subject))].filter(Boolean) as string[];
+          setMcqAudioAvailableSubjects(subjects);
           
-        case 'video':
+          // Reset selection state
+          setMcqAudioSelectionStep('subject');
+          setMcqAudioSelectedSubject('');
+          setMcqAudioSelectedTopic('');
+          setMcqAudioAvailableTopics([]);
+          setFilteredQuestions([]);
+          
+          setIsFilterDialogOpen(true);
+          console.log('MCQ subjects loaded:', subjects);
+          break;
+        }
+          
+        case 'audio': {
+          setCurrentQuestionType('audio');
+          // For audio questions, load all subjects first (similar to video questions)
+          const subjectsResponse = await axios.get(`${API_URL}/audio-questions/`);
+          const allQuestions = subjectsResponse.data;
+          
+          // Extract unique subjects
+          const subjects = [...new Set(allQuestions.map((q: any) => q.subject))].filter(Boolean) as string[];
+          setMcqAudioAvailableSubjects(subjects);
+          
+          // Reset selection state
+          setMcqAudioSelectionStep('subject');
+          setMcqAudioSelectedSubject('');
+          setMcqAudioSelectedTopic('');
+          setMcqAudioAvailableTopics([]);
+          setFilteredQuestions([]);
+          
+          setIsFilterDialogOpen(true);
+          console.log('Audio subjects loaded:', subjects);
+          break;
+        }
+          
+        case 'video': {
           // For video questions, load all data and start hierarchical selection
-          endpoint = `${API_URL}/video-questions/`;
+          const endpoint = `${API_URL}/video-questions/`;
           const videoResponse = await axios.get(endpoint);
           
           // Store all video question sets
@@ -405,11 +409,12 @@ export default function CreateQuizNew() {
           setIsFilterDialogOpen(true);
           console.log('Video subjects loaded:', subjects);
           break;
+        }
           
-        case 'puzzle':
-          endpoint = `${API_URL}/puzzles/`;
+        case 'puzzle': {
+          const endpoint = `${API_URL}/puzzles/`;
           const puzzleResponse = await axios.get(endpoint);
-          questions = puzzleResponse.data.map((q: any) => ({
+          const questions = puzzleResponse.data.map((q: any) => ({
             _id: q._id,
             questionId: q._id,
             subject: q.subject || 'संज्ञानात्मक',
@@ -434,9 +439,10 @@ export default function CreateQuizNew() {
           setFilteredQuestions(questions);
           setIsFilterDialogOpen(true);
           break;
+        }
       }
       
-      console.log(`Loaded ${questions.length} ${slot.type} questions`);
+      console.log(`Started loading ${slot.type} questions`);
     } catch (error: any) {
       console.error('Error loading questions:', error);
       toast({
@@ -533,6 +539,117 @@ export default function CreateQuizNew() {
       setAvailableTopics([]);
     }
   };
+
+  // Handle subject selection for MCQ/Audio questions
+  const handleMcqAudioSubjectSelect = async (subject: string) => {
+    console.log('handleMcqAudioSubjectSelect called with:', subject, 'type:', currentQuestionType);
+    setMcqAudioSelectedSubject(subject);
+    
+    try {
+      let topics: string[] = [];
+      
+      if (currentQuestionType === 'mcq') {
+        // Get topics for MCQ questions - use NMMS class as default
+        const apiUrl = `${API_URL}/questions/topics/NMMS/${encodeURIComponent(subject)}`;
+        console.log('Calling MCQ API:', apiUrl);
+        const topicsResponse = await axios.get(apiUrl);
+        console.log('MCQ API response:', topicsResponse.data);
+        topics = topicsResponse.data.topics || [];
+      } else if (currentQuestionType === 'audio') {
+        // Get topics for audio questions - use NMMS class
+        const apiUrl = `${API_URL}/audio-questions/topics/NMMS/${encodeURIComponent(subject)}`;
+        console.log('Calling Audio API:', apiUrl);
+        const topicsResponse = await axios.get(apiUrl);
+        console.log('Audio API response:', topicsResponse.data);
+        topics = topicsResponse.data.topics || [];
+      }
+      
+      console.log('Setting topics:', topics);
+      setMcqAudioAvailableTopics(topics);
+      setMcqAudioSelectionStep('topic');
+      console.log('Topics loaded successfully');
+    } catch (error: any) {
+      console.error('Error loading topics:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      toast({
+        title: "Error",
+        description: "Failed to load topics for the selected subject",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Handle topic selection for MCQ/Audio questions
+  const handleMcqAudioTopicSelect = async (topic: string) => {
+    setMcqAudioSelectedTopic(topic);
+    
+    try {
+      let questions: Question[] = [];
+      
+      if (currentQuestionType === 'mcq') {
+        // Get questions for MCQ - use NMMS class
+        const questionsResponse = await axios.get(`${API_URL}/questions/NMMS/${encodeURIComponent(mcqAudioSelectedSubject)}/${encodeURIComponent(topic)}`);
+        questions = questionsResponse.data.map((q: any) => ({
+          _id: q._id || q.id,
+          questionId: q.questionId || q.id,
+          subject: q.subject || 'N/A',
+          class: q.class || 'N/A',
+          topic: q.topic || 'N/A',
+          subtopic: q.subtopic || '',
+          question: q.question || q.questionText || '',
+          options: q.options || [],
+          correctAnswer: q.correctAnswer || q.answer || '',
+          questionImage: q.questionImage || q.image || '',
+          difficulty: q.difficulty || '',
+          type: 'mcq'
+        }));
+      } else if (currentQuestionType === 'audio') {
+        // Get questions for audio - use NMMS class
+        const questionsResponse = await axios.get(`${API_URL}/audio-questions/NMMS/${encodeURIComponent(mcqAudioSelectedSubject)}/${encodeURIComponent(topic)}`);
+        questions = questionsResponse.data.map((q: any) => ({
+          _id: q._id || q.id,
+          questionId: q.questionId || q.id,
+          subject: q.subject || 'N/A',
+          class: q.class || 'N/A',
+          topic: q.topic || 'N/A',
+          subtopic: q.subtopic || '',
+          question: q.question || q.questionText || '',
+          options: q.options || [],
+          correctAnswer: q.correctAnswer || q.answer || '',
+          audio: q.audio || q.audioUrl || '',
+          questionImage: q.questionImage || q.image || '',
+          difficulty: q.difficulty || '',
+          type: 'audio'
+        }));
+      }
+      
+      setFilteredQuestions(questions);
+      setMcqAudioSelectionStep('questions');
+      console.log('Questions loaded:', questions.length);
+    } catch (error: any) {
+      console.error('Error loading questions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load questions for the selected topic",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Handle back navigation for MCQ/Audio selection
+  const handleMcqAudioSelectionBack = () => {
+    if (mcqAudioSelectionStep === 'questions') {
+      setMcqAudioSelectionStep('topic');
+      setMcqAudioSelectedTopic('');
+      setFilteredQuestions([]);
+    } else if (mcqAudioSelectionStep === 'topic') {
+      setMcqAudioSelectionStep('subject');
+      setMcqAudioSelectedSubject('');
+      setMcqAudioSelectedTopic('');
+      setMcqAudioAvailableTopics([]);
+      setFilteredQuestions([]);
+    }
+  };
   
   // Select question for a slot
   const selectQuestion = (question: Question) => {
@@ -553,6 +670,14 @@ export default function CreateQuizNew() {
     setAvailableSubjects([]);
     setAvailableTopics([]);
     setVideoQuestionSets([]);
+    
+    // Reset MCQ/Audio selection states
+    setMcqAudioSelectionStep('subject');
+    setMcqAudioSelectedSubject('');
+    setMcqAudioSelectedTopic('');
+    setMcqAudioAvailableSubjects([]);
+    setMcqAudioAvailableTopics([]);
+    setCurrentQuestionType(null);
     
     toast({
       title: "Question Selected",
@@ -1110,6 +1235,157 @@ export default function CreateQuizNew() {
                       </div>
                     )}
                   </div>
+                ) : selectedSlot !== null && (questionSlots[selectedSlot].type === 'mcq' || questionSlots[selectedSlot].type === 'audio') ? (
+                  <>
+                    {/* Breadcrumb for MCQ/Audio */}
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                      <span className="cursor-pointer hover:text-blue-600" onClick={() => {
+                        if (mcqAudioSelectionStep !== 'subject') handleMcqAudioSelectionBack();
+                      }}>
+                        📚 Subject
+                      </span>
+                      {mcqAudioSelectionStep !== 'subject' && (
+                        <>
+                          <span>→</span>
+                          <span className={`${mcqAudioSelectionStep === 'topic' ? 'font-bold text-blue-700' : 'cursor-pointer hover:text-blue-600'}`}
+                                onClick={() => {
+                                  if (mcqAudioSelectionStep === 'questions') handleMcqAudioSelectionBack();
+                                }}>
+                            📖 {mcqAudioSelectedSubject || 'Topic'}
+                          </span>
+                        </>
+                      )}
+                      {mcqAudioSelectionStep === 'questions' && (
+                        <>
+                          <span>→</span>
+                          <span className="font-bold text-blue-700">📝 {mcqAudioSelectedTopic}</span>
+                        </>
+                      )}
+                    </div>
+                    
+                    {/* Step 1: Subject Selection for MCQ/Audio */}
+                    {mcqAudioSelectionStep === 'subject' && (
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-blue-700">Select Subject</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          {mcqAudioAvailableSubjects.map((subject) => (
+                            <Card 
+                              key={subject}
+                              className="cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-all"
+                              onClick={() => handleMcqAudioSubjectSelect(subject)}
+                            >
+                              <CardContent className="p-6 text-center">
+                                <div className="text-2xl mb-2">📚</div>
+                                <div className="font-bold text-lg">{subject}</div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Step 2: Topic Selection for MCQ/Audio */}
+                    {mcqAudioSelectionStep === 'topic' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-blue-700">Select Topic from {mcqAudioSelectedSubject}</h3>
+                          <Button variant="outline" size="sm" onClick={handleMcqAudioSelectionBack}>← Back</Button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          {mcqAudioAvailableTopics.map((topic) => (
+                            <Card 
+                              key={topic}
+                              className="cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-all"
+                              onClick={() => handleMcqAudioTopicSelect(topic)}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xl">📖</span>
+                                  <span className="font-bold text-lg">{topic}</span>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Step 3: Question Selection for MCQ/Audio */}
+                    {mcqAudioSelectionStep === 'questions' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-blue-700">
+                            Select {questionSlots[selectedSlot].type.toUpperCase()} Question from {mcqAudioSelectedTopic}
+                          </h3>
+                          <Button variant="outline" size="sm" onClick={handleMcqAudioSelectionBack}>← Back</Button>
+                        </div>
+                        <div className="max-h-96 overflow-y-auto space-y-3">
+                          {filteredQuestions.map((question) => (
+                            <Card 
+                              key={question._id}
+                              className="cursor-pointer hover:bg-blue-50 hover:border-blue-400 transition-all"
+                              onClick={() => selectQuestion(question)}
+                            >
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <div className="flex-1">
+                                    {/* Question Text */}
+                                    <div className="font-medium text-gray-900 mb-2">
+                                      {question.question || 'No question text'}
+                                    </div>
+                                    
+                                    {/* Audio for audio questions */}
+                                    {question.type === 'audio' && question.audio && (
+                                      <div className="mb-2">
+                                        <audio controls className="w-full max-w-md">
+                                          <source src={question.audio} type="audio/mpeg" />
+                                          <source src={question.audio} type="audio/mp3" />
+                                          Your browser does not support audio playback.
+                                        </audio>
+                                      </div>
+                                    )}
+                                    
+                                    {/* Options */}
+                                    {question.options && question.options.length > 0 && (
+                                      <div className="grid grid-cols-2 gap-1 mb-2">
+                                        {question.options.map((opt, optIdx) => (
+                                          <div
+                                            key={optIdx} 
+                                            className={`text-sm px-3 py-2 rounded-md flex items-center gap-2 ${
+                                              opt === question.correctAnswer 
+                                                ? 'bg-green-100 text-green-900 font-semibold border-2 border-green-400' 
+                                                : 'bg-gray-50 text-gray-700 border border-gray-200'
+                                            }`}
+                                          >
+                                            <span className="font-bold bg-white px-2 py-0.5 rounded">
+                                              {String.fromCharCode(65 + optIdx)}
+                                            </span>
+                                            <span>{opt}</span>
+                                            {opt === question.correctAnswer && (
+                                              <span className="ml-auto text-green-700">✓</span>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    
+                                    {/* Hint */}
+                                    {question.hint && (question.hint as any).text && (
+                                      <div className="mt-2 p-2 bg-amber-50 border-l-3 border-amber-400 rounded">
+                                        <p className="text-xs text-amber-900">
+                                          <span className="font-semibold">💡 Hint:</span> {(question.hint as any).text}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : selectedSlot !== null && questionSlots[selectedSlot].type === 'video' ? (
                   <>
                     {/* Breadcrumb */}

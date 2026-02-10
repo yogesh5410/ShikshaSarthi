@@ -37,7 +37,7 @@ const generateMP3 = async (text, tempDir) => {
 
   // Step 1: Generate WAV using Piper
  /* const piperCmd = `echo "${escapedText}" | piper -m ~/piper-voices/hi/hi_IN-pratham-medium.onnx --length_scale 1.18 -f ${wavPath}`; */
-  const piperCmd = `echo "${escapedText}" | python3 -m piper -m /home/amathul/hi_IN-pratham-medium.onnx --length_scale 1.18 -f ${wavPath}`;
+  const piperCmd = `echo "${escapedText}" | piper -m ~/piper-voices/hi/hi_IN-pratham-medium.onnx --length_scale 1.18 -f ${wavPath}`;
 
   try {
     await execPromise(piperCmd);

@@ -3,6 +3,8 @@ const router = express.Router();
 const AudioQuestion = require("../models/AudioQuestion");
 const AudioQuizAttempt = require("../models/AudioQuizAttempt");
 const audioCache = require("../utils/audioCache");
+const path = require('path');
+const fs = require('fs');
 
 // Test route to create a sample attempt
 router.post("/test-attempt", async (req, res) => {
@@ -121,6 +123,22 @@ router.get("/topics/:class/:subject", async (req, res) => {
   }
 });
 
+// Get a single audio question by ID
+router.get("/question/:id", async (req, res) => {
+  try {
+    const question = await AudioQuestion.findById(req.params.id);
+    
+    if (!question) {
+      return res.status(404).json({ message: "Audio question not found" });
+    }
+
+    res.json(question);
+  } catch (error) {
+    console.error("Error fetching audio question:", error);
+    res.status(500).json({ message: "Error fetching audio question", error: error.message });
+  }
+});
+
 // Get audio questions by class, subject, and topic
 router.get("/:class/:subject/:topic", async (req, res) => {
   try {
@@ -169,36 +187,22 @@ router.get("/:class/:subject/:topic", async (req, res) => {
   }
 });
 
-// Get all audio questions for a subject in a class
-router.get("/:class/:subject", async (req, res) => {
+// Serve cached audio files
+// Frontend may request: /api/audio-questions/audio/<filename> (proxied to backend /audio-questions/audio/:filename)
+router.get('/audio/:filename', async (req, res) => {
   try {
-    const { class: className, subject } = req.params;
+    const { filename } = req.params;
+    const filePath = path.join(__dirname, '..', 'data', 'audio-cache', filename);
 
-    const questions = await AudioQuestion.find({
-      class: className,
-      subject: decodeURIComponent(subject)
-    });
-
-    res.json(questions);
-  } catch (error) {
-    console.error("Error fetching audio questions:", error);
-    res.status(500).json({ message: "Error fetching audio questions", error: error.message });
-  }
-});
-
-// Get a single audio question by ID
-router.get("/question/:id", async (req, res) => {
-  try {
-    const question = await AudioQuestion.findById(req.params.id);
-    
-    if (!question) {
-      return res.status(404).json({ message: "Audio question not found" });
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Audio file not found' });
     }
 
-    res.json(question);
-  } catch (error) {
-    console.error("Error fetching audio question:", error);
-    res.status(500).json({ message: "Error fetching audio question", error: error.message });
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.sendFile(filePath);
+  } catch (err) {
+    console.error('Error serving cached audio file:', err);
+    res.status(500).json({ message: 'Error serving audio file' });
   }
 });
 
