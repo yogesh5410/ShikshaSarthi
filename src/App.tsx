@@ -83,8 +83,6 @@ const AppRoutes = () => {
       <Route path="/about" element={<About />} />
       <Route path="/not-authorized" element={<NotAuthorized />} />
       <Route path="/uploadquestion" element={<Upload_question />} />
-      <Route path="/test" element={<MemoryMatchGrid/>} />
-      <Route path="/math" element={<MatchPieces/>} />
       <Route path="/demo-test" element={<DemoTest />} />
 
 
@@ -113,6 +111,8 @@ const AppRoutes = () => {
       <Route path="/student/video-questions/:subject" element={<VideoSubjectTopics />} />
       <Route path="/student/video-quiz/:subject/:topic" element={<VideoQuizPlayer />} />
       <Route path="/student/multimedia/puzzles" element={<Puzzles />} />
+      <Route path="/student/puzzles/memory-match" element={<MemoryMatchGrid/>} />
+      <Route path="/student/puzzles/match-pieces" element={<MatchPieces/>} />
       <Route path="/student/multimedia/miscellaneous" element={<MAT />} />
       <Route path="/student/mat" element={<MAT />} />
       <Route path="/student/mat/:module" element={<MATPractice />} />

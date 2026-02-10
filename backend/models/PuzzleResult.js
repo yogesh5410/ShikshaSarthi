@@ -22,6 +22,28 @@ const puzzleResultSchema = new mongoose.Schema({
   nearbyClicks: Number,
   memoryLevel: String,
 
+  // Enhanced cognitive assessment metrics
+  cognitiveMetrics: {
+    workingMemory: Number,           // Core memory capacity (0-1)
+    attentionControl: Number,        // Focus and inhibition control (0-1)
+    processingSpeed: Number,         // Cognitive efficiency (0-1)
+    strategicEfficiency: Number,     // Planning and resource management (0-1)
+    terminationPenalty: Number,      // Performance adjustment factor (0-1)
+    averageClickInterval: Number,    // Time between clicks in seconds
+  },
+
+  // Detailed gameplay metrics for analysis
+  gameplayMetrics: {
+    totalPairs: Number,
+    correctPairs: Number,
+    totalClicks: Number,
+    incorrectClicks: Number,
+    nearbyClicks: Number,
+    timeTaken: Number,
+    mode: String,
+    clickEfficiency: Number,         // Ratio of optimal to actual clicks
+  },
+
   // Match Pieces specific
   totalImages: Number,
   imagesCompleted: Number,

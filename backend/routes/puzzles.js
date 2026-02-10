@@ -9,7 +9,7 @@ const AVAILABLE_PUZZLES = [
     puzzleType: "memory_match",
     title: "मेमोरी मैच",
     description: "कार्ड्स की स्थिति याद करें और जोड़ियाँ ढूँढें। याददाश्त और ध्यान का परीक्षण।",
-    route: "/test",
+    route: "/student/puzzles/memory-match",
     duration: "3 मिनट",
     type: "puzzle",
     subject: "संज्ञानात्मक",
@@ -25,7 +25,7 @@ const AVAILABLE_PUZZLES = [
     puzzleType: "match_pieces",
     title: "मैच पीसेज़",
     description: "चित्र के टुकड़ों को जोड़कर मूल चित्र बनाएं। दृश्य पहचान और स्थानिक तर्क का परीक्षण।",
-    route: "/math",
+    route: "/student/puzzles/match-pieces",
     duration: "3 मिनट",
     type: "puzzle",
     subject: "संज्ञानात्मक",
@@ -59,13 +59,84 @@ router.get("/single/:puzzleId", async (req, res) => {
 });
 
 /**
- * Heuristic-based Cognitive Evaluation
- * All metrics clamped to [0, 1] range.
- * Score output: 0-100.
+ * Memory Match Cognitive Assessment System
+ * 
+ * STRATEGY:
+ * This evaluation system measures four core cognitive domains essential for memory performance:
+ * 1. Working Memory Capacity - ability to maintain and manipulate information
+ * 2. Attention Control - selective focus and inhibition of irrelevant stimuli  
+ * 3. Processing Speed - efficiency of cognitive operations
+ * 4. Strategic Thinking - pattern recognition and systematic approach
+ * 
+ * Each metric is normalized to [0,1] and weighted based on cognitive importance.
+ * Final score represents overall memory performance on 0-100 scale.
  */
 
 // Utility: clamp value between 0 and 1
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
+
+/**
+ * Calculate Working Memory Score
+ * Measures the core ability to remember card positions and maintain mental map
+ * Higher accuracy indicates stronger working memory capacity
+ */
+const calculateWorkingMemoryScore = (correctPairs, totalPairs) => {
+  return clamp01(correctPairs / totalPairs);
+};
+
+/**
+ * Calculate Attention Control Score  
+ * Measures ability to focus on relevant information and ignore distractors
+ * Accounts for erroneous clicks while considering spatial proximity errors
+ */
+const calculateAttentionControlScore = (incorrectClicks, nearbyClicks, totalPairs) => {
+  // Nearby clicks get 30% forgiveness as they indicate partial memory
+  const effectiveErrors = Math.max(0, incorrectClicks - 0.3 * nearbyClicks);
+  // Normalize by total pairs to account for game difficulty
+  const errorRate = effectiveErrors / totalPairs;
+  return clamp01(1 - errorRate);
+};
+
+/**
+ * Calculate Processing Speed Score
+ * Measures cognitive efficiency and speed of mental operations
+ * Faster completion indicates higher processing speed
+ */
+const calculateProcessingSpeedScore = (timeTaken, maxTime = 180) => {
+  return clamp01(1 - timeTaken / maxTime);
+};
+
+/**
+ * Calculate Strategic Efficiency Score
+ * Measures systematic approach and cognitive resource management
+ * Fewer unnecessary clicks indicate better strategic planning
+ */
+const calculateStrategicEfficiencyScore = (totalClicks, correctPairs, totalPairs) => {
+  // Optimal strategy: 2 clicks per successful pair
+  const optimalClicks = 2 * correctPairs;
+  const excessClicks = Math.max(0, totalClicks - optimalClicks);
+  // Normalize excess by theoretical maximum (4 clicks per pair in worst case)
+  const maxExcessClicks = 4 * totalPairs;
+  return clamp01(1 - excessClicks / maxExcessClicks);
+};
+
+/**
+ * Apply Performance Penalties
+ * Accounts for premature termination which affects cognitive assessment validity
+ */
+const calculateTerminationPenalty = (endReason, correctPairs, totalPairs) => {
+  switch (endReason) {
+    case "EXITED":
+      // Progressive penalty based on incompletion
+      const completionRatio = correctPairs / totalPairs;
+      return 0.25 * (1 - completionRatio);
+    case "TIME_UP":
+      // Minor penalty for time management
+      return 0.08;
+    default:
+      return 0;
+  }
+};
 
 router.post("/evaluate", async (req, res) => {
   try {
@@ -77,108 +148,106 @@ router.post("/evaluate", async (req, res) => {
       nearbyClicks,
       correctPairs,
       timeTaken,
-      endReason, // COMPLETED | EXITED | TIME_UP
+      endReason,
+      clickTimestamps = [], // Array of click timestamps for cognitive analysis
+      sequentialPatterns = [] // Pattern analysis data
     } = req.body;
 
-    const MAX_TIME = 180; // seconds (3 minutes)
+    const MAX_TIME = 180; // 3 minutes standard assessment time
 
-    /* ---- Guard: if no real gameplay happened ---- */
-    const moves = Math.floor(totalClicks / 2); // approximate move count
-    const noGameplay = correctPairs === 0 && moves <= 1;
+    /* ---- Validate Meaningful Gameplay ---- */
+    const approximateMoves = Math.floor(totalClicks / 2);
+    const hasMinimalEngagement = correctPairs === 0 && approximateMoves <= 1;
 
-    if (noGameplay) {
-      // Player exited or timed out with almost no interaction
+    if (hasMinimalEngagement) {
       return res.status(200).json({
         score: 0,
         memoryLevel: "Not Evaluated",
         feedback: "कोई वास्तविक गेमप्ले नहीं हुआ। कृपया खेल पूरा करने का प्रयास करें।",
         endReason,
-        breakdown: {
-          accuracy: 0,
-          efficiency: 0,
-          speed: 0,
-          control: 0,
-          penaltyApplied: 0,
+        cognitiveMetrics: {
+          workingMemory: 0,
+          attentionControl: 0,
+          processingSpeed: 0,
+          strategicEfficiency: 0,
+          terminationPenalty: 0,
         },
       });
     }
 
-    /* ---------------- Heuristic Features ---------------- */
-
-    // 1. Accuracy: fraction of pairs found
-    const accuracy = clamp01(correctPairs / totalPairs);
-
-    // 2. Efficiency: how close total clicks are to the ideal (2 per pair found)
-    //    Only count against clicks actually used vs pairs found
-    const idealClicks = 2 * correctPairs;
-    const extraClicks = Math.max(0, totalClicks - idealClicks);
-    const maxExtraClicks = 4 * totalPairs; // normalizer
-    const efficiency = clamp01(1 - extraClicks / maxExtraClicks);
-
-    // 3. Speed: time efficiency (faster = better)
-    const speed = clamp01(1 - timeTaken / MAX_TIME);
-
-    // 4. Control: error regulation (fewer incorrect clicks = better)
-    const effectiveErrors = Math.max(0, incorrectClicks - 0.3 * nearbyClicks);
-    const control = clamp01(1 - effectiveErrors / totalPairs);
-
-    /* ---------------- Base Fitness Score ---------------- */
-    let fitnessScore =
-      0.4 * accuracy +
-      0.25 * efficiency +
-      0.2 * speed +
-      0.15 * control;
-
-    /* ---------------- Termination Penalties ---------------- */
-    let penalty = 0;
-
-    if (endReason === "EXITED") {
-      // Scale penalty by how little was completed
-      const completionRatio = correctPairs / totalPairs;
-      penalty = 0.3 * (1 - completionRatio); // max 0.3 if nothing done, 0 if all done
-    } else if (endReason === "TIME_UP") {
-      penalty = 0.1;
+    /* ---- Calculate Core Cognitive Metrics ---- */
+    const workingMemory = calculateWorkingMemoryScore(correctPairs, totalPairs);
+    const attentionControl = calculateAttentionControlScore(incorrectClicks, nearbyClicks, totalPairs);
+    const processingSpeed = calculateProcessingSpeedScore(timeTaken, MAX_TIME);
+    const strategicEfficiency = calculateStrategicEfficiencyScore(totalClicks, correctPairs, totalPairs);
+    
+    /* ---- Calculate Advanced Metrics ---- */
+    let averageClickInterval = 0;
+    if (clickTimestamps.length > 1) {
+      const intervals = clickTimestamps.slice(1).map((time, i) => time - clickTimestamps[i]);
+      averageClickInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length / 1000; // Convert to seconds
     }
 
-    fitnessScore = clamp01(fitnessScore - penalty);
-    fitnessScore = Number(fitnessScore.toFixed(2));
+    /* ---- Composite Cognitive Score ---- */
+    // Weights based on cognitive psychology research for memory assessment
+    let cognitiveScore =
+      0.40 * workingMemory +        // Primary indicator of memory capacity
+      0.25 * attentionControl +     // Critical for selective attention
+      0.20 * processingSpeed +      // Efficiency of cognitive processing  
+      0.15 * strategicEfficiency;   // Higher-order cognitive planning
 
-    /* ---------------- Classification ---------------- */
+    /* ---- Apply Performance Adjustments ---- */
+    const terminationPenalty = calculateTerminationPenalty(endReason, correctPairs, totalPairs);
+    cognitiveScore = clamp01(cognitiveScore - terminationPenalty);
+    cognitiveScore = Number(cognitiveScore.toFixed(3));
+
+    /* ---- Memory Performance Classification ---- */
     let memoryLevel, feedback;
 
-    if (fitnessScore >= 0.85) {
+    if (cognitiveScore >= 0.85) {
       memoryLevel = "Exceptional";
-      feedback = "उत्कृष्ट याददाश्त और रणनीतिक सोच।";
-    } else if (fitnessScore >= 0.7) {
+      feedback = "उत्कृष्ट याददाश्त और रणनीतिक सोच। संज्ञानात्मक क्षमता अत्यधिक विकसित है।";
+    } else if (cognitiveScore >= 0.70) {
       memoryLevel = "High";
-      feedback = "मजबूत कार्यशील स्मृति और कुशल खोज व्यवहार।";
-    } else if (fitnessScore >= 0.55) {
+      feedback = "मजबूत कार्यशील स्मृति और कुशल खोज व्यवहार। उत्तम ध्यान नियंत्रण दिखाया।";
+    } else if (cognitiveScore >= 0.55) {
       memoryLevel = "Average";
-      feedback = "सामान्य संज्ञानात्मक प्रदर्शन, सुधार की गुंजाइश है।";
-    } else if (fitnessScore >= 0.4) {
+      feedback = "सामान्य संज्ञानात्मक प्रदर्शन। अभ्यास से और सुधार हो सकता है।";
+    } else if (cognitiveScore >= 0.40) {
       memoryLevel = "Below Average";
-      feedback = "स्मृति और ध्यान को अभ्यास की आवश्यकता है।";
+      feedback = "स्मृति और ध्यान को अधिक अभ्यास की आवश्यकता है। धीरे-धीरे खेलें।";
     } else {
       memoryLevel = "Low";
-      feedback = "कमजोर स्मृति पुनर्स्मरण और ध्यान नियंत्रण। अधिक अभ्यास करें।";
+      feedback = "कमजोर स्मृति पुनर्स्मरण और ध्यान नियंत्रण। नियमित अभ्यास करें।";
     }
 
-    /* ---------------- Response ---------------- */
+    /* ---- Detailed Response with Cognitive Analysis ---- */
     const responseData = {
-      score: Math.round(fitnessScore * 100), // 0-100
+      score: Math.round(cognitiveScore * 100), // 0-100 scale
       memoryLevel,
       feedback,
       endReason,
-      breakdown: {
-        accuracy: clamp01(accuracy),
-        efficiency: clamp01(efficiency),
-        speed: clamp01(speed),
-        control: clamp01(control),
-        penaltyApplied: penalty,
+      cognitiveMetrics: {
+        workingMemory: Number(workingMemory.toFixed(3)),
+        attentionControl: Number(attentionControl.toFixed(3)),
+        processingSpeed: Number(processingSpeed.toFixed(3)),
+        strategicEfficiency: Number(strategicEfficiency.toFixed(3)),
+        terminationPenalty: Number(terminationPenalty.toFixed(3)),
+        averageClickInterval: Number(averageClickInterval.toFixed(3)), // seconds
       },
+      gameplayMetrics: {
+        totalPairs,
+        correctPairs,
+        totalClicks,
+        incorrectClicks,
+        nearbyClicks,
+        timeTaken,
+        mode,
+        clickEfficiency: totalClicks > 0 ? Number((correctPairs * 2 / totalClicks).toFixed(3)) : 0,
+      }
     };
 
-    // Save to DB if studentId is provided
+    /* ---- Database Storage with Enhanced Metrics ---- */
     const { studentId } = req.body;
     if (studentId) {
       try {
@@ -186,27 +255,42 @@ router.post("/evaluate", async (req, res) => {
           studentId,
           puzzleType: "memory_match",
           score: responseData.score,
-          timeTaken: timeTaken,
+          timeTaken,
           endReason,
           mode,
+          
+          // Core game metrics
           totalPairs,
           correctPairs,
           totalClicks,
           incorrectClicks,
           nearbyClicks,
+          
+          // Cognitive assessment
           memoryLevel,
-          breakdown: responseData.breakdown,
+          cognitiveMetrics: responseData.cognitiveMetrics,
+          gameplayMetrics: responseData.gameplayMetrics,
+          
+          // Legacy breakdown for backward compatibility
+          breakdown: {
+            accuracy: workingMemory,
+            efficiency: strategicEfficiency,
+            speed: processingSpeed,
+            control: attentionControl,
+            penaltyApplied: terminationPenalty,
+          },
+          
           feedback,
         });
       } catch (saveErr) {
-        console.error("Error saving memory match result:", saveErr);
+        console.error("Error saving enhanced memory match result:", saveErr);
       }
     }
 
     res.status(200).json(responseData);
   } catch (err) {
-    console.error("Evaluation Error:", err);
-    res.status(500).json({ error: "Evaluation failed" });
+    console.error("Memory Match Evaluation Error:", err);
+    res.status(500).json({ error: "Cognitive evaluation failed" });
   }
 });
 

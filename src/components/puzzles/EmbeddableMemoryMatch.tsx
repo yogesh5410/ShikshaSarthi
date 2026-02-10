@@ -40,43 +40,73 @@ interface EmbeddableMemoryMatchProps {
     timeTaken: number;
     endReason: string;
     score: number; // 0-100 computed locally
+    clickTimestamps: number[]; // Array of click timestamps for cognitive analysis
+    sequentialPatterns: any[]; // Pattern analysis data
   }) => void;
 }
 
-/* ---- local heuristic score identical to backend /puzzles/evaluate ---- */
+/* ---- Enhanced scoring functions matching backend ---- */
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 
-const computeScore = (
+const calculateWorkingMemoryScore = (correctPairs: number, totalPairs: number) => {
+  return clamp01(correctPairs / totalPairs);
+};
+
+const calculateAttentionControlScore = (incorrectClicks: number, nearbyClicks: number, totalPairs: number) => {
+  const effectiveErrors = Math.max(0, incorrectClicks - 0.3 * nearbyClicks);
+  const errorRate = effectiveErrors / totalPairs;
+  return clamp01(1 - errorRate);
+};
+
+const calculateProcessingSpeedScore = (timeTaken: number, maxTime: number = 180) => {
+  return clamp01(1 - timeTaken / maxTime);
+};
+
+const calculateStrategicEfficiencyScore = (totalClicks: number, correctPairs: number, totalPairs: number) => {
+  const optimalClicks = 2 * correctPairs;
+  const excessClicks = Math.max(0, totalClicks - optimalClicks);
+  const maxExcessClicks = 4 * totalPairs;
+  return clamp01(1 - excessClicks / maxExcessClicks);
+};
+
+const calculateTerminationPenalty = (endReason: string, correctPairs: number, totalPairs: number) => {
+  switch (endReason) {
+    case "EXITED":
+      const completionRatio = correctPairs / totalPairs;
+      return 0.25 * (1 - completionRatio);
+    case "TIME_UP":
+      return 0.08;
+    default:
+      return 0;
+  }
+};
+
+const computeEnhancedScore = (
   totalPairs: number,
   totalClicks: number,
   incorrectClicks: number,
   nearbyClicks: number,
   correctPairs: number,
   timeTaken: number,
-  endReason: string
+  endReason: string,
+  clickTimestamps: number[]
 ) => {
-  const MAX_TIME = 180;
-  const accuracy = clamp01(correctPairs / totalPairs);
-  const idealClicks = 2 * correctPairs;
-  const extraClicks = Math.max(0, totalClicks - idealClicks);
-  const maxExtraClicks = 4 * totalPairs;
-  const efficiency = clamp01(1 - extraClicks / maxExtraClicks);
-  const speed = clamp01(1 - timeTaken / MAX_TIME);
-  const effectiveErrors = Math.max(0, incorrectClicks - 0.3 * nearbyClicks);
-  const control = clamp01(1 - effectiveErrors / totalPairs);
+  const workingMemory = calculateWorkingMemoryScore(correctPairs, totalPairs);
+  const attentionControl = calculateAttentionControlScore(incorrectClicks, nearbyClicks, totalPairs);
+  const processingSpeed = calculateProcessingSpeedScore(timeTaken, 180);
+  const strategicEfficiency = calculateStrategicEfficiencyScore(totalClicks, correctPairs, totalPairs);
+  
+  // Weighted cognitive score
+  let cognitiveScore = 
+    0.40 * workingMemory +
+    0.25 * attentionControl +
+    0.20 * processingSpeed +
+    0.15 * strategicEfficiency;
 
-  let fitnessScore = 0.4 * accuracy + 0.25 * efficiency + 0.2 * speed + 0.15 * control;
-
-  let penalty = 0;
-  if (endReason === "EXITED") {
-    penalty = 0.25;
-    if (accuracy < 0.3) penalty += 0.15;
-  } else if (endReason === "TIME_UP") {
-    penalty = accuracy >= 0.8 ? 0 : 0.05;
-  }
-
-  fitnessScore = clamp01(fitnessScore - penalty);
-  return Math.round(fitnessScore * 100);
+  const terminationPenalty = calculateTerminationPenalty(endReason, correctPairs, totalPairs);
+  cognitiveScore = clamp01(cognitiveScore - terminationPenalty);
+  
+  return Math.round(cognitiveScore * 100);
 };
 
 const EmbeddableMemoryMatch: React.FC<EmbeddableMemoryMatchProps> = ({ onComplete }) => {
@@ -98,6 +128,8 @@ const EmbeddableMemoryMatch: React.FC<EmbeddableMemoryMatchProps> = ({ onComplet
   const [totalClicks, setTotalClicks] = useState(0);
   const [incorrectClicks, setIncorrectClicks] = useState(0);
   const [nearbyClicks, setNearbyClicks] = useState(0);
+  const [clickTimestamps, setClickTimestamps] = useState<number[]>([]); // Enhanced tracking
+  const [sequentialPatterns, setSequentialPatterns] = useState<any[]>([]); // Pattern data
 
   const [submitted, setSubmitted] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -139,21 +171,38 @@ const EmbeddableMemoryMatch: React.FC<EmbeddableMemoryMatchProps> = ({ onComplet
 
   const handleFlip = (card: CardType) => {
     if (previewPhase || flipped.length === 2 || card.matched || flipped.includes(card) || submitted) return;
+    
+    // Enhanced tracking: record click timestamp
+    const timestamp = Date.now();
+    setClickTimestamps(prev => [...prev, timestamp]);
     setTotalClicks(c => c + 1);
+    
     const newFlipped = [...flipped, card];
     setFlipped(newFlipped);
 
     if (newFlipped.length === 2) {
       setMoves(m => m + 1);
       if (newFlipped[0].image === newFlipped[1].image) {
+        // Successful match
         setCards(prev => prev.map(c => (c.image === card.image ? { ...c, matched: true } : c)));
         setMatches(m => m + 1);
         setFlipped([]);
       } else {
+        // Incorrect match - track error patterns
         setIncorrectClicks(i => i + 1);
+        
+        // Check if cards are spatially nearby (indicates partial memory)
         if (Math.abs(newFlipped[0].index - newFlipped[1].index) <= 2) {
           setNearbyClicks(n => n + 1);
         }
+        
+        // Record pattern for cognitive analysis
+        setSequentialPatterns(prev => [...prev, {
+          timestamp,
+          cardIndices: [newFlipped[0].index, newFlipped[1].index],
+          type: 'incorrect_match'
+        }]);
+        
         setTimeout(() => setFlipped([]), 700);
       }
     }
@@ -164,7 +213,18 @@ const EmbeddableMemoryMatch: React.FC<EmbeddableMemoryMatchProps> = ({ onComplet
     setSubmitted(true);
     const endReason = type === "completed" ? "COMPLETED" : "TIME_UP";
     const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-    const score = computeScore(pairCount, totalClicks, incorrectClicks, nearbyClicks, matches, timeTaken, endReason);
+    
+    // Compute enhanced score using new cognitive assessment
+    const score = computeEnhancedScore(
+      pairCount, 
+      totalClicks, 
+      incorrectClicks, 
+      nearbyClicks, 
+      matches, 
+      timeTaken, 
+      endReason,
+      clickTimestamps
+    );
 
     onComplete({
       puzzleType: "memory_match",
@@ -177,6 +237,8 @@ const EmbeddableMemoryMatch: React.FC<EmbeddableMemoryMatchProps> = ({ onComplet
       timeTaken,
       endReason,
       score,
+      clickTimestamps,
+      sequentialPatterns,
     });
   };
 
