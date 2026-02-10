@@ -355,6 +355,55 @@ router.post("/submit-advanced", async (req, res) => {
 
     await report.save();
 
+    // Also save puzzle results to PuzzleResult collection for puzzle history tracking
+    const PuzzleResult = require("../models/PuzzleResult");
+    const puzzleAnswers = answers.filter(ans => ans.questionType === 'puzzle' && ans.puzzleData);
+    for (const pAns of puzzleAnswers) {
+      try {
+        const pd = pAns.puzzleData;
+        const puzzleDoc = {
+          studentId: studentId.trim(),
+          puzzleType: pd.puzzleType,
+          score: pd.score || 0,
+          timeTaken: pd.timeTaken || 0,
+          endReason: pd.endReason || 'COMPLETED',
+        };
+
+        // Memory match specific fields
+        if (pd.puzzleType === 'memory_match') {
+          puzzleDoc.mode = pd.mode || 'individual';
+          puzzleDoc.totalPairs = pd.totalPairs;
+          puzzleDoc.correctPairs = pd.correctPairs;
+          puzzleDoc.totalClicks = pd.totalClicks;
+          puzzleDoc.incorrectClicks = pd.incorrectClicks;
+          puzzleDoc.nearbyClicks = pd.nearbyClicks;
+        }
+
+        // Match pieces specific fields
+        if (pd.puzzleType === 'match_pieces') {
+          puzzleDoc.totalImages = pd.totalImages;
+          puzzleDoc.imagesCompleted = pd.imagesCompleted;
+          puzzleDoc.totalMoves = pd.totalMoves;
+          if (pd.perImage) {
+            puzzleDoc.perImageSummary = pd.perImage.map(img => ({
+              imageIndex: img.imageIndex,
+              correct: img.correctPlacements,
+              total: img.totalPieces,
+              moves: img.moveCount,
+              completed: img.correctPlacements === img.totalPieces,
+              timeMs: img.timeTakenMs,
+            }));
+          }
+        }
+
+        await new PuzzleResult(puzzleDoc).save();
+        console.log(`Saved puzzle result for student ${studentId}, type: ${pd.puzzleType}, score: ${pd.score}`);
+      } catch (puzzleErr) {
+        console.error("Error saving puzzle result from quiz:", puzzleErr);
+        // Don't fail the whole submission for puzzle save errors
+      }
+    }
+
     // Update quiz attemptedBy array if not already present
     if (!quiz.attemptedBy.includes(studentId)) {
       quiz.attemptedBy.push(studentId);
