@@ -72,8 +72,8 @@ const MultimediaAssessment: React.FC = () => {
       iconColor: "text-green-600",
       hoverBorder: "hover:border-green-400",
       details: "Solve interactive puzzles including pattern recognition, logic puzzles, and brain teasers.",
-      count: "30 Puzzles",
-      difficulty: "Hard",
+      count: "2 Puzzles",
+      difficulty: "Medium",
       route: "/student/multimedia/puzzles"
     },
     {
@@ -192,7 +192,27 @@ const MultimediaAssessment: React.FC = () => {
                             className={`w-full ${assessment.iconColor} hover:opacity-90`}
                             variant="outline"
                           >
-                            {/* <PlayCircle className="h-4 w-4 mr-2" /> */}
+                            History
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : assessment.id === "puzzles" ? (
+                      <div className="w-full flex items-center gap-3">
+                        <Link to={assessment.route} className="flex-1">
+                          <Button
+                            className={`w-full ${assessment.iconColor} hover:opacity-90`}
+                            variant="outline"
+                          >
+                            <PlayCircle className="h-4 w-4 mr-2" />
+                            Start Assessment
+                          </Button>
+                        </Link>
+
+                        <Link to="/student/puzzle-history" className="w-40">
+                          <Button
+                            className={`w-full ${assessment.iconColor} hover:opacity-90`}
+                            variant="outline"
+                          >
                             History
                           </Button>
                         </Link>

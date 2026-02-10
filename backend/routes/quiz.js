@@ -55,10 +55,16 @@ router.get("/", async (req, res) => {
 // Get quiz by ID
 router.get("/:id", async (req, res) => {
   try {
-    const quiz = await Quiz.findOne({ quizId: req.params.id }).populate(
-      "questions"
-    );
+    const quiz = await Quiz.findOne({ quizId: req.params.id });
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
+
+    // Try to populate questions (may fail if mixed ID types like puzzle IDs)
+    try {
+      await quiz.populate("questions");
+    } catch (popErr) {
+      console.log("Question populate skipped (mixed ID types):", popErr.message);
+    }
+
     res.status(200).json(quiz);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -348,6 +354,82 @@ router.post("/submit-advanced", async (req, res) => {
     });
 
     await report.save();
+
+    // Also save puzzle results to PuzzleResult collection for puzzle history tracking
+    const PuzzleResult = require("../models/PuzzleResult");
+    const puzzleAnswers = answers.filter(ans => ans.questionType === 'puzzle' && ans.puzzleData);
+    for (const pAns of puzzleAnswers) {
+      try {
+        const pd = pAns.puzzleData;
+        const puzzleDoc = {
+          studentId: studentId.trim(),
+          puzzleType: pd.puzzleType,
+          score: pd.score || 0,
+          timeTaken: pd.timeTaken || 0,
+          endReason: pd.endReason || 'COMPLETED',
+        };
+
+        // Memory match specific fields
+        if (pd.puzzleType === 'memory_match') {
+          puzzleDoc.mode = pd.mode || 'individual';
+          puzzleDoc.totalPairs = pd.totalPairs;
+          puzzleDoc.correctPairs = pd.correctPairs;
+          puzzleDoc.totalClicks = pd.totalClicks;
+          puzzleDoc.incorrectClicks = pd.incorrectClicks;
+          puzzleDoc.nearbyClicks = pd.nearbyClicks;
+
+          // Enhanced cognitive metrics
+          if (pd.clickTimestamps && pd.clickTimestamps.length > 1) {
+            const intervals = pd.clickTimestamps.slice(1).map((time, i) => time - pd.clickTimestamps[i]);
+            const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length / 1000;
+            
+            puzzleDoc.cognitiveMetrics = {
+              workingMemory: Number(((pd.correctPairs || 0) / (pd.totalPairs || 1)).toFixed(3)),
+              attentionControl: Number((1 - Math.max(0, (pd.incorrectClicks || 0) - 0.3 * (pd.nearbyClicks || 0)) / (pd.totalPairs || 1)).toFixed(3)),
+              processingSpeed: Number((1 - (pd.timeTaken || 0) / 180).toFixed(3)),
+              strategicEfficiency: Number((1 - Math.max(0, (pd.totalClicks || 0) - 2 * (pd.correctPairs || 0)) / (4 * (pd.totalPairs || 1))).toFixed(3)),
+              terminationPenalty: pd.endReason === 'EXITED' ? 0.25 * (1 - (pd.correctPairs || 0) / (pd.totalPairs || 1)) : (pd.endReason === 'TIME_UP' ? 0.08 : 0),
+              averageClickInterval: avgInterval
+            };
+          }
+
+          // Enhanced gameplay metrics
+          puzzleDoc.gameplayMetrics = {
+            totalPairs: pd.totalPairs,
+            correctPairs: pd.correctPairs,
+            totalClicks: pd.totalClicks,
+            incorrectClicks: pd.incorrectClicks,
+            nearbyClicks: pd.nearbyClicks,
+            timeTaken: pd.timeTaken,
+            mode: pd.mode,
+            clickEfficiency: pd.totalClicks > 0 ? Number((pd.correctPairs * 2 / pd.totalClicks).toFixed(3)) : 0
+          };
+        }
+
+        // Match pieces specific fields (unchanged for now)
+        if (pd.puzzleType === 'match_pieces') {
+          puzzleDoc.totalImages = pd.totalImages;
+          puzzleDoc.imagesCompleted = pd.imagesCompleted;
+          puzzleDoc.totalMoves = pd.totalMoves;
+          if (pd.perImage) {
+            puzzleDoc.perImageSummary = pd.perImage.map(img => ({
+              imageIndex: img.imageIndex,
+              correct: img.correctPlacements,
+              total: img.totalPieces,
+              moves: img.moveCount,
+              completed: img.correctPlacements === img.totalPieces,
+              timeMs: img.timeTakenMs,
+            }));
+          }
+        }
+
+        await new PuzzleResult(puzzleDoc).save();
+        console.log(`Saved enhanced puzzle result for student ${studentId}, type: ${pd.puzzleType}, score: ${pd.score}`);
+      } catch (puzzleErr) {
+        console.error("Error saving enhanced puzzle result from quiz:", puzzleErr);
+        // Don't fail the whole submission for puzzle save errors
+      }
+    }
 
     // Update quiz attemptedBy array if not already present
     if (!quiz.attemptedBy.includes(studentId)) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Header from "@/components/Header";
-import { Clock, Trophy, Target, Zap, X, Play, Sparkles, ArrowRight, ArrowLeft, Brain, Eye, RotateCcw, ListChecks, Crosshair, Gauge, Timer, BarChart3, LogOut, DoorOpen } from "lucide-react";
+import { Clock, Trophy, Target, Zap, X, Play, Sparkles, ArrowRight, ArrowLeft, Brain, Eye, RotateCcw, ListChecks, Crosshair, Gauge, Timer, BarChart3, LogOut, DoorOpen, History } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +40,9 @@ const MemoryMatchGrid: React.FC = () => {
   const [matches, setMatches] = useState(0);
   const [startTime, setStartTime] = useState<number>(0);
 
+  // Student
+  const [studentId, setStudentId] = useState<string>("");
+
   // timers
   const [previewTimer, setPreviewTimer] = useState(PREVIEW_TIME);
   const [solveTimer, setSolveTimer] = useState(SOLVE_TIME);
@@ -58,6 +61,21 @@ const MemoryMatchGrid: React.FC = () => {
   const pairCount = mode === "individual" ? 10 : 20;
   const gridCols = mode === "individual" ? 5 : 8;
   const gridRows = mode === "individual" ? 4 : 5;
+
+  /* ---------------- LOAD STUDENT & HISTORY ---------------- */
+  useEffect(() => {
+    const studentData = localStorage.getItem("student");
+    if (studentData) {
+      try {
+        const parsed = JSON.parse(studentData);
+        if (parsed.student && parsed.student.studentId) {
+          setStudentId(parsed.student.studentId);
+        }
+      } catch (e) {
+        console.error("Error parsing student data:", e);
+      }
+    }
+  }, []);
 
   /* ---------------- START GAME ---------------- */
   const startGame = (selectedMode: "individual" | "group") => {
@@ -157,6 +175,7 @@ const MemoryMatchGrid: React.FC = () => {
 
     try {
       const res = await axios.post(`${API_URL}/puzzles/evaluate`, {
+        studentId: studentId || undefined,
         mode,
         totalPairs: pairCount,
         totalClicks,

@@ -410,18 +410,25 @@ export default function CreateQuizNew() {
           endpoint = `${API_URL}/puzzles/`;
           const puzzleResponse = await axios.get(endpoint);
           questions = puzzleResponse.data.map((q: any) => ({
-            _id: q._id || q.id,
-            questionId: q.questionId || q.id,
-            subject: q.subject || 'N/A',
-            class: q.class || 'N/A',
-            topic: q.topic || 'N/A',
-            subtopic: q.subtopic || '',
-            question: q.question || q.questionText || '',
-            options: q.options || [],
-            correctAnswer: q.correctAnswer || q.answer || '',
-            questionImage: q.questionImage || q.image || '',
-            difficulty: q.difficulty || '',
-            type: 'puzzle'
+            _id: q._id,
+            questionId: q._id,
+            subject: q.subject || 'संज्ञानात्मक',
+            class: q.class || 'सभी',
+            topic: q.topic || 'पहेली',
+            subtopic: '',
+            question: q.title || 'Puzzle Game',
+            options: [],
+            correctAnswer: '',
+            questionImage: '',
+            difficulty: '',
+            type: 'puzzle' as const,
+            // puzzle-specific fields
+            puzzleType: q.puzzleType,
+            puzzleTitle: q.title,
+            puzzleDescription: q.description,
+            puzzleRoute: q.route,
+            puzzleDuration: q.duration,
+            puzzleModes: q.modes,
           }));
           setAvailableQuestions(questions);
           setFilteredQuestions(questions);
@@ -757,7 +764,7 @@ export default function CreateQuizNew() {
                 endpoint = `${API_URL}/video-questions/single/${questionId}`;
                 break;
               case 'puzzle':
-                endpoint = `${API_URL}/puzzles/${questionId}`;
+                endpoint = `${API_URL}/puzzles/single/${questionId}`;
                 break;
             }
 
@@ -821,9 +828,9 @@ export default function CreateQuizNew() {
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'mcq': return 'MCQ';
-      case 'audio': return '🔊 Audio';
-      case 'video': return '📹 Video';
-      case 'puzzle': return '🧩 Puzzle';
+      case 'audio': return 'Audio';
+      case 'video': return 'Video';
+      case 'puzzle': return 'Puzzle';
       default: return type;
     }
   };
@@ -1049,8 +1056,61 @@ export default function CreateQuizNew() {
               </DialogHeader>
 
               <div className="space-y-4">
-                {/* Video Question Hierarchical Selection */}
-                {selectedSlot !== null && questionSlots[selectedSlot].type === 'video' ? (
+                {/* Puzzle Question Selection */}
+                {selectedSlot !== null && questionSlots[selectedSlot].type === 'puzzle' ? (
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-semibold text-orange-700">पहेली गेम चुनें</h3>
+                    <p className="text-sm text-gray-600 mb-4">क्विज़ में जोड़ने के लिए एक पहेली गेम चुनें। छात्र क्विज़ के दौरान यह गेम खेलेंगे।</p>
+                    <div className="grid grid-cols-1 gap-4">
+                      {filteredQuestions.map((puzzle: any) => (
+                        <Card
+                          key={puzzle._id}
+                          className="cursor-pointer hover:bg-orange-50 hover:border-orange-400 transition-all border-2"
+                          onClick={() => selectQuestion(puzzle)}
+                        >
+                          <CardContent className="p-5">
+                            <div className="flex items-start gap-4">
+                              <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                puzzle.puzzleType === 'memory_match'
+                                  ? 'bg-gradient-to-br from-indigo-500 to-purple-500'
+                                  : 'bg-gradient-to-br from-cyan-500 to-teal-500'
+                              }`}>
+                                <span className="text-white text-xl font-bold">
+                                  {puzzle.puzzleType === 'memory_match' ? 'MM' : 'MP'}
+                                </span>
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-bold text-lg text-gray-900">{puzzle.puzzleTitle || puzzle.question}</h4>
+                                  <Badge className="bg-orange-100 text-orange-700 text-xs">{puzzle.puzzleDuration}</Badge>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-3">{puzzle.puzzleDescription}</p>
+                                
+                                {/* Modes */}
+                                {puzzle.puzzleModes && (
+                                  <div className="flex gap-2">
+                                    {puzzle.puzzleModes.map((mode: any) => (
+                                      <div key={mode.id} className="bg-gray-100 rounded-lg px-3 py-1.5 text-xs">
+                                        <span className="font-medium text-gray-700">{mode.label}</span>
+                                        {mode.pairs && <span className="text-gray-500 ml-1">({mode.pairs} जोड़ियाँ)</span>}
+                                        {mode.images && <span className="text-gray-500 ml-1">({mode.images} चित्र)</span>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {filteredQuestions.length === 0 && (
+                      <div className="text-center text-gray-500 py-8">
+                        कोई पहेली गेम उपलब्ध नहीं है।
+                      </div>
+                    )}
+                  </div>
+                ) : selectedSlot !== null && questionSlots[selectedSlot].type === 'video' ? (
                   <>
                     {/* Breadcrumb */}
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">

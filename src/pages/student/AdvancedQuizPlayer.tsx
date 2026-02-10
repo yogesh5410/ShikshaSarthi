@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, Volume2, Video, BookOpen, Puzzle, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import axios from 'axios';
+import EmbeddableMemoryMatch from '@/components/puzzles/EmbeddableMemoryMatch';
+import EmbeddableMatchPieces from '@/components/puzzles/EmbeddableMatchPieces';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -29,6 +31,13 @@ interface Answer {
     seekCount: number;
     playbackEvents: Array<{action: string; timestamp: number}>;
   };
+  puzzleData?: {
+    puzzleType: string;
+    score: number;
+    timeTaken: number;
+    endReason: string;
+    [key: string]: any;
+  };
 }
 
 const AdvancedQuizPlayer: React.FC = () => {
@@ -49,6 +58,9 @@ const AdvancedQuizPlayer: React.FC = () => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [countdownToStart, setCountdownToStart] = useState(0);
   
+  // Puzzle results tracking — maps questionId to puzzle result data
+  const [puzzleResults, setPuzzleResults] = useState<{[key: string]: any}>({});
+
   // Video analytics tracking
   const [videoAnalytics, setVideoAnalytics] = useState<{[key: string]: {
     videoDuration: number;
@@ -167,7 +179,7 @@ const AdvancedQuizPlayer: React.FC = () => {
           }
         } else {
           type = 'puzzle';
-          endpoint = `${API_URL}/puzzles/${questionId}`;
+          endpoint = `${API_URL}/puzzles/single/${questionId}`;
         }
 
         console.log(`Loading question ${index} (${type}):`, questionId, 'from:', endpoint);
@@ -320,6 +332,24 @@ const AdvancedQuizPlayer: React.FC = () => {
           };
         }
 
+        // Puzzle questions: use puzzle score (>= 50 → correct)
+        if (q.type === 'puzzle' && answer.puzzleData) {
+          const puzzleScore = answer.puzzleData.score || 0;
+          const isPuzzleCorrect = puzzleScore >= 50;
+          if (isPuzzleCorrect) correctCount++;
+          else incorrectCount++;
+
+          return {
+            questionId: q._id,
+            questionType: q.type,
+            selectedAnswer: 'puzzle_completed',
+            correctAnswer: 'puzzle_completed',
+            isCorrect: isPuzzleCorrect,
+            timeSpent: answer.timeSpent,
+            puzzleData: answer.puzzleData,
+          };
+        }
+
         const correctAnswer = getCorrectAnswer(q);
         const isCorrect = answer.selectedAnswer === correctAnswer;
         
@@ -418,7 +448,7 @@ const AdvancedQuizPlayer: React.FC = () => {
         }
         return '';
       case 'puzzle':
-        return ''; // Puzzles don't have a traditional correct answer
+        return 'puzzle_completed'; // Puzzles are scored separately; this is a sentinel value
       default:
         return '';
     }
@@ -814,14 +844,88 @@ const AdvancedQuizPlayer: React.FC = () => {
     );
   };
 
+  const handlePuzzleComplete = (questionId: string, result: any) => {
+    // Store the puzzle result
+    setPuzzleResults(prev => ({ ...prev, [questionId]: result }));
+
+    // Also record as an answer so the quiz palette shows it as answered
+    const timeSpent = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+    const newAnswer: Answer = {
+      questionId,
+      questionType: 'puzzle',
+      selectedAnswer: 'puzzle_completed',
+      timeSpent,
+      puzzleData: result,
+    };
+    setAnswers(prev => {
+      const filtered = prev.filter(a => a.questionId !== questionId);
+      return [...filtered, newAnswer];
+    });
+  };
+
   const renderPuzzleQuestion = (data: any) => {
+    const currentQuestion = questions[currentIndex];
+    const questionId = currentQuestion._id;
+    const existingResult = puzzleResults[questionId];
+    const isMemory = data?.puzzleType === 'memory_match';
+    const puzzleTitle = data?.title || (isMemory ? 'मेमोरी मैच चैलेंज' : data?.puzzleType === 'match_pieces' ? 'मैच पीसेज़' : 'पहेली गेम');
+
+    // If already completed, show the result summary
+    if (existingResult) {
+      return (
+        <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl text-center border border-green-200">
+          <div className="h-16 w-16 mx-auto mb-4 rounded-xl flex items-center justify-center text-white shadow-md bg-gradient-to-br from-green-500 to-emerald-600">
+            <Puzzle className="h-8 w-8" />
+          </div>
+          <h3 className="text-xl font-bold mb-2 text-gray-900">{puzzleTitle} — पूर्ण!</h3>
+          <div className="inline-flex items-center gap-2 bg-white rounded-full px-6 py-3 shadow-md mb-3">
+            <span className="text-3xl font-bold text-green-600">{existingResult.score}</span>
+            <span className="text-gray-500">/100</span>
+          </div>
+          <p className="text-sm text-gray-600">
+            {existingResult.endReason === 'COMPLETED' ? 'गेम पूर्ण' : existingResult.endReason === 'TIME_UP' ? 'समय समाप्त' : 'बाहर निकले'}
+            {existingResult.timeTaken && ` — ${existingResult.timeTaken} सेकंड`}
+          </p>
+          <p className="text-xs text-green-600 mt-2 font-medium">✓ यह पहेली पहले ही पूरी हो चुकी है</p>
+        </div>
+      );
+    }
+
+    // Render the embedded game
+    if (isMemory) {
+      return (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center text-white shadow bg-gradient-to-br from-indigo-500 to-purple-600">
+              <Puzzle className="h-4 w-4" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">{puzzleTitle}</h3>
+          </div>
+          <EmbeddableMemoryMatch onComplete={(result) => handlePuzzleComplete(questionId, result)} />
+        </div>
+      );
+    } else if (data?.puzzleType === 'match_pieces') {
+      return (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center text-white shadow bg-gradient-to-br from-cyan-500 to-teal-600">
+              <Puzzle className="h-4 w-4" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">{puzzleTitle}</h3>
+          </div>
+          <EmbeddableMatchPieces onComplete={(result) => handlePuzzleComplete(questionId, result)} />
+        </div>
+      );
+    }
+
+    // Fallback if puzzle type is unknown
     return (
-      <div className="p-4 bg-orange-50 rounded-lg text-center">
-        <Puzzle className="h-12 w-12 mx-auto mb-4 text-orange-600" />
-        <h3 className="text-lg font-semibold mb-2">Puzzle Game</h3>
-        <p className="text-gray-600">Puzzle questions are interactive and scored separately.</p>
-        <Button className="mt-4" onClick={() => handleAnswerSelect('completed')}>
-          Mark as Completed
+      <div className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl text-center border border-indigo-200">
+        <Puzzle className="h-12 w-12 mx-auto mb-4 text-indigo-400" />
+        <h3 className="text-lg font-bold mb-2 text-gray-900">पहेली गेम</h3>
+        <p className="text-gray-600 text-sm mb-4">इस पहेली गेम को खेलें।</p>
+        <Button onClick={() => handleAnswerSelect('puzzle_completed')}>
+          पूर्ण के रूप में चिह्नित करें
         </Button>
       </div>
     );

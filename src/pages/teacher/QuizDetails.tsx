@@ -177,13 +177,35 @@ const QuizDetails = () => {
   }
 
   // Calculate quiz statistics
-  const totalQuestions = quiz.questions?.length || 0;
+  const totalQuestions = quiz.totalQuestions || quiz.questions?.length || 0;
   const totalAttempts = quiz.attemptedBy?.length || 0;
   const correctAnswers = quiz.correct || 0;
   const incorrectAnswers = quiz.incorrect || 0;
   const unattemptedAnswers = quiz.unattempted || 0;
   const totalAnswered = correctAnswers + incorrectAnswers + unattemptedAnswers;
   const accuracyRate = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
+
+  // Helper to determine question type by index based on questionTypes config
+  const getQuestionType = (index: number) => {
+    const types = quiz.questionTypes || {};
+    const mcqEnd = types.mcq || 0;
+    const audioEnd = mcqEnd + (types.audio || 0);
+    const videoEnd = audioEnd + (types.video || 0);
+    if (index < mcqEnd) return 'MCQ';
+    if (index < audioEnd) return 'Audio';
+    if (index < videoEnd) return 'Video';
+    return 'Puzzle';
+  };
+
+  const getQuestionTypeColor = (type: string) => {
+    switch (type) {
+      case 'MCQ': return 'bg-blue-100 text-blue-800';
+      case 'Audio': return 'bg-green-100 text-green-800';
+      case 'Video': return 'bg-purple-100 text-purple-800';
+      case 'Puzzle': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -307,7 +329,39 @@ const QuizDetails = () => {
             
             {quiz.questions && quiz.questions.length > 0 ? (
               <div className="space-y-6">
-                {quiz.questions.map((question, index) => (
+                {quiz.questions.map((question, index) => {
+                  // Check if question is a populated object or just a string ID
+                  const isPopulated = typeof question === 'object' && question !== null && question.question;
+                  const qType = getQuestionType(index);
+                  const qTypeColor = getQuestionTypeColor(qType);
+
+                  if (!isPopulated) {
+                    // Render a compact card for non-populated questions (puzzle, video, audio IDs)
+                    const qId = typeof question === 'string' ? question : question?._id || `Q${index + 1}`;
+                    return (
+                      <Card key={qId || index} className="border-l-4 border-l-gray-200">
+                        <CardHeader>
+                          <div className="flex items-center space-x-2 mb-1">
+                            <Badge className={`${qTypeColor} border-0`}>
+                              {qType}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              Question {index + 1}
+                            </span>
+                          </div>
+                          <CardTitle className="text-lg">
+                            {qType === 'Puzzle' ? 'Puzzle Game' : qType === 'Audio' ? 'Audio Question' : qType === 'Video' ? 'Video Question' : 'Question'}
+                          </CardTitle>
+                          <CardDescription>
+                            ID: {qId}
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    );
+                  }
+
+                  // Render full question card for populated MCQ questions
+                  return (
                   <Card key={question._id || index} className="border-l-4 border-l-gray-200">
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -326,6 +380,9 @@ const QuizDetails = () => {
                                 {question.topic}
                               </Badge>
                             )}
+                            <Badge className={`${qTypeColor} border-0`}>
+                              {qType}
+                            </Badge>
                             <span className="text-sm text-muted-foreground">
                               Question {index + 1}
                             </span>
@@ -452,7 +509,8 @@ const QuizDetails = () => {
                       )}
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <Card>

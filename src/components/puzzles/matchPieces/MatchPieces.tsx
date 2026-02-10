@@ -5,7 +5,7 @@ import {
   Clock, Trophy, Target, Zap, X, Play, Sparkles, ArrowRight, ArrowLeft,
   Brain, Eye, RotateCcw, ListChecks, Crosshair, Gauge, Timer, BarChart3,
   LogOut, DoorOpen, Image, Puzzle, CheckCircle2, Grid3X3, ImageIcon,
-  ChevronRight, Info
+  ChevronRight, Info, History
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,6 +132,24 @@ const MatchPieces: React.FC = () => {
   const [showExitAlert, setShowExitAlert] = useState(false);
   const [draggedPiece, setDraggedPiece] = useState<{ piece: PieceType; from: "scattered" | number } | null>(null);
   const [dragOverPos, setDragOverPos] = useState<number | null>(null);
+
+  // Student
+  const [studentId, setStudentId] = useState<string>("");
+
+  /* ---------- LOAD STUDENT & HISTORY ---------- */
+  useEffect(() => {
+    const studentData = localStorage.getItem("student");
+    if (studentData) {
+      try {
+        const parsed = JSON.parse(studentData);
+        if (parsed.student && parsed.student.studentId) {
+          setStudentId(parsed.student.studentId);
+        }
+      } catch (e) {
+        console.error("Error parsing student data:", e);
+      }
+    }
+  }, []);
 
   /* ---------- PICK 3 RANDOM IMAGES & START ---------- */
   const startGame = () => {
@@ -445,6 +463,7 @@ const MatchPieces: React.FC = () => {
 
     try {
       const res = await axios.post(`${API_URL}/puzzles/evaluate-pieces`, {
+        studentId: studentId || undefined,
         totalImages: 3,
         imagesCompleted: allCompleted ? 3 : completedImages.filter(Boolean).length,
         perImage,
@@ -988,86 +1007,29 @@ const MatchPieces: React.FC = () => {
                   )}
                 </div>
 
-                {/* RIGHT: Breakdown */}
+                {/* RIGHT: Tips & Actions */}
                 <div className="flex-1 flex flex-col justify-center">
-                  <h3 className="text-xl font-bold text-gray-800 mb-5 flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-cyan-600" />
-                    प्रदर्शन विश्लेषण
-                  </h3>
+                  <div className="text-center mb-6">
+                    <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                      🧩 चित्र जोड़ने का खेल
+                    </h3>
+                    <p className="text-gray-600 text-base leading-relaxed">
+                      आपने दृश्य पहचान और स्थानिक तर्क क्षमता का परीक्षण पूरा किया है।
+                    </p>
+                  </div>
 
-                  {analysis.breakdown && (
-                    <div className="space-y-4">
-                      {/* Accuracy */}
-                      <div>
-                        <div className="flex justify-between mb-1.5">
-                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5">
-                            <Crosshair className="h-3.5 w-3.5 text-cyan-500" />सटीकता
-                          </span>
-                          <span className="font-bold text-cyan-600 text-sm">{Math.round(analysis.breakdown.accuracy * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div className="h-full bg-gradient-to-r from-cyan-400 to-cyan-600 rounded-full transition-all duration-700"
-                            style={{ width: `${analysis.breakdown.accuracy * 100}%` }} />
-                        </div>
-                      </div>
-
-                      {/* Completion */}
-                      <div>
-                        <div className="flex justify-between mb-1.5">
-                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-teal-500" />पूर्णता
-                          </span>
-                          <span className="font-bold text-teal-600 text-sm">{Math.round(analysis.breakdown.completion * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div className="h-full bg-gradient-to-r from-teal-400 to-teal-600 rounded-full transition-all duration-700"
-                            style={{ width: `${analysis.breakdown.completion * 100}%` }} />
-                        </div>
-                      </div>
-
-                      {/* Efficiency */}
-                      <div>
-                        <div className="flex justify-between mb-1.5">
-                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5">
-                            <Gauge className="h-3.5 w-3.5 text-emerald-500" />कार्यक्षमता
-                          </span>
-                          <span className="font-bold text-emerald-600 text-sm">{Math.round(analysis.breakdown.efficiency * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-700"
-                            style={{ width: `${analysis.breakdown.efficiency * 100}%` }} />
-                        </div>
-                      </div>
-
-                      {/* Speed */}
-                      <div>
-                        <div className="flex justify-between mb-1.5">
-                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5">
-                            <Timer className="h-3.5 w-3.5 text-amber-500" />गति
-                          </span>
-                          <span className="font-bold text-amber-600 text-sm">{Math.round(analysis.breakdown.speed * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-700"
-                            style={{ width: `${analysis.breakdown.speed * 100}%` }} />
-                        </div>
-                      </div>
-
-                      {/* Spatial Reasoning */}
-                      <div>
-                        <div className="flex justify-between mb-1.5">
-                          <span className="font-medium text-gray-700 text-sm flex items-center gap-1.5">
-                            <Brain className="h-3.5 w-3.5 text-violet-500" />स्थानिक तर्क
-                          </span>
-                          <span className="font-bold text-violet-600 text-sm">{Math.round(analysis.breakdown.spatialReasoning * 100)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div className="h-full bg-gradient-to-r from-violet-400 to-violet-600 rounded-full transition-all duration-700"
-                            style={{ width: `${analysis.breakdown.spatialReasoning * 100}%` }} />
-                        </div>
-                      </div>
+                  <div className="bg-gradient-to-br from-cyan-50 to-teal-50 rounded-2xl p-5 mb-5">
+                    <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                      <Brain className="h-5 w-5 text-cyan-600" />
+                      अगली बार के लिए सुझाव
+                    </h4>
+                    <div className="space-y-2 text-sm text-gray-700">
+                      <p>• चित्र के रंगों और किनारों पर ध्यान दें</p>
+                      <p>• पहले कोने के टुकड़े ढूंढें और फिर बाकी</p>
+                      <p>• मूल चित्र को देखते रहें जब तक याद न हो जाए</p>
+                      <p>• धैर्य रखें और व्यवस्थित तरीके से काम करें</p>
                     </div>
-                  )}
+                  </div>
 
                   {/* Action Buttons */}
                   <div className="grid grid-cols-2 gap-4 mt-6">
