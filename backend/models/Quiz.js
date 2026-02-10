@@ -18,6 +18,13 @@ const quizSchema = new mongoose.Schema({
     video: { type: Number, default: 0 },
     puzzle: { type: Number, default: 0 }
   },
+  // Metadata for video questions (to track which specific question from a video set)
+  videoQuestionMetadata: [{
+    slotIndex: Number,
+    parentVideoId: String,
+    questionIndex: Number,
+    questionText: String
+  }],
   startTime: { type: Date }, // Contest start time
   endTime: { type: Date }, // Contest end time
   createdAt: { type: Date, default: Date.now },

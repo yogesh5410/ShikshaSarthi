@@ -21,6 +21,14 @@ interface Answer {
   questionType: string;
   selectedAnswer: string | string[];
   timeSpent: number;
+  videoAnalytics?: {
+    videoDuration: number;
+    watchTime: number;
+    watchPercentage: number;
+    pauseCount: number;
+    seekCount: number;
+    playbackEvents: Array<{action: string; timestamp: number}>;
+  };
 }
 
 const AdvancedQuizPlayer: React.FC = () => {
@@ -41,8 +49,19 @@ const AdvancedQuizPlayer: React.FC = () => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [countdownToStart, setCountdownToStart] = useState(0);
   
-  const timerRef = useRef<number | null>(null);
-  const countdownRef = useRef<number | null>(null);
+  // Video analytics tracking
+  const [videoAnalytics, setVideoAnalytics] = useState<{[key: string]: {
+    videoDuration: number;
+    watchTime: number;
+    watchPercentage: number;
+    pauseCount: number;
+    seekCount: number;
+    playbackEvents: Array<{action: string; timestamp: number}>;
+    lastPlayTime: number;
+  }}>({});
+  
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const questionStartTimeRef = useRef<number>(Date.now());
 
@@ -121,6 +140,7 @@ const AdvancedQuizPlayer: React.FC = () => {
       console.log('Loading questions for quiz:', quizInfo);
       console.log('Questions array:', quizInfo.questions);
       console.log('Question types:', quizInfo.questionTypes);
+      console.log('Video question metadata:', quizInfo.videoQuestionMetadata);
       
       const questionPromises = quizInfo.questions.map(async (questionId: string, index: number) => {
         // Determine question type based on index and quiz configuration
@@ -135,7 +155,16 @@ const AdvancedQuizPlayer: React.FC = () => {
           endpoint = `${API_URL}/audio-questions/question/${questionId}`;
         } else if (index < quizInfo.questionTypes.mcq + quizInfo.questionTypes.audio + quizInfo.questionTypes.video) {
           type = 'video';
-          endpoint = `${API_URL}/video-questions/single/${questionId}`;
+          // Check if this is an individual video question (has metadata)
+          const videoMetadata = quizInfo.videoQuestionMetadata?.find((meta: any) => meta.slotIndex === index);
+          if (videoMetadata) {
+            // Load specific question from video set
+            endpoint = `${API_URL}/video-questions/single/${videoMetadata.parentVideoId}/question/${videoMetadata.questionIndex}`;
+            console.log(`Loading individual video question: parent=${videoMetadata.parentVideoId}, index=${videoMetadata.questionIndex}`);
+          } else {
+            // Fallback to loading entire video set (old behavior)
+            endpoint = `${API_URL}/video-questions/single/${questionId}`;
+          }
         } else {
           type = 'puzzle';
           endpoint = `${API_URL}/puzzles/${questionId}`;
@@ -208,6 +237,19 @@ const AdvancedQuizPlayer: React.FC = () => {
       timeSpent
     };
 
+    // Add video analytics if it's a video question
+    if (currentQuestion.type === 'video' && videoAnalytics[currentQuestion._id]) {
+      const analytics = videoAnalytics[currentQuestion._id];
+      newAnswer.videoAnalytics = {
+        videoDuration: analytics.videoDuration,
+        watchTime: analytics.watchTime,
+        watchPercentage: analytics.watchPercentage,
+        pauseCount: analytics.pauseCount,
+        seekCount: analytics.seekCount,
+        playbackEvents: analytics.playbackEvents
+      };
+    }
+
     setAnswers((prev) => {
       const filtered = prev.filter(a => a.questionId !== currentQuestion._id);
       return [...filtered, newAnswer];
@@ -266,7 +308,15 @@ const AdvancedQuizPlayer: React.FC = () => {
             selectedAnswer: null,
             correctAnswer: getCorrectAnswer(q),
             isCorrect: false,
-            timeSpent: 0
+            timeSpent: 0,
+            videoAnalytics: q.type === 'video' && videoAnalytics[q._id] ? {
+              videoDuration: videoAnalytics[q._id].videoDuration,
+              watchTime: videoAnalytics[q._id].watchTime,
+              watchPercentage: videoAnalytics[q._id].watchPercentage,
+              pauseCount: videoAnalytics[q._id].pauseCount,
+              seekCount: videoAnalytics[q._id].seekCount,
+              playbackEvents: videoAnalytics[q._id].playbackEvents
+            } : undefined
           };
         }
 
@@ -282,7 +332,8 @@ const AdvancedQuizPlayer: React.FC = () => {
           selectedAnswer: answer.selectedAnswer,
           correctAnswer,
           isCorrect,
-          timeSpent: answer.timeSpent
+          timeSpent: answer.timeSpent,
+          videoAnalytics: answer.videoAnalytics
         };
       });
 
@@ -357,13 +408,53 @@ const AdvancedQuizPlayer: React.FC = () => {
       case 'audio':
         return question.data.correctAnswer;
       case 'video':
-        // Video questions have multiple questions, get the first one's correct answer
-        return question.data.questions?.[0]?.correctAnswer || '';
+        // Check if individual video question (has correctAnswer directly) or video set (has questions array)
+        if (question.data.correctAnswer) {
+          // Individual video question
+          return question.data.correctAnswer;
+        } else if (question.data.questions?.[0]?.correctAnswer) {
+          // Video question set - get first question's correct answer
+          return question.data.questions[0].correctAnswer;
+        }
+        return '';
       case 'puzzle':
         return ''; // Puzzles don't have a traditional correct answer
       default:
         return '';
     }
+  };
+
+  // Helper function to check if URL is YouTube
+  const isYouTubeUrl = (url: string): boolean => {
+    if (!url) return false;
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  };
+
+  // Helper function to extract YouTube video ID
+  const getYouTubeVideoId = (url: string): string | null => {
+    if (!url) return null;
+    
+    // Handle different YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /youtube\.com\/watch\?.*v=([^&\n?#]+)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    return null;
+  };
+
+  // Helper function to get YouTube embed URL
+  const getYouTubeEmbedUrl = (url: string): string => {
+    const videoId = getYouTubeVideoId(url);
+    if (!videoId) return url;
+    return `https://www.youtube.com/embed/${videoId}`;
   };
 
   const formatTime = (seconds: number): string => {
@@ -516,7 +607,9 @@ const AdvancedQuizPlayer: React.FC = () => {
     console.log('Video data keys:', data ? Object.keys(data) : 'null');
     console.log('Video URL:', data?.videoUrl);
     console.log('Video title:', data?.videoTitle);
-    console.log('Video questions:', data?.questions);
+    console.log('Video questions array:', data?.questions);
+    console.log('Direct question:', data?.question);
+    console.log('Direct options:', data?.options);
     console.log('================================');
     
     // Safety check for data structure
@@ -524,8 +617,118 @@ const AdvancedQuizPlayer: React.FC = () => {
       return <div className="p-4 text-red-600">Error: Video question data not loaded</div>;
     }
 
-    // For video questions, show the video and the first question
-    const firstQuestion = data.questions?.[0];
+    // Check if this is an individual video question (has question/options directly)
+    // or a video question set (has questions array)
+    const isIndividualQuestion = data.question && data.options;
+    const currentQuestion = isIndividualQuestion 
+      ? data  // Use data directly
+      : data.questions?.[0];  // Use first question from array
+    
+    const currentQuestionId = questions[currentIndex]._id;
+    
+    // Initialize video analytics for this question if not exists
+    if (!videoAnalytics[currentQuestionId]) {
+      setVideoAnalytics(prev => ({
+        ...prev,
+        [currentQuestionId]: {
+          videoDuration: 0,
+          watchTime: 0,
+          watchPercentage: 0,
+          pauseCount: 0,
+          seekCount: 0,
+          playbackEvents: [],
+          lastPlayTime: 0
+        }
+      }));
+    }
+
+    // Video event handlers
+    const handleVideoPlay = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const video = e.currentTarget;
+      const now = Date.now();
+      
+      setVideoAnalytics(prev => ({
+        ...prev,
+        [currentQuestionId]: {
+          ...prev[currentQuestionId],
+          lastPlayTime: now,
+          videoDuration: video.duration || prev[currentQuestionId]?.videoDuration || 0,
+          playbackEvents: [
+            ...(prev[currentQuestionId]?.playbackEvents || []),
+            { action: 'play', timestamp: now }
+          ]
+        }
+      }));
+    };
+
+    const handleVideoPause = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const video = e.currentTarget;
+      const now = Date.now();
+      
+      setVideoAnalytics(prev => {
+        const current = prev[currentQuestionId] || { watchTime: 0, pauseCount: 0, playbackEvents: [], lastPlayTime: 0, videoDuration: 0, watchPercentage: 0, seekCount: 0 };
+        const additionalWatchTime = current.lastPlayTime > 0 ? (now - current.lastPlayTime) / 1000 : 0;
+        const newWatchTime = current.watchTime + additionalWatchTime;
+        const videoDuration = video.duration || current.videoDuration || 0;
+        
+        return {
+          ...prev,
+          [currentQuestionId]: {
+            ...current,
+            watchTime: newWatchTime,
+            watchPercentage: videoDuration > 0 ? (newWatchTime / videoDuration) * 100 : 0,
+            pauseCount: current.pauseCount + 1,
+            playbackEvents: [
+              ...current.playbackEvents,
+              { action: 'pause', timestamp: now }
+            ],
+            lastPlayTime: 0
+          }
+        };
+      });
+    };
+
+    const handleVideoSeeking = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const now = Date.now();
+      
+      setVideoAnalytics(prev => ({
+        ...prev,
+        [currentQuestionId]: {
+          ...(prev[currentQuestionId] || { watchTime: 0, pauseCount: 0, playbackEvents: [], lastPlayTime: 0, videoDuration: 0, watchPercentage: 0, seekCount: 0 }),
+          seekCount: (prev[currentQuestionId]?.seekCount || 0) + 1,
+          playbackEvents: [
+            ...(prev[currentQuestionId]?.playbackEvents || []),
+            { action: 'seek', timestamp: now }
+          ]
+        }
+      }));
+    };
+
+    const handleVideoEnded = (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const video = e.currentTarget;
+      const now = Date.now();
+      
+      setVideoAnalytics(prev => {
+        const current = prev[currentQuestionId] || { watchTime: 0, pauseCount: 0, playbackEvents: [], lastPlayTime: 0, videoDuration: 0, watchPercentage: 0, seekCount: 0 };
+        const additionalWatchTime = current.lastPlayTime > 0 ? (now - current.lastPlayTime) / 1000 : 0;
+        const newWatchTime = current.watchTime + additionalWatchTime;
+        const videoDuration = video.duration || current.videoDuration || 0;
+        
+        return {
+          ...prev,
+          [currentQuestionId]: {
+            ...current,
+            watchTime: newWatchTime,
+            watchPercentage: videoDuration > 0 ? (newWatchTime / videoDuration) * 100 : 0,
+            playbackEvents: [
+              ...current.playbackEvents,
+              { action: 'ended', timestamp: now }
+            ],
+            lastPlayTime: 0
+          }
+        };
+      });
+    };
     
     return (
       <div className="space-y-4">
@@ -538,12 +741,37 @@ const AdvancedQuizPlayer: React.FC = () => {
             <p className="text-sm text-gray-600 mb-3">{data.videoDescription}</p>
           )}
           {data.videoUrl ? (
-            <video controls className="w-full rounded-lg mb-3" key={data.videoUrl}>
-              <source src={data.videoUrl} type="video/mp4" />
-              <source src={data.videoUrl} type="video/webm" />
-              <source src={data.videoUrl} type="video/ogg" />
-              Your browser does not support the video element.
-            </video>
+            <>
+              {isYouTubeUrl(data.videoUrl) ? (
+                // YouTube iframe embed
+                <div className="relative w-full rounded-lg overflow-hidden mb-3" style={{ paddingBottom: '56.25%' }}>
+                  <iframe
+                    className="absolute top-0 left-0 w-full h-full rounded-lg"
+                    src={getYouTubeEmbedUrl(data.videoUrl)}
+                    title={data.videoTitle || 'Video Question'}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              ) : (
+                // Regular MP4/video file
+                <video 
+                  controls 
+                  className="w-full rounded-lg mb-3" 
+                  key={data.videoUrl}
+                  onPlay={handleVideoPlay}
+                  onPause={handleVideoPause}
+                  onSeeking={handleVideoSeeking}
+                  onEnded={handleVideoEnded}
+                >
+                  <source src={data.videoUrl} type="video/mp4" />
+                  <source src={data.videoUrl} type="video/webm" />
+                  <source src={data.videoUrl} type="video/ogg" />
+                  Your browser does not support the video element.
+                </video>
+              )}
+            </>
           ) : (
             <div className="p-3 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
               ⚠️ Video file not available
@@ -551,14 +779,14 @@ const AdvancedQuizPlayer: React.FC = () => {
           )}
         </div>
         
-        {firstQuestion ? (
+        {currentQuestion ? (
           <>
             <div className="p-4 bg-white rounded-lg border">
-              <h3 className="text-lg font-semibold mb-2">{firstQuestion.question}</h3>
+              <h3 className="text-lg font-semibold mb-2">{currentQuestion.question}</h3>
             </div>
             <div className="space-y-2">
-              {firstQuestion.options && firstQuestion.options.length > 0 ? (
-                firstQuestion.options.map((option: string, index: number) => (
+              {currentQuestion.options && currentQuestion.options.length > 0 ? (
+                currentQuestion.options.map((option: string, index: number) => (
                   <button
                     key={index}
                     onClick={() => handleAnswerSelect(option)}

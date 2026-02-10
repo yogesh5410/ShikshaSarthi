@@ -388,3 +388,9 @@ This student is learning effectively! High focus, thoughtful answering, minimal 
 **Status**: ✅ Fully Implemented and Ready for Testing
 **Version**: 1.0
 **Last Updated**: February 8, 2026
+
+
+// square root 
+https://youtu.be/rimfVt06iIY?si=F_kC6Wr_01_ClkPt
+//cube root
+https://youtu.be/HfeDa7eD4b0?si=7J7l3YRsAceT81gQ
