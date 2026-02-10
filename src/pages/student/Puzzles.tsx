@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import {
   Card,
   CardContent,
@@ -21,47 +20,11 @@ import {
   Brain,
   Eye,
   Grid3X3,
-  History,
   Trophy,
 } from "lucide-react";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 const Puzzles: React.FC = () => {
   const navigate = useNavigate();
-  const [pastResults, setPastResults] = useState<any[]>([]);
-  const [studentId, setStudentId] = useState<string>("");
-  const [loadingHistory, setLoadingHistory] = useState(false);
-
-  useEffect(() => {
-    const studentData = localStorage.getItem("student");
-    if (studentData) {
-      try {
-        const parsed = JSON.parse(studentData);
-        if (parsed.student && parsed.student.studentId) {
-          setStudentId(parsed.student.studentId);
-        }
-      } catch (e) {
-        console.error("Error parsing student data:", e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!studentId) return;
-    const fetchHistory = async () => {
-      setLoadingHistory(true);
-      try {
-        const res = await axios.get(`${API_URL}/puzzles/history/${studentId}`);
-        setPastResults(res.data);
-      } catch (err) {
-        console.error("Error fetching puzzle history:", err);
-      } finally {
-        setLoadingHistory(false);
-      }
-    };
-    fetchHistory();
-  }, [studentId]);
 
   const puzzleGames = [
     {
@@ -91,15 +54,6 @@ const Puzzles: React.FC = () => {
       features: ["3 चित्र", "9 टुकड़े प्रति चित्र", "खींचें और रखें"],
     },
   ];
-
-  const getResultLabel = (endReason: string) => {
-    switch (endReason) {
-      case "COMPLETED": return "पूर्ण";
-      case "EXITED": return "बाहर निकले";
-      case "TIME_UP": return "समय समाप्त";
-      default: return endReason;
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
@@ -203,50 +157,6 @@ const Puzzles: React.FC = () => {
               );
             })}
           </div>
-
-          {/* Past Results */}
-          {studentId && pastResults.length > 0 && (
-            <Card className="border border-gray-200 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <History className="h-5 w-5 text-indigo-600" />
-                  पिछले परिणाम
-                </CardTitle>
-                <CardDescription>आपके सभी पहेली गेम के परिणाम</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-80 overflow-y-auto">
-                  {pastResults.slice(0, 15).map((r: any, i: number) => (
-                    <div key={r._id || i} className="flex items-center justify-between bg-gray-50 rounded-lg p-3 text-sm hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm ${
-                          r.score >= 70 ? 'bg-green-500' : r.score >= 40 ? 'bg-yellow-500' : 'bg-red-500'
-                        }`}>
-                          {r.score}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            {r.puzzleType === 'memory_match' ? 'मेमोरी मैच' : 'मैच पीसेज़'}
-                            {r.mode && <span className="text-gray-500 ml-1">({r.mode === 'individual' ? 'व्यक्तिगत' : 'समूह'})</span>}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {r.memoryLevel || r.recognitionLevel || ''} — {getResultLabel(r.endReason)}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500">
-                          {new Date(r.attemptedAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </p>
-                        <p className="text-xs text-gray-400">{r.timeTaken} सेकंड</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {loadingHistory && <p className="text-center text-sm text-gray-400 mt-2">लोड हो रहा है...</p>}
-              </CardContent>
-            </Card>
-          )}
         </div>
       </main>
 

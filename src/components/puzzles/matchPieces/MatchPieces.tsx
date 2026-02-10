@@ -135,8 +135,6 @@ const MatchPieces: React.FC = () => {
 
   // Student
   const [studentId, setStudentId] = useState<string>("");
-  const [pastResults, setPastResults] = useState<any[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
 
   /* ---------- LOAD STUDENT & HISTORY ---------- */
   useEffect(() => {
@@ -152,22 +150,6 @@ const MatchPieces: React.FC = () => {
       }
     }
   }, []);
-
-  useEffect(() => {
-    if (!studentId) return;
-    const fetchHistory = async () => {
-      setLoadingHistory(true);
-      try {
-        const res = await axios.get(`${API_URL}/puzzles/history/${studentId}?type=match_pieces`);
-        setPastResults(res.data);
-      } catch (err) {
-        console.error("Error fetching puzzle history:", err);
-      } finally {
-        setLoadingHistory(false);
-      }
-    };
-    fetchHistory();
-  }, [studentId, screen]);
 
   /* ---------- PICK 3 RANDOM IMAGES & START ---------- */
   const startGame = () => {
@@ -659,48 +641,6 @@ const MatchPieces: React.FC = () => {
                   </Button>
                 </CardFooter>
               </Card>
-
-              {/* PAST RESULTS */}
-              {studentId && pastResults.length > 0 && (
-                <Card className="mt-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                      <History className="h-5 w-5 text-cyan-600" />
-                      पिछले परिणाम
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="pb-4">
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {pastResults.slice(0, 10).map((r: any, i: number) => (
-                        <div key={r._id || i} className="flex items-center justify-between bg-gray-50 rounded-lg p-3 text-sm">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                              r.score >= 70 ? 'bg-green-500' : r.score >= 40 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}>
-                              {r.score}
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-800">
-                                {r.imagesCompleted || 0}/3 चित्र पूर्ण
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {r.recognitionLevel} • {r.endReason === 'COMPLETED' ? 'पूर्ण' : r.endReason === 'EXITED' ? 'बाहर निकले' : 'समय समाप्त'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500">
-                              {new Date(r.attemptedAt).toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </p>
-                            <p className="text-xs text-gray-400">{r.timeTaken}s</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {loadingHistory && <p className="text-center text-sm text-gray-400 mt-2">लोड हो रहा है...</p>}
-                  </CardContent>
-                </Card>
-              )}
             </div>
           </div>
         )}
