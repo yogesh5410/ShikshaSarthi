@@ -65,7 +65,7 @@ interface QuestionSlot {
 }
 
 export default function CreateQuizNew() {
-  const [step, setStep] = useState<1 | 2>(1);
+  const [showQuestionPalette, setShowQuestionPalette] = useState(false);
   const [config, setConfig] = useState<QuizConfig>({
     quizId: '',
     timeLimit: 60,
@@ -106,6 +106,7 @@ export default function CreateQuizNew() {
     
     let teacherData = null;
     
+    console.log('=== TEACHER ID DEBUG ===');
     console.log('Raw currentUser:', currentUser);
     console.log('Raw teacherCookie:', teacherCookie);
     
@@ -136,12 +137,32 @@ export default function CreateQuizNew() {
       // Use teacherId first, fallback to _id, then username
       const id = teacherData.teacherId || teacherData._id || teacherData.username || '';
       console.log('Teacher data found:', teacherData);
-      console.log('Teacher ID set to:', id);
-      setTeacherId(id);
+      console.log('Available fields:', Object.keys(teacherData));
+      console.log('Teacher ID extracted:', id);
+      console.log('Teacher ID type:', typeof id);
+      console.log('Teacher ID length:', id.length);
+      
+      if (!id || id.trim() === '') {
+        console.error('❌ Teacher ID is empty!');
+        toast({
+          title: "Error",
+          description: "Teacher ID not found. Please log out and log in again.",
+          variant: "destructive"
+        });
+      } else {
+        console.log('✅ Teacher ID set successfully:', id);
+        setTeacherId(id);
+      }
     } else {
-      console.error('No teacher data found');
+      console.error('❌ No teacher data found in localStorage or cookies');
+      toast({
+        title: "Error",
+        description: "No teacher session found. Please log in.",
+        variant: "destructive"
+      });
     }
-  }, []);
+    console.log('========================');
+  }, [toast]);
 
   // Auto-calculate end time when start time or time limit changes
   useEffect(() => {
@@ -257,7 +278,7 @@ export default function CreateQuizNew() {
     }
     
     initializeSlots();
-    setStep(2);
+    setShowQuestionPalette(true);
     
     toast({
       title: "Configuration Saved",
@@ -427,7 +448,6 @@ export default function CreateQuizNew() {
       }
       
       // Reset form
-      setStep(1);
       setConfig({
         quizId: '',
         timeLimit: 60,
@@ -440,6 +460,7 @@ export default function CreateQuizNew() {
         endTime: ''
       });
       setQuestionSlots([]);
+      setShowQuestionPalette(false);
       setIsUpdateMode(false);
       setQuizToUpdate('');
       
@@ -575,7 +596,7 @@ export default function CreateQuizNew() {
       }
       
       setIsUpdateMode(true);
-      setStep(2); // Go directly to question selection
+      setShowQuestionPalette(true); // Show question palette
       
       toast({
         title: "Quiz Loaded",
@@ -632,13 +653,15 @@ export default function CreateQuizNew() {
         </div>
       </div>
 
-      {step === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 1: Quiz Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+      {/* Main Content - Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Panel - Configuration Form */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quiz Configuration</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="quizId">Quiz ID *</Label>
                 <Input
@@ -646,21 +669,21 @@ export default function CreateQuizNew() {
                   value={config.quizId}
                   onChange={(e) => setConfig({ ...config, quizId: e.target.value })}
                   placeholder="e.g., QUIZ001"
+                  disabled={showQuestionPalette && !isUpdateMode}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="timeLimit">Time Limit (minutes) *</Label>
+                <Label htmlFor="timeLimit">Time Limit (min) *</Label>
                 <Input
                   id="timeLimit"
                   type="number"
                   value={config.timeLimit}
                   onChange={(e) => setConfig({ ...config, timeLimit: parseInt(e.target.value) || 0 })}
+                  disabled={showQuestionPalette && !isUpdateMode}
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="mcqCount">MCQ Questions</Label>
                 <Input
@@ -668,10 +691,14 @@ export default function CreateQuizNew() {
                   type="number"
                   value={config.mcqCount}
                   onChange={(e) => {
-                    const count = parseInt(e.target.value) || 0;
-                    const total = count + config.audioCount + config.puzzleCount + config.videoCount;
-                    setConfig({ ...config, mcqCount: count, totalQuestions: total });
+                    const value = parseInt(e.target.value) || 0;
+                    setConfig(prev => ({
+                      ...prev,
+                      mcqCount: value,
+                      totalQuestions: value + prev.audioCount + prev.videoCount + prev.puzzleCount
+                    }));
                   }}
+                  disabled={showQuestionPalette && !isUpdateMode}
                 />
               </div>
 
@@ -682,11 +709,34 @@ export default function CreateQuizNew() {
                   type="number"
                   value={config.audioCount}
                   onChange={(e) => {
-                    const count = parseInt(e.target.value) || 0;
-                    const total = config.mcqCount + count + config.puzzleCount + config.videoCount;
-                    setConfig({ ...config, audioCount: count, totalQuestions: total });
+                    const value = parseInt(e.target.value) || 0;
+                    setConfig(prev => ({
+                      ...prev,
+                      audioCount: value,
+                      totalQuestions: prev.mcqCount + value + prev.videoCount + prev.puzzleCount
+                    }));
                   }}
+                  disabled={showQuestionPalette && !isUpdateMode}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="videoCount">Video Questions</Label>
+                <Input
+                  id="videoCount"
+                  type="number"
+                  value={config.videoCount}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    setConfig(prev => ({
+                      ...prev,
+                      videoCount: value,
+                      totalQuestions: prev.mcqCount + prev.audioCount + value + prev.puzzleCount
+                    }));
+                  }}
+                  disabled={showQuestionPalette && !isUpdateMode}
+                />
+                <p className="text-sm text-gray-500">Each video contains multiple questions</p>
               </div>
 
               <div className="space-y-2">
@@ -696,43 +746,22 @@ export default function CreateQuizNew() {
                   type="number"
                   value={config.puzzleCount}
                   onChange={(e) => {
-                    const count = parseInt(e.target.value) || 0;
-                    const total = config.mcqCount + config.audioCount + count + config.videoCount;
-                    setConfig({ ...config, puzzleCount: count, totalQuestions: total });
+                    const value = parseInt(e.target.value) || 0;
+                    setConfig(prev => ({
+                      ...prev,
+                      puzzleCount: value,
+                      totalQuestions: prev.mcqCount + prev.audioCount + prev.videoCount + value
+                    }));
                   }}
+                  disabled={showQuestionPalette && !isUpdateMode}
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="videoCount">Video Questions</Label>
-                <Input
-                  id="videoCount"
-                  type="number"
-                  value={config.videoCount}
-                  onChange={(e) => {
-                    const count = parseInt(e.target.value) || 0;
-                    const total = config.mcqCount + config.audioCount + config.puzzleCount + count;
-                    setConfig({ ...config, videoCount: count, totalQuestions: total });
-                  }}
-                />
-                <p className="text-sm text-gray-500">
-                  Each video contains multiple questions
-                </p>
               </div>
 
               <div className="space-y-2">
-                <Label>Total Questions (Auto-calculated)</Label>
-                <Input
-                  value={config.totalQuestions}
-                  disabled
-                  className="bg-gray-100 font-bold"
-                />
+                <Label>Total Questions</Label>
+                <Input value={config.totalQuestions} disabled className="bg-gray-100 font-bold" />
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="startTime">
                   <Calendar className="inline mr-2 h-4 w-4" />
@@ -749,71 +778,67 @@ export default function CreateQuizNew() {
               <div className="space-y-2">
                 <Label htmlFor="endTime">
                   <Clock className="inline mr-2 h-4 w-4" />
-                  End Time (Auto-calculated)
+                  End Time (Auto)
                 </Label>
                 <Input
                   id="endTime"
                   type="datetime-local"
                   value={config.endTime}
                   disabled
-                  className="bg-gray-100 cursor-not-allowed"
+                  className="bg-gray-100"
                 />
-                <p className="text-xs text-gray-500">
-                  Calculated as: Start Time + {config.timeLimit} minutes
-                </p>
-              </div>
-            </div>
-
-            <Button onClick={handleConfigSubmit} className="w-full" size="lg">
-              <Plus className="mr-2 h-4 w-4" />
-              Continue to Question Selection
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {step === 2 && (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Step 2: Select Questions</CardTitle>
-              <div className="text-sm text-gray-600">
-                Click on a question slot to select a question. Questions are ordered: MCQ → Audio → Puzzles → Videos
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-10 gap-2">
-                {questionSlots.map((slot) => (
-                  <Button
-                    key={slot.index}
-                    variant={slot.question ? "default" : "outline"}
-                    className={`relative ${!slot.question ? 'border-2 border-dashed' : ''}`}
-                    onClick={() => loadQuestionsForSlot(slot.index)}
-                  >
-                    <div className="flex flex-col items-center">
-                      <span className="text-xs">{slot.index + 1}</span>
-                      <Badge className={`mt-1 text-xs ${getTypeColor(slot.type)}`}>
-                        {getTypeLabel(slot.type)}
-                      </Badge>
-                      {slot.question && (
-                        <CheckCircle className="absolute -top-1 -right-1 h-4 w-4 text-green-500" />
-                      )}
-                    </div>
-                  </Button>
-                ))}
               </div>
 
-              <div className="mt-6 flex gap-4">
-                <Button variant="outline" onClick={() => setStep(1)}>
-                  Back to Configuration
+              {!showQuestionPalette && (
+                <Button onClick={handleConfigSubmit} className="w-full" size="lg">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Continue to Question Selection
                 </Button>
-                <Button onClick={handleCreateQuiz} className="flex-1" size="lg">
-                  <Save className="mr-2 h-4 w-4" />
-                  {isUpdateMode ? 'Update Quiz' : 'Create Quiz'}
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Right Panel - Question Palette */}
+        {showQuestionPalette && (
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Question Selection</CardTitle>
+                <div className="text-sm text-gray-600">
+                  Click on a question slot to select a question
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-10 gap-2 mb-6">
+                  {questionSlots.map((slot) => (
+                    <Button
+                      key={slot.index}
+                      variant={slot.question ? "default" : "outline"}
+                      className={`relative ${!slot.question ? 'border-2 border-dashed' : ''}`}
+                      onClick={() => loadQuestionsForSlot(slot.index)}
+                    >
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs">{slot.index + 1}</span>
+                        <Badge className={`mt-1 text-xs ${getTypeColor(slot.type)}`}>
+                          {getTypeLabel(slot.type)}
+                        </Badge>
+                        {slot.question && (
+                          <CheckCircle className="absolute -top-1 -right-1 h-4 w-4 text-green-500" />
+                        )}
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+
+                <div className="flex gap-4">
+                  <Button onClick={handleCreateQuiz} className="flex-1" size="lg">
+                    <Save className="mr-2 h-4 w-4" />
+                    {isUpdateMode ? 'Update Quiz' : 'Create Quiz'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
           {/* Question Filter Dialog */}
           <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
@@ -976,8 +1001,9 @@ export default function CreateQuizNew() {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

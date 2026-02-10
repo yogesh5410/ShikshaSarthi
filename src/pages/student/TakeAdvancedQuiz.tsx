@@ -41,12 +41,43 @@ const TakeAdvancedQuiz: React.FC = () => {
     if (studentData) {
       try {
         const parsed = JSON.parse(studentData);
-        setStudentId(parsed.student?.studentId || '');
+        console.log('Parsed student data:', parsed);
+        
+        // Try multiple ways to get studentId
+        const extractedStudentId = parsed.student?.studentId || 
+                                   parsed.studentId || 
+                                   parsed.student?._id || 
+                                   parsed._id || 
+                                   '';
+        
+        console.log('Extracted studentId:', extractedStudentId);
+        
+        if (!extractedStudentId) {
+          toast({
+            title: "Error",
+            description: "Student ID not found. Please log in again.",
+            variant: "destructive"
+          });
+        }
+        
+        setStudentId(extractedStudentId);
       } catch (e) {
         console.error('Error parsing student data', e);
+        toast({
+          title: "Error",
+          description: "Failed to load student data. Please log in again.",
+          variant: "destructive"
+        });
       }
+    } else {
+      toast({
+        title: "Error",
+        description: "No student data found. Please log in.",
+        variant: "destructive"
+      });
+      setTimeout(() => navigate('/login'), 2000);
     }
-  }, []);
+  }, [navigate, toast]);
 
   const handleLoadQuiz = async () => {
     if (!quizId.trim()) {
@@ -106,6 +137,19 @@ const TakeAdvancedQuiz: React.FC = () => {
 
   const handleStartQuiz = () => {
     if (!quizInfo) return;
+    
+    // Validate studentId before starting
+    if (!studentId || studentId.trim() === '') {
+      toast({
+        title: "Error",
+        description: "Student ID is missing. Please log in again.",
+        variant: "destructive"
+      });
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+    
+    console.log('Starting quiz with studentId:', studentId);
     
     // Navigate to the quiz player with quiz data
     navigate('/student/advanced-quiz-player', {

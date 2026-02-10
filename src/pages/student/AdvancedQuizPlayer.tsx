@@ -51,6 +51,20 @@ const AdvancedQuizPlayer: React.FC = () => {
       navigate('/student/take-advanced-quiz');
       return;
     }
+    
+    // Validate studentId
+    if (!studentId || studentId.trim() === '') {
+      console.error('StudentId is missing or empty:', studentId);
+      toast({
+        title: "Error",
+        description: "Student ID is missing. Please log in and try again.",
+        variant: "destructive"
+      });
+      setTimeout(() => navigate('/login'), 2000);
+      return;
+    }
+    
+    console.log('Quiz initialized with studentId:', studentId);
 
     loadQuestions();
     setTimeRemaining(quizInfo.timeLimit * 60); // Convert minutes to seconds
@@ -216,12 +230,31 @@ const AdvancedQuizPlayer: React.FC = () => {
 
   const handleSubmitQuiz = async (timeUp: boolean = false) => {
     try {
+      console.log('Starting quiz submission...');
+      
+      // Validate studentId before submission
+      if (!studentId || studentId.trim() === '') {
+        console.error('Cannot submit: studentId is missing or empty');
+        toast({
+          title: "Submission Error",
+          description: "Student ID is missing. Cannot submit quiz. Please log in again.",
+          variant: "destructive"
+        });
+        setTimeout(() => navigate('/login'), 2000);
+        return;
+      }
+      
+      console.log('Submitting with studentId:', studentId);
+      
       setQuizEnded(true);
       
       // Calculate results
       let correctCount = 0;
       let incorrectCount = 0;
       let unattemptedCount = questions.length - answers.length;
+
+      console.log('Questions:', questions.length);
+      console.log('Answers:', answers.length);
 
       const evaluatedAnswers = questions.map((q, index) => {
         const answer = answers.find(a => a.questionId === q._id);
@@ -255,10 +288,9 @@ const AdvancedQuizPlayer: React.FC = () => {
 
       const totalTimeTaken = quizInfo.timeLimit * 60 - timeRemaining;
 
-      // Submit to backend
-      await axios.post(`${API_URL}/quizzes/submit-advanced`, {
+      const submitData = {
         quizId: quizInfo.quizId,
-        studentId,
+        studentId: studentId || '', // Ensure it's at least an empty string
         answers: evaluatedAnswers,
         score: {
           correct: correctCount,
@@ -266,24 +298,56 @@ const AdvancedQuizPlayer: React.FC = () => {
           unattempted: unattemptedCount
         },
         timeTaken: totalTimeTaken,
-        completedAt: new Date(),
+        completedAt: new Date().toISOString(),
         timeUp
-      });
+      };
+
+      console.log('=== SUBMIT DATA DEBUG ===');
+      console.log('Full submitData:', JSON.stringify(submitData, null, 2));
+      console.log('studentId value:', studentId);
+      console.log('studentId type:', typeof studentId);
+      console.log('studentId length:', studentId?.length);
+      console.log('studentId trimmed:', studentId?.trim());
+      console.log('========================');
+
+      // Submit to backend
+      const response = await axios.post(`${API_URL}/quizzes/submit-advanced`, submitData);
+      console.log('Submit response:', response.data);
 
       toast({
         title: "Quiz Submitted",
-        description: `Score: ${correctCount}/${questions.length}`
+        description: `Score: ${correctCount}/${questions.length}`,
+        duration: 3000
       });
 
-      setShowResults(true);
+      // Navigate to results page with data
+      navigate('/student/advanced-quiz-results', {
+        state: {
+          results: {
+            quizId: quizInfo.quizId,
+            studentId,
+            score: {
+              correct: correctCount,
+              incorrect: incorrectCount,
+              unattempted: unattemptedCount,
+              percentage: ((correctCount / questions.length) * 100).toFixed(2)
+            },
+            answers: evaluatedAnswers
+          }
+        }
+      });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting quiz:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error details:', error.message);
       toast({
         title: "Error",
-        description: "Failed to submit quiz",
+        description: error.response?.data?.error || error.message || "Failed to submit quiz",
         variant: "destructive"
       });
+      // Don't keep quiz ended state if submission failed
+      setQuizEnded(false);
     }
   };
 
@@ -381,6 +445,15 @@ const AdvancedQuizPlayer: React.FC = () => {
   };
 
   const renderAudioQuestion = (data: any, selectedAnswer?: string) => {
+    console.log('=== RENDERING AUDIO QUESTION ===');
+    console.log('Audio data received:', data);
+    console.log('Audio data type:', typeof data);
+    console.log('Audio data keys:', data ? Object.keys(data) : 'null');
+    console.log('Audio URL:', data?.audio);
+    console.log('Question:', data?.question);
+    console.log('Options:', data?.options);
+    console.log('================================');
+    
     // Safety check for data structure
     if (!data) {
       return <div className="p-4 text-red-600">Error: Audio question data not loaded</div>;
@@ -393,11 +466,17 @@ const AdvancedQuizPlayer: React.FC = () => {
             <Volume2 className="h-6 w-6 text-green-600" />
             <h3 className="text-lg font-semibold">Audio Question</h3>
           </div>
-          {data.audio && (
-            <audio controls className="w-full mb-3">
+          {data.audio ? (
+            <audio controls className="w-full mb-3" key={data.audio}>
               <source src={data.audio} type="audio/mpeg" />
+              <source src={data.audio} type="audio/mp3" />
+              <source src={data.audio} type="audio/wav" />
               Your browser does not support the audio element.
             </audio>
+          ) : (
+            <div className="p-3 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
+              ⚠️ Audio file not available
+            </div>
           )}
           <h3 className="text-lg font-semibold mb-2">{data.question || 'Question not available'}</h3>
           {data.questionImage && (
@@ -431,6 +510,15 @@ const AdvancedQuizPlayer: React.FC = () => {
   };
 
   const renderVideoQuestion = (data: any, selectedAnswer?: string) => {
+    console.log('=== RENDERING VIDEO QUESTION ===');
+    console.log('Video data received:', data);
+    console.log('Video data type:', typeof data);
+    console.log('Video data keys:', data ? Object.keys(data) : 'null');
+    console.log('Video URL:', data?.videoUrl);
+    console.log('Video title:', data?.videoTitle);
+    console.log('Video questions:', data?.questions);
+    console.log('================================');
+    
     // Safety check for data structure
     if (!data) {
       return <div className="p-4 text-red-600">Error: Video question data not loaded</div>;
@@ -449,11 +537,17 @@ const AdvancedQuizPlayer: React.FC = () => {
           {data.videoDescription && (
             <p className="text-sm text-gray-600 mb-3">{data.videoDescription}</p>
           )}
-          {data.videoUrl && (
-            <video controls className="w-full rounded-lg mb-3">
+          {data.videoUrl ? (
+            <video controls className="w-full rounded-lg mb-3" key={data.videoUrl}>
               <source src={data.videoUrl} type="video/mp4" />
+              <source src={data.videoUrl} type="video/webm" />
+              <source src={data.videoUrl} type="video/ogg" />
               Your browser does not support the video element.
             </video>
+          ) : (
+            <div className="p-3 bg-yellow-100 border border-yellow-300 rounded text-yellow-800">
+              ⚠️ Video file not available
+            </div>
           )}
         </div>
         
@@ -710,7 +804,191 @@ const AdvancedQuizPlayer: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
-      <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Question Palette Sidebar */}
+        <div className="lg:col-span-1">
+          <Card className="sticky top-6">
+            <CardHeader>
+              <CardTitle className="text-sm">Question Palette</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Timer */}
+              <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-semibold text-gray-600">Time Left</span>
+                  <Clock className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className={`text-2xl font-bold ${timeRemaining < 60 ? 'text-red-600' : 'text-blue-600'}`}>
+                  {formatTime(timeRemaining)}
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2 bg-green-50 rounded text-center">
+                  <div className="font-bold text-green-600">{answers.length}</div>
+                  <div className="text-gray-600">Answered</div>
+                </div>
+                <div className="p-2 bg-gray-50 rounded text-center">
+                  <div className="font-bold text-gray-600">{questions.length - answers.length}</div>
+                  <div className="text-gray-600">Remaining</div>
+                </div>
+              </div>
+
+              {/* MCQ Section */}
+              {quizInfo.questionTypes.mcq > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <BookOpen className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-semibold text-gray-700">MCQ ({quizInfo.questionTypes.mcq})</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {questions.slice(0, quizInfo.questionTypes.mcq).map((q, idx) => {
+                      const isAnswered = answers.some(a => a.questionId === q._id);
+                      const isCurrent = currentIndex === idx;
+                      return (
+                        <button
+                          key={q._id}
+                          onClick={() => setCurrentIndex(idx)}
+                          className={`w-8 h-8 rounded text-xs font-semibold transition-all ${
+                            isCurrent
+                              ? 'bg-blue-600 text-white ring-2 ring-blue-300'
+                              : isAnswered
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          {idx + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Audio Section */}
+              {quizInfo.questionTypes.audio > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Volume2 className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-semibold text-gray-700">Audio ({quizInfo.questionTypes.audio})</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {questions.slice(quizInfo.questionTypes.mcq, quizInfo.questionTypes.mcq + quizInfo.questionTypes.audio).map((q, idx) => {
+                      const actualIndex = quizInfo.questionTypes.mcq + idx;
+                      const isAnswered = answers.some(a => a.questionId === q._id);
+                      const isCurrent = currentIndex === actualIndex;
+                      return (
+                        <button
+                          key={q._id}
+                          onClick={() => setCurrentIndex(actualIndex)}
+                          className={`w-8 h-8 rounded text-xs font-semibold transition-all ${
+                            isCurrent
+                              ? 'bg-green-600 text-white ring-2 ring-green-300'
+                              : isAnswered
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          {actualIndex + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Video Section */}
+              {quizInfo.questionTypes.video > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Video className="h-4 w-4 text-purple-600" />
+                    <span className="text-xs font-semibold text-gray-700">Video ({quizInfo.questionTypes.video})</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {questions.slice(
+                      quizInfo.questionTypes.mcq + quizInfo.questionTypes.audio,
+                      quizInfo.questionTypes.mcq + quizInfo.questionTypes.audio + quizInfo.questionTypes.video
+                    ).map((q, idx) => {
+                      const actualIndex = quizInfo.questionTypes.mcq + quizInfo.questionTypes.audio + idx;
+                      const isAnswered = answers.some(a => a.questionId === q._id);
+                      const isCurrent = currentIndex === actualIndex;
+                      return (
+                        <button
+                          key={q._id}
+                          onClick={() => setCurrentIndex(actualIndex)}
+                          className={`w-8 h-8 rounded text-xs font-semibold transition-all ${
+                            isCurrent
+                              ? 'bg-purple-600 text-white ring-2 ring-purple-300'
+                              : isAnswered
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          {actualIndex + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Puzzle Section */}
+              {quizInfo.questionTypes.puzzle > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Puzzle className="h-4 w-4 text-orange-600" />
+                    <span className="text-xs font-semibold text-gray-700">Puzzle ({quizInfo.questionTypes.puzzle})</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {questions.slice(
+                      quizInfo.questionTypes.mcq + quizInfo.questionTypes.audio + quizInfo.questionTypes.video
+                    ).map((q, idx) => {
+                      const actualIndex = quizInfo.questionTypes.mcq + quizInfo.questionTypes.audio + quizInfo.questionTypes.video + idx;
+                      const isAnswered = answers.some(a => a.questionId === q._id);
+                      const isCurrent = currentIndex === actualIndex;
+                      return (
+                        <button
+                          key={q._id}
+                          onClick={() => setCurrentIndex(actualIndex)}
+                          className={`w-8 h-8 rounded text-xs font-semibold transition-all ${
+                            isCurrent
+                              ? 'bg-orange-600 text-white ring-2 ring-orange-300'
+                              : isAnswered
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          {actualIndex + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Legend */}
+              <div className="pt-3 border-t space-y-1 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <span className="text-gray-600">Answered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                  <span className="text-gray-600">Not Answered</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-600 rounded ring-2 ring-blue-300"></div>
+                  <span className="text-gray-600">Current</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Quiz Content */}
+        <div className="lg:col-span-3">
+          <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="flex items-center gap-2">
@@ -758,6 +1036,8 @@ const AdvancedQuizPlayer: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+        </div>
+      </div>
     </div>
   );
 };

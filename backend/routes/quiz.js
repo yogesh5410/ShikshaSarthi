@@ -234,12 +234,27 @@ router.get("/analytics/:quizId", async (req, res) => {
     });
 
     // Get all student reports for this quiz
-    const Report = require("../models/Report");
     const StudentReport = require("../models/StudentReport");
     
     const reports = await StudentReport.find({ quizId: quiz.quizId });
     
-    // Calculate statistics
+    console.log(`Found ${reports.length} reports for quiz ${quiz.quizId}`);
+    
+    // Calculate statistics from StudentReport model (which has correct, incorrect, unattempted)
+    const studentReports = reports.map(report => {
+      const totalQuestions = report.correct + report.incorrect + report.unattempted;
+      const percentage = totalQuestions > 0 ? ((report.correct / totalQuestions) * 100) : 0;
+      
+      return {
+        studentId: report.studentId,
+        correct: report.correct,
+        incorrect: report.incorrect,
+        unattempted: report.unattempted,
+        totalQuestions: totalQuestions,
+        percentage: percentage.toFixed(2)
+      };
+    }).sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage));
+    
     const analytics = {
       quizInfo: {
         quizId: quiz.quizId,
@@ -250,25 +265,15 @@ router.get("/analytics/:quizId", async (req, res) => {
         endTime: quiz.endTime
       },
       totalAttempts: reports.length,
-      students: reports.map(report => ({
-        studentId: report.studentId,
-        score: report.score,
-        totalQuestions: report.totalQuestions,
-        correctAnswers: report.correctAnswers,
-        incorrectAnswers: report.incorrectAnswers,
-        unattempted: report.unattempted,
-        percentage: ((report.correctAnswers / report.totalQuestions) * 100).toFixed(2),
-        timeTaken: report.timeTaken,
-        submittedAt: report.submittedAt
-      })).sort((a, b) => b.score - a.score),
+      studentReports: studentReports,
       averageScore: reports.length > 0 
-        ? (reports.reduce((sum, r) => sum + r.score, 0) / reports.length).toFixed(2)
+        ? (studentReports.reduce((sum, r) => sum + parseFloat(r.percentage), 0) / reports.length).toFixed(2)
         : 0,
       highestScore: reports.length > 0 
-        ? Math.max(...reports.map(r => r.score))
+        ? Math.max(...studentReports.map(r => parseFloat(r.percentage)))
         : 0,
       lowestScore: reports.length > 0 
-        ? Math.min(...reports.map(r => r.score))
+        ? Math.min(...studentReports.map(r => parseFloat(r.percentage)))
         : 0
     };
 
@@ -283,6 +288,29 @@ router.get("/analytics/:quizId", async (req, res) => {
 router.post("/submit-advanced", async (req, res) => {
   try {
     const { quizId, studentId, answers, score, timeTaken, completedAt, timeUp } = req.body;
+
+    console.log('=== BACKEND SUBMIT DEBUG ===');
+    console.log('Received studentId:', studentId);
+    console.log('studentId type:', typeof studentId);
+    console.log('studentId length:', studentId?.length);
+    console.log('===========================');
+
+    // Validate required fields
+    if (!quizId) {
+      return res.status(400).json({ error: "Quiz ID is required" });
+    }
+
+    if (!studentId || studentId.trim() === '') {
+      return res.status(400).json({ error: "Student ID is required and cannot be empty" });
+    }
+
+    if (!answers || !Array.isArray(answers)) {
+      return res.status(400).json({ error: "Answers array is required" });
+    }
+
+    if (!score || typeof score.correct === 'undefined' || typeof score.incorrect === 'undefined') {
+      return res.status(400).json({ error: "Score object with correct and incorrect counts is required" });
+    }
 
     // Find the quiz
     const quiz = await Quiz.findOne({ quizId });
@@ -302,29 +330,30 @@ router.post("/submit-advanced", async (req, res) => {
     
     const student = await Student.findOne({ studentId });
     
+    if (!student) {
+      console.warn(`Student with ID ${studentId} not found in database`);
+    }
+    
     const report = new StudentReport({
       quizId,
-      studentId,
-      studentName: student?.name || studentId,
+      studentId: studentId.trim(), // Ensure trimmed
+      correct: score.correct,
+      incorrect: score.incorrect,
+      unattempted: score.unattempted,
       answers: answers.map((ans) => ({
         questionId: ans.questionId,
-        questionType: ans.questionType,
         selectedAnswer: ans.selectedAnswer,
-        correctAnswer: ans.correctAnswer,
-        isCorrect: ans.isCorrect,
-        timeSpent: ans.timeSpent
-      })),
-      score: score.correct,
-      totalQuestions: quiz.totalQuestions,
-      correctAnswers: score.correct,
-      incorrectAnswers: score.incorrect,
-      unattempted: score.unattempted,
-      timeTaken,
-      submittedAt: completedAt,
-      timeUp: timeUp || false
+        isCorrect: ans.isCorrect
+      }))
     });
 
     await report.save();
+
+    // Update quiz attemptedBy array if not already present
+    if (!quiz.attemptedBy.includes(studentId)) {
+      quiz.attemptedBy.push(studentId);
+      await quiz.save();
+    }
 
     res.status(201).json({
       message: "Quiz submitted successfully",

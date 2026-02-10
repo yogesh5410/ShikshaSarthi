@@ -40,6 +40,7 @@ import MATTopicTest from "./pages/student/MATTopicTest";
 import MATTestResults from "./pages/student/MATTestResults";
 import TakeAdvancedQuiz from "./pages/student/TakeAdvancedQuiz";
 import AdvancedQuizPlayer from "./pages/student/AdvancedQuizPlayer";
+import AdvancedQuizResults from "./pages/student/AdvancedQuizResults";
 import DemoTest from "./pages/DemoTest";
 
 // Question Page
@@ -119,6 +120,7 @@ const AppRoutes = () => {
       <Route path="/student/mat-test-results/:testId" element={<MATTestResults />} />
       <Route path="/student/take-advanced-quiz" element={<TakeAdvancedQuiz />} />
       <Route path="/student/advanced-quiz-player" element={<AdvancedQuizPlayer />} />
+      <Route path="/student/advanced-quiz-results" element={<AdvancedQuizResults />} />
       <Route path='/studentreport/:id' element={<StudentReport></StudentReport>}></Route>
       <Route path='/singlequiz/:id' element={<SingleQuizReport></SingleQuizReport>}></Route>
       <Route path='/login/student' element={<LoginStudent></LoginStudent>}></Route>

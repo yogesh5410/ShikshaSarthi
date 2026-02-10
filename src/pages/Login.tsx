@@ -82,7 +82,19 @@ const Login: React.FC = () => {
             ...(response.data.student || response.data.user),
             role: role
           };
+          
+          console.log('=== LOGIN DEBUG ===');
+          console.log('Response data:', response.data);
+          console.log('userData:', userData);
+          console.log('studentId in userData:', userData.studentId);
+          console.log('==================');
+          
           localStorage.setItem('student', JSON.stringify({ student: userData }));
+          
+          // Verify what was stored
+          const stored = localStorage.getItem('student');
+          console.log('Stored in localStorage:', stored);
+          
         } else if (role === 'teacher') {
           userData = {
             ...(response.data.teacher || response.data.user),
