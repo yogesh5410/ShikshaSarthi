@@ -249,7 +249,22 @@ const EmbeddableMemoryMatch: React.FC<EmbeddableMemoryMatchProps> = ({ onComplet
   };
 
   return (
-    <div className="w-full bg-gradient-to-br from-indigo-50 via-white to-pink-50 rounded-xl p-3">
+    <div className="w-full bg-gradient-to-br from-indigo-50 via-white to-pink-50 rounded-xl p-3 relative">
+      {/* Completion Overlay */}
+      {submitted && (
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-xl z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="mb-4 flex justify-center">
+              <div className="h-20 w-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                <Trophy className="h-10 w-10 text-white" />
+              </div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">पहेली पूर्ण! 🎉</h3>
+            <p className="text-gray-600 text-sm">आपका स्कोर क्विज़ परिणाम में दिखाया जाएगा</p>
+          </div>
+        </div>
+      )}
+
       {/* Phase banner + timer */}
       <div className="flex items-center justify-between mb-3">
         <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold text-white ${
