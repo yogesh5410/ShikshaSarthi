@@ -394,3 +394,7 @@ This student is learning effectively! High focus, thoughtful answering, minimal 
 https://youtu.be/rimfVt06iIY?si=F_kC6Wr_01_ClkPt
 //cube root
 https://youtu.be/HfeDa7eD4b0?si=7J7l3YRsAceT81gQ
+//percentage
+https://youtu.be/qiSa8Z4ZJfQ?si=bT3H0O9IEVuS8xT3
+//power rules
+https://youtu.be/xlZo_XjXw7o?si=vL8a6u7A1eYtBLgq

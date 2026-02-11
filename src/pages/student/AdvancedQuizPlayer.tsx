@@ -321,6 +321,15 @@ const AdvancedQuizPlayer: React.FC = () => {
             correctAnswer: getCorrectAnswer(q),
             isCorrect: false,
             timeSpent: 0,
+            // Add video question details for results page
+            ...(q.type === 'video' && q.data && {
+              questionText: q.data.question,
+              options: q.data.options,
+              hint: q.data.hint?.text || null,
+              solution: q.data.solution || null,
+              parentVideoId: q.data.parentVideoId,
+              questionIndex: q.data.questionIndex
+            }),
             videoAnalytics: q.type === 'video' && videoAnalytics[q._id] ? {
               videoDuration: videoAnalytics[q._id].videoDuration,
               watchTime: videoAnalytics[q._id].watchTime,
@@ -363,6 +372,15 @@ const AdvancedQuizPlayer: React.FC = () => {
           correctAnswer,
           isCorrect,
           timeSpent: answer.timeSpent,
+          // Add video question details for results page
+          ...(q.type === 'video' && q.data && {
+            questionText: q.data.question,
+            options: q.data.options,
+            hint: q.data.hint?.text || null,
+            solution: q.data.solution || null,
+            parentVideoId: q.data.parentVideoId,
+            questionIndex: q.data.questionIndex
+          }),
           videoAnalytics: answer.videoAnalytics
         };
       });
