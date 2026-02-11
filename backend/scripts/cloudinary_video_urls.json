@@ -1,0 +1,34 @@
+[
+  {
+    "topic": "वर्गमूल",
+    "videoName": "Square Root",
+    "cloudinaryUrl": "https://res.cloudinary.com/dmebh0vcd/video/upload/v1770841581/nmms_math_videos/square_root_hvkfts.mp4",
+    "publicId": "nmms_math_videos/square_root_hvkfts",
+    "duration": 303.113288,
+    "format": "mp4"
+  },
+  {
+    "topic": "घनमूल",
+    "videoName": "Cube Root",
+    "cloudinaryUrl": "https://res.cloudinary.com/dmebh0vcd/video/upload/v1770841587/nmms_math_videos/cube_root_lgjb48.mp4",
+    "publicId": "nmms_math_videos/cube_root_lgjb48",
+    "duration": 215.550839,
+    "format": "mp4"
+  },
+  {
+    "topic": "प्रतिशत",
+    "videoName": "Percentage",
+    "cloudinaryUrl": "https://res.cloudinary.com/dmebh0vcd/video/upload/v1770841596/nmms_math_videos/percentage_dcrbom.mp4",
+    "publicId": "nmms_math_videos/percentage_dcrbom",
+    "duration": 235.6361,
+    "format": "mp4"
+  },
+  {
+    "topic": "करणी और घातांक",
+    "videoName": "Surds & Indices",
+    "cloudinaryUrl": "https://res.cloudinary.com/dmebh0vcd/video/upload/v1770841603/nmms_math_videos/surds_indices_z3op6z.mp4",
+    "publicId": "nmms_math_videos/surds_indices_z3op6z",
+    "duration": 211.069388,
+    "format": "mp4"
+  }
+]
