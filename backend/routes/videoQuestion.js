@@ -109,6 +109,7 @@ router.get("/single/:parentId/question/:questionIndex", async (req, res) => {
       options: videoQuestion.questions[index].options,
       correctAnswer: videoQuestion.questions[index].correctAnswer,
       hint: videoQuestion.questions[index].hint,
+      solution: videoQuestion.questions[index].solution,
       type: 'video'
     };
     

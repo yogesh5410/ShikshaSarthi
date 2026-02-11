@@ -17,6 +17,10 @@ const videoQuestionSchema = new mongoose.Schema({
         text: { type: String },
         image: { type: String },
       },
+      solution: {
+        text: { type: String },
+        steps: { type: [String] }, // Array of solution steps
+      },
     },
   ],
   createdAt: { type: Date, default: Date.now },

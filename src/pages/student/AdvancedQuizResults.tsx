@@ -25,7 +25,6 @@ import {
   Play,
   Pause,
   FastForward,
-  Eye,
   Brain,
   Target,
   BarChart3,
@@ -180,128 +179,95 @@ const AdvancedQuizResults: React.FC = () => {
       : parseFloat(results.score.percentage);
   };
 
-  // Calculate video-specific analytics
+  // Calculate video-specific analytics based on accuracy and time spent
   const calculateVideoAnalytics = () => {
     if (!results?.answers) return null;
     
     const videoQuestions = results.answers.filter(a => a.questionType === 'video');
     if (videoQuestions.length === 0) return null;
 
-    let totalWatchPercentage = 0;
-    let totalPauseCount = 0;
-    let totalSeekCount = 0;
     let totalTimeSpent = 0;
-    let questionsWatched = 0;
     let correctAnswers = 0;
+    let veryQuickAnswers = 0; // Less than 10 seconds
+    let thoughtfulAnswers = 0; // More than 20 seconds
+    let moderateAnswers = 0; // Between 10-20 seconds
 
-    const videoDetails = videoQuestions.map(q => {
-      const analytics = q.videoAnalytics;
-      if (analytics) {
-        totalWatchPercentage += analytics.watchPercentage;
-        totalPauseCount += analytics.pauseCount;
-        totalSeekCount += analytics.seekCount;
-        if (analytics.watchPercentage > 0) questionsWatched++;
-      }
+    videoQuestions.forEach(q => {
       totalTimeSpent += q.timeSpent;
       if (q.isCorrect) correctAnswers++;
-
-      return {
-        questionId: q.questionId,
-        timeSpent: q.timeSpent,
-        isCorrect: q.isCorrect,
-        watchPercentage: analytics?.watchPercentage || 0,
-        pauseCount: analytics?.pauseCount || 0,
-        seekCount: analytics?.seekCount || 0
-      };
+      
+      if (q.timeSpent < 10) veryQuickAnswers++;
+      else if (q.timeSpent >= 20) thoughtfulAnswers++;
+      else moderateAnswers++;
     });
 
-    const avgWatchPercentage = videoQuestions.length > 0 ? totalWatchPercentage / videoQuestions.length : 0;
-    const avgTimeSpent = videoQuestions.length > 0 ? totalTimeSpent / videoQuestions.length : 0;
+    const avgTimeSpent = totalTimeSpent / videoQuestions.length;
     const accuracy = (correctAnswers / videoQuestions.length) * 100;
 
-    // Determine learning behavior category
+    // Determine learning behavior based on accuracy and time spent
     let behaviorCategory = '';
     let behaviorDescription = '';
     let behaviorIcon = '';
-    let behaviorColor = '';
     
-    // Calculate behavior based on watch percentage, time, and accuracy
-    const veryQuickAnswers = videoQuestions.filter(q => q.timeSpent < 5).length;
-    const skippedVideos = videoQuestions.filter(q => !q.videoAnalytics || q.videoAnalytics.watchPercentage < 20).length;
-    
-    if (avgWatchPercentage >= 70 && avgTimeSpent >= 20 && veryQuickAnswers <= 1) {
-      behaviorCategory = 'Engaged Learner';
-      behaviorDescription = 'Student is watching videos attentively and taking time to understand the content before answering questions.';
-      behaviorIcon = '🎓';
-      behaviorColor = 'green';
-    } else if (avgWatchPercentage >= 50 && avgTimeSpent >= 10) {
-      behaviorCategory = 'Moderate Engagement';
-      behaviorDescription = 'Student is partially watching videos but could benefit from more careful attention to the content.';
-      behaviorIcon = '📚';
-      behaviorColor = 'blue';
-    } else if (skippedVideos >= videoQuestions.length / 2 || veryQuickAnswers >= videoQuestions.length / 2) {
-      behaviorCategory = 'Needs Attention';
-      behaviorDescription = 'Student is skipping videos or answering too quickly without proper engagement. Individual support recommended.';
-      behaviorIcon = '⚠️';
-      behaviorColor = 'red';
-    } else {
-      behaviorCategory = 'Developing Habits';
-      behaviorDescription = 'Student is still developing effective video learning habits. Guidance on proper study techniques would be beneficial.';
-      behaviorIcon = '🌱';
-      behaviorColor = 'yellow';
+    // Excellent Performance: High accuracy + Good time management
+    if (accuracy >= 75 && avgTimeSpent >= 15) {
+      behaviorCategory = 'उत्कृष्ट प्रदर्शन';
+      behaviorDescription = `आपने ${accuracy.toFixed(0)}% सटीकता के साथ शानदार प्रदर्शन किया। प्रति प्रश्न औसतन ${avgTimeSpent.toFixed(0)} सेकंड का समय देकर आपने सोच-समझकर उत्तर दिए। यह दर्शाता है कि आप वीडियो को ध्यान से देखते हैं और समझकर उत्तर देते हैं। बेहतरीन काम!`;
+      behaviorIcon = '🌟';
+    } 
+    // Good Performance: Decent accuracy with reasonable time
+    else if (accuracy >= 60 && avgTimeSpent >= 10) {
+      behaviorCategory = 'अच्छा प्रदर्शन';
+      behaviorDescription = `${accuracy.toFixed(0)}% सटीकता अच्छी है। आप प्रति प्रश्न ${avgTimeSpent.toFixed(0)} सेकंड का समय ले रहे हैं जो उचित है। थोड़ा और ध्यान देने से आप उत्कृष्ट स्तर पर पहुंच सकते हैं। वीडियो के महत्वपूर्ण हिस्सों पर फोकस करें।`;
+      behaviorIcon = '✅';
+    }
+    // Quick but accurate: High accuracy but very fast
+    else if (accuracy >= 70 && avgTimeSpent < 10) {
+      behaviorCategory = 'तेज़ और सटीक';
+      behaviorDescription = `आप बहुत जल्दी उत्तर दे रहे हैं (औसत ${avgTimeSpent.toFixed(0)} सेकंड) लेकिन ${accuracy.toFixed(0)}% सटीकता अच्छी है। यह दिखाता है कि आप विषय को अच्छे से जानते हैं। हालांकि, थोड़ा अधिक समय लेने से और बेहतर परिणाम मिल सकते हैं।`;
+      behaviorIcon = '⚡';
+    }
+    // Needs more focus: Low accuracy despite spending time
+    else if (accuracy < 50 && avgTimeSpent >= 15) {
+      behaviorCategory = 'ध्यान केंद्रित करें';
+      behaviorDescription = `आप प्रति प्रश्न ${avgTimeSpent.toFixed(0)} सेकंड का अच्छा समय दे रहे हैं, लेकिन ${accuracy.toFixed(0)}% सटीकता में सुधार की जरूरत है। वीडियो के मुख्य बिंदुओं पर अधिक ध्यान दें। यदि कोई भाग समझ न आए तो उसे दोबारा देखें।`;
+      behaviorIcon = '🎯';
+    }
+    // Rushing: Both low accuracy and low time
+    else if (accuracy < 50 && avgTimeSpent < 10) {
+      behaviorCategory = 'जल्दबाजी में सुधार करें';
+      behaviorDescription = `${accuracy.toFixed(0)}% सटीकता और औसत ${avgTimeSpent.toFixed(0)} सेकंड का समय दर्शाता है कि आप बहुत जल्दी में हैं। वीडियो को पूरा देखें और प्रश्नों को ध्यान से पढ़ें। धैर्य रखें - गुणवत्ता गति से अधिक महत्वपूर्ण है।`;
+      behaviorIcon = '⏱️';
+    }
+    // Average performance
+    else {
+      behaviorCategory = 'संतोषजनक प्रयास';
+      behaviorDescription = `${accuracy.toFixed(0)}% सटीकता और ${avgTimeSpent.toFixed(0)} सेकंड प्रति प्रश्न एक अच्छी शुरुआत है। नियमित अभ्यास से आप बेहतर हो सकते हैं। वीडियो के महत्वपूर्ण भागों को नोट करें और ध्यान से सुनें।`;
+      behaviorIcon = '📈';
     }
 
-    // Generate specific recommendations
-    const recommendations = [];
-    if (avgWatchPercentage < 60) {
-      recommendations.push({
-        type: 'critical',
-        title: 'Watch Complete Videos',
-        message: 'Student is not watching videos fully. Encourage watching at least 70% of each video for better understanding.'
-      });
-    }
-    if (veryQuickAnswers > 2) {
-      recommendations.push({
-        type: 'warning',
-        title: 'Take More Time',
-        message: 'Multiple questions answered in less than 5 seconds. Student should spend more time thinking through answers.'
-      });
-    }
-    if (accuracy < 50 && avgWatchPercentage >= 60) {
-      recommendations.push({
-        type: 'info',
-        title: 'Comprehension Support',
-        message: 'Student is watching videos but struggling with questions. Additional explanations or practice may help.'
-      });
-    }
-    if (accuracy >= 70 && avgWatchPercentage >= 70) {
-      recommendations.push({
-        type: 'success',
-        title: 'Excellent Performance',
-        message: 'Student demonstrates strong video learning habits and good comprehension. Keep up the good work!'
-      });
-    }
-    if (skippedVideos > 0) {
-      recommendations.push({
-        type: 'warning',
-        title: 'Video Engagement Required',
-        message: `${skippedVideos} out of ${videoQuestions.length} videos were skipped or barely watched. All videos should be viewed for complete learning.`
-      });
+    // Additional insights based on answer patterns
+    const quickAnswerRatio = veryQuickAnswers / videoQuestions.length;
+    const thoughtfulRatio = thoughtfulAnswers / videoQuestions.length;
+    
+    let additionalInsight = '';
+    if (quickAnswerRatio > 0.6) {
+      additionalInsight = ' आप अधिकतर प्रश्नों का उत्तर जल्दी दे रहे हैं - वीडियो को पूरा देखने पर विचार करें।';
+    } else if (thoughtfulRatio > 0.6) {
+      additionalInsight = ' आप प्रत्येक प्रश्न पर अच्छा समय दे रहे हैं - यह सीखने का सही तरीका है।';
     }
 
     return {
       totalVideoQuestions: videoQuestions.length,
-      questionsWatched,
-      avgWatchPercentage,
       avgTimeSpent,
       accuracy,
       correctAnswers,
+      veryQuickAnswers,
+      thoughtfulAnswers,
+      moderateAnswers,
       behaviorCategory,
-      behaviorDescription,
-      behaviorIcon,
-      behaviorColor,
-      recommendations,
-      videoDetails
+      behaviorDescription: behaviorDescription + additionalInsight,
+      behaviorIcon
     };
   };
 
@@ -442,6 +408,234 @@ const AdvancedQuizResults: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Video Analysis Accordion */}
+                {type === 'video' && results.answers && stats.total > 0 && videoAnalytics && (
+                  <Accordion type="single" collapsible className="mt-4">
+                    {/* Panel 1: Video विश्लेषण और स्कोर */}
+                    <AccordionItem value="video-analysis" className="border border-purple-200 rounded-lg px-3 bg-purple-50/30 mb-3">
+                      <AccordionTrigger className="hover:no-underline py-3">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="h-5 w-5 text-purple-600" />
+                          <span className="text-sm font-semibold text-gray-900">वीडियो विश्लेषण और स्कोर</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-3">
+                        <div className="space-y-4 mt-2">
+                          {/* Score Cards - Only 2 metrics */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="border-2 border-purple-100 bg-purple-50/50 rounded-lg p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Target className="h-5 w-5 text-purple-600" />
+                                <span className="text-sm font-semibold text-gray-600">सटीकता (Accuracy)</span>
+                              </div>
+                              <div className="text-3xl font-bold text-purple-600">
+                                {videoAnalytics.accuracy.toFixed(0)}%
+                              </div>
+                              <p className="text-xs text-gray-600 mt-2">
+                                {videoAnalytics.correctAnswers}/{videoAnalytics.totalVideoQuestions} सही उत्तर
+                              </p>
+                            </div>
+
+                            <div className="border-2 border-green-100 bg-green-50/50 rounded-lg p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Clock className="h-5 w-5 text-green-600" />
+                                <span className="text-sm font-semibold text-gray-600">औसत समय (Avg Time)</span>
+                              </div>
+                              <div className="text-3xl font-bold text-green-600">
+                                {videoAnalytics.avgTimeSpent.toFixed(0)}s
+                              </div>
+                              <p className="text-xs text-gray-600 mt-2">प्रति प्रश्न</p>
+                            </div>
+                          </div>
+
+                          {/* Overall Analysis */}
+                          <div className="p-4 rounded-lg border-2 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-300">
+                            <div className="flex items-start gap-3">
+                              <div className="text-3xl">{videoAnalytics.behaviorIcon}</div>
+                              <div className="flex-1">
+                                <h4 className="font-bold text-gray-900 mb-2 text-base">
+                                  {videoAnalytics.behaviorCategory}
+                                </h4>
+                                <p className="text-sm text-gray-700 leading-relaxed">
+                                  {videoAnalytics.behaviorDescription}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    {/* Panel 2: प्रश्न, उत्तर और हल */}
+                    <AccordionItem value="video-questions" className="border border-purple-200 rounded-lg px-3 bg-purple-50/30">
+                      <AccordionTrigger className="hover:no-underline py-3">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-5 w-5 text-purple-600" />
+                          <span className="text-sm font-semibold text-gray-900">प्रश्न, उत्तर और हल</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-3">
+                        <div className="space-y-4 mt-2">
+                          {results.answers?.filter(a => a.questionType === 'video').map((answer, index) => {
+                            // Use data directly from answer object (included during quiz submission)
+                            const questionText = answer.questionText || 'प्रश्न पाठ उपलब्ध नहीं';
+                            const options = answer.options || [];
+                            const correctAnswer = answer.correctAnswer;
+                            const solution = answer.solution;
+                            
+                            console.log('Video Question:', {
+                              questionId: answer.questionId,
+                              hasQuestionText: !!answer.questionText,
+                              hasOptions: !!answer.options,
+                              optionsLength: options.length,
+                              correctAnswer: correctAnswer,
+                              hasSolution: !!solution,
+                              solutionData: solution
+                            });
+                            
+                            return (
+                            <div 
+                              key={answer.questionId}
+                              className="border-2 border-purple-200 rounded-lg overflow-hidden bg-white"
+                            >
+                              {/* Question Header with Purple Background */}
+                              <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold">प्रश्न {index + 1}</span>
+                                  <Badge className="bg-white/20 text-white border-white/30">
+                                    {answer.isCorrect ? 'Answered' : answer.selectedAnswer === null ? 'Skipped' : 'Answered'}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center gap-1 text-sm">
+                                  <Clock className="h-3.5 w-3.5" />
+                                  <span>{answer.timeSpent}s</span>
+                                </div>
+                              </div>
+
+                              {/* Question Text */}
+                              <div className="p-4">
+                                <p className="text-base font-medium text-gray-800 mb-4">
+                                  {questionText}
+                                </p>
+
+                                {/* Options - Only show if options exist */}
+                                {options.length > 0 ? (
+                                  <div className="space-y-2 mb-4">
+                                    {options.map((option: string, optIndex: number) => {
+                                      const optionLabel = String.fromCharCode(65 + optIndex); // A, B, C, D
+                                      const isSelected = answer.selectedAnswer === option;
+                                      const isCorrect = correctAnswer === option;
+                                      
+                                      return (
+                                        <div
+                                          key={optIndex}
+                                          className={`flex items-center gap-3 p-3 rounded-lg border-2 ${
+                                            isCorrect
+                                              ? 'bg-green-50 border-green-300'
+                                              : isSelected && !answer.isCorrect
+                                              ? 'bg-red-50 border-red-300'
+                                              : 'bg-gray-50 border-gray-200'
+                                          }`}
+                                        >
+                                          <div className={`font-bold text-sm min-w-[24px] ${
+                                            isCorrect ? 'text-green-700' :
+                                            isSelected && !answer.isCorrect ? 'text-red-700' :
+                                            'text-gray-700'
+                                          }`}>
+                                            {optionLabel}
+                                          </div>
+                                          <div className={`flex-1 text-sm ${
+                                            isCorrect ? 'text-green-900 font-medium' :
+                                            isSelected && !answer.isCorrect ? 'text-red-900 font-medium' :
+                                            'text-gray-700'
+                                          }`}>
+                                            {option}
+                                          </div>
+                                          {isCorrect && (
+                                            <CheckCircle className="h-5 w-5 text-green-600" />
+                                          )}
+                                          {isSelected && !answer.isCorrect && (
+                                            <XCircle className="h-5 w-5 text-red-600" />
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                                    ⚠️ विकल्प उपलब्ध नहीं हैं
+                                  </div>
+                                )}
+
+                                {/* Wrong Answer Section */}
+                                {!answer.isCorrect && answer.selectedAnswer !== null && (
+                                  <div className="bg-red-50 border-2 border-red-200 rounded-lg p-3 mb-3">
+                                    <div className="flex items-start gap-2">
+                                      <XCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                                      <div>
+                                        <div className="font-bold text-red-900 mb-1">गलत उत्तर</div>
+                                        <div className="text-sm text-red-800">
+                                          सही उत्तर: <span className="font-semibold text-green-700">{correctAnswer}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Skipped Section */}
+                                {answer.selectedAnswer === null && (
+                                  <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-3 mb-3">
+                                    <div className="flex items-start gap-2">
+                                      <MinusCircle className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                                      <div>
+                                        <div className="font-bold text-gray-900 mb-1">अप्रयासित</div>
+                                        <div className="text-sm text-gray-700">
+                                          सही उत्तर: <span className="font-semibold text-green-700">{correctAnswer}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Solution Section - Blue/Green Background - Always Show */}
+                                <div className="bg-gradient-to-br from-blue-50 to-green-50 border-2 border-blue-200 rounded-lg p-4">
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 mt-1">
+                                      <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center">
+                                        <span className="text-sm">📝</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex-1">
+                                      <div className="font-bold text-blue-900 mb-2 text-base flex items-center gap-2">
+                                        <span>हल (Solution)</span>
+                                      </div>
+                                      
+                                      {solution ? (
+                                        <>
+                                          {/* Solution Text - Full explanation */}
+                                          {solution.text && (
+                                            <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                                              {solution.text}
+                                            </div>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <div className="text-sm text-gray-600 italic">
+                                          इस प्रश्न के लिए हल उपलब्ध नहीं है। (Only वर्गमूल and घनमूल topics have solutions)
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )})}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
+
                 {/* Puzzle Analysis Accordion */}
                 {type === 'puzzle' && results.answers && stats.total > 0 && (
                   <Accordion type="single" collapsible className="mt-4">
@@ -576,212 +770,6 @@ const AdvancedQuizResults: React.FC = () => {
           })}
         </CardContent>
       </Card>
-
-      {/* Video Learning Analytics Section */}
-      {videoAnalytics && videoAnalytics.totalVideoQuestions > 0 && (
-        <Card className="mb-6 border-2 border-purple-200">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-            <CardTitle className="flex items-center gap-2 text-purple-900">
-              <Video className="h-6 w-6" />
-              Video Learning Report
-            </CardTitle>
-            <p className="text-sm text-purple-700">
-              Analysis of video engagement and learning behavior
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-6">
-            
-            {/* Learning Behavior Category */}
-            <div className={`p-6 rounded-lg border-2 ${
-              videoAnalytics.behaviorColor === 'green' ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' :
-              videoAnalytics.behaviorColor === 'blue' ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-300' :
-              videoAnalytics.behaviorColor === 'yellow' ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-300' :
-              'bg-gradient-to-r from-red-50 to-orange-50 border-red-300'
-            }`}>
-              <div className="flex items-start gap-4">
-                <div className="text-5xl">{videoAnalytics.behaviorIcon}</div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold mb-2">
-                    Learning Behavior: {videoAnalytics.behaviorCategory}
-                  </h3>
-                  <p className={`text-base ${
-                    videoAnalytics.behaviorColor === 'green' ? 'text-green-800' :
-                    videoAnalytics.behaviorColor === 'blue' ? 'text-blue-800' :
-                    videoAnalytics.behaviorColor === 'yellow' ? 'text-yellow-800' :
-                    'text-red-800'
-                  }`}>
-                    {videoAnalytics.behaviorDescription}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Performance Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Video Performance */}
-              <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Video className="h-5 w-5 text-purple-600" />
-                  <span className="font-semibold text-gray-800">Video Performance</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Accuracy:</span>
-                    <span className="text-lg font-bold text-purple-600">
-                      {videoAnalytics.accuracy.toFixed(0)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Correct:</span>
-                    <span className="text-sm font-semibold">
-                      {videoAnalytics.correctAnswers}/{videoAnalytics.totalVideoQuestions}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Engagement Level */}
-              <div className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Eye className="h-5 w-5 text-blue-600" />
-                  <span className="font-semibold text-gray-800">Video Engagement</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Avg Watched:</span>
-                    <span className="text-lg font-bold text-blue-600">
-                      {videoAnalytics.avgWatchPercentage.toFixed(0)}%
-                    </span>
-                  </div>
-                  <Progress value={videoAnalytics.avgWatchPercentage} className="h-2" />
-                  <p className="text-xs text-gray-600">
-                    {videoAnalytics.avgWatchPercentage >= 70 ? '✅ Good engagement' :
-                     videoAnalytics.avgWatchPercentage >= 50 ? '⚠️ Moderate engagement' :
-                     '❌ Low engagement'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Time Management */}
-              <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <Clock className="h-5 w-5 text-green-600" />
-                  <span className="font-semibold text-gray-800">Time Management</span>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Avg per Q:</span>
-                    <span className="text-lg font-bold text-green-600">
-                      {videoAnalytics.avgTimeSpent.toFixed(0)}s
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600">
-                    {videoAnalytics.avgTimeSpent >= 20 && videoAnalytics.avgTimeSpent <= 90 
-                      ? '✅ Good pacing' :
-                     videoAnalytics.avgTimeSpent < 20 
-                      ? '⚠️ Too quick' :
-                      '⚠️ Too slow'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Recommendations for Student/Teacher */}
-            {videoAnalytics.recommendations.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-purple-600" />
-                  Action Items & Recommendations
-                </h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {videoAnalytics.recommendations.map((rec, index) => (
-                    <div 
-                      key={index}
-                      className={`p-4 rounded-lg border-l-4 ${
-                        rec.type === 'success' ? 'bg-green-50 border-green-500' :
-                        rec.type === 'critical' ? 'bg-red-50 border-red-500' :
-                        rec.type === 'warning' ? 'bg-yellow-50 border-yellow-500' :
-                        'bg-blue-50 border-blue-500'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="text-2xl">
-                          {rec.type === 'success' ? '✅' :
-                           rec.type === 'critical' ? '🚨' :
-                           rec.type === 'warning' ? '⚠️' :
-                           '💡'}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold mb-1">{rec.title}</h4>
-                          <p className="text-sm text-gray-700">{rec.message}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Individual Video Question Performance */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Target className="h-5 w-5 text-purple-600" />
-                Question-wise Video Engagement
-              </h3>
-              <div className="space-y-2">
-                {videoAnalytics.videoDetails.map((detail, index) => (
-                  <div 
-                    key={detail.questionId} 
-                    className={`p-3 rounded-lg border ${
-                      detail.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Badge className={detail.isCorrect ? 'bg-green-600' : 'bg-red-600'}>
-                          Q{index + 1}
-                        </Badge>
-                        <span className="text-sm font-medium">
-                          {detail.isCorrect ? '✅ Correct' : '❌ Incorrect'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="text-gray-600">
-                          Watched: <span className="font-semibold text-blue-600">{detail.watchPercentage.toFixed(0)}%</span>
-                        </span>
-                        <span className="text-gray-600">
-                          Time: <span className="font-semibold text-purple-600">{detail.timeSpent}s</span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-2">
-                      <Progress value={detail.watchPercentage} className="h-1" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Teacher's Note Section */}
-            <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-2 border-amber-300">
-              <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                For Teacher
-              </h4>
-              <p className="text-sm text-amber-800">
-                {videoAnalytics.behaviorColor === 'green' 
-                  ? '✅ This student demonstrates excellent video learning habits. They are engaged, thoughtful, and achieving good results. Minimal intervention needed.'
-                  : videoAnalytics.behaviorColor === 'blue'
-                  ? '📘 This student shows moderate engagement. Consider encouraging them to watch videos more completely and take more time with questions.'
-                  : videoAnalytics.behaviorColor === 'yellow'
-                  ? '🔔 This student is developing their learning approach. They would benefit from guidance on effective video learning strategies and study habits.'
-                  : '🚨 This student needs immediate attention. They are not engaging with video content properly. Individual support, parent communication, and study habit coaching recommended.'}
-              </p>
-            </div>
-
-          </CardContent>
-        </Card>
-      )}
 
       {/* Comparative Analysis */}
       {results.allStudentsStats && (
