@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
@@ -16,7 +22,10 @@ import {
   Zap,
   Calendar,
   TrendingUp,
-  Award
+  Award,
+  ChevronDown,
+  BarChart3,
+  Activity
 } from "lucide-react";
 import axios from "axios";
 
@@ -117,7 +126,7 @@ const PuzzleHistory: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Calculate stats
+  // Calculate overall stats
   const totalAttempts = pastResults.length;
   const completedGames = pastResults.filter(r => r.endReason === "COMPLETED").length;
   const averageScore = pastResults.length > 0 
@@ -126,6 +135,57 @@ const PuzzleHistory: React.FC = () => {
   const bestScore = pastResults.length > 0 
     ? Math.max(...pastResults.map(r => r.score)) 
     : 0;
+
+  // Calculate per-puzzle stats
+  const memoryMatchResults = pastResults.filter(r => r.puzzleType === "memory_match");
+  const matchPiecesResults = pastResults.filter(r => r.puzzleType === "match_pieces");
+
+  const calculatePuzzleStats = (results: any[]) => {
+    if (results.length === 0) return null;
+    const avgScore = Math.round(results.reduce((sum, r) => sum + r.score, 0) / results.length);
+    const bestScore = Math.max(...results.map(r => r.score));
+    const completed = results.filter(r => r.endReason === "COMPLETED").length;
+    const avgTime = Math.round(results.reduce((sum, r) => sum + r.timeTaken, 0) / results.length);
+    return { avgScore, bestScore, completed, total: results.length, avgTime };
+  };
+
+  const memoryMatchStats = calculatePuzzleStats(memoryMatchResults);
+  const matchPiecesStats = calculatePuzzleStats(matchPiecesResults);
+
+  const getAnalysisText = (stats: any, puzzleName: string) => {
+    if (!stats) return `अभी तक ${puzzleName} नहीं खेला गया।`;
+    
+    let performance = "औसत";
+    if (stats.avgScore >= 85) performance = "उत्कृष्ट";
+    else if (stats.avgScore >= 70) performance = "अच्छा";
+    else if (stats.avgScore < 55) performance = "सुधार की आवश्यकता";
+
+    const completionRate = Math.round((stats.completed / stats.total) * 100);
+    
+    return `आपने ${stats.total} बार ${puzzleName} खेला है। आपका औसत स्कोर ${stats.avgScore} है जो ${performance} प्रदर्शन दर्शाता है। आपकी पूर्णता दर ${completionRate}% है और औसत समय ${Math.floor(stats.avgTime / 60)} मिनट ${stats.avgTime % 60} सेकंड है।`;
+  };
+
+  const getCombinedAnalysis = () => {
+    if (totalAttempts === 0) return "अभी तक कोई पहेली नहीं खेली गई।";
+    
+    let overallPerformance = "औसत";
+    if (averageScore >= 85) overallPerformance = "उत्कृष्ट";
+    else if (averageScore >= 70) overallPerformance = "अच्छा";
+    else if (averageScore < 55) overallPerformance = "सुधार की आवश्यकता";
+
+    const completionRate = Math.round((completedGames / totalAttempts) * 100);
+    
+    let strengthArea = "";
+    if (memoryMatchStats && matchPiecesStats) {
+      strengthArea = memoryMatchStats.avgScore > matchPiecesStats.avgScore 
+        ? " आप मेमोरी मैच में बेहतर प्रदर्शन कर रहे हैं।"
+        : matchPiecesStats.avgScore > memoryMatchStats.avgScore
+        ? " आप मैच पीसेज़ में बेहतर प्रदर्शन कर रहे हैं।"
+        : " आप दोनों पहेलियों में समान रूप से अच्छा प्रदर्शन कर रहे हैं।";
+    }
+
+    return `कुल मिलाकर आपका औसत स्कोर ${averageScore} है जो ${overallPerformance} प्रदर्शन है। आपकी पूर्णता दर ${completionRate}% है।${strengthArea} निरंतर अभ्यास से और सुधार हो सकता है।`;
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
@@ -158,6 +218,130 @@ const PuzzleHistory: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Puzzle Analysis Accordion */}
+          {totalAttempts > 0 && (
+            <Accordion type="single" collapsible className="mb-8">
+              <AccordionItem value="analysis" className="border border-indigo-200 rounded-lg px-4 bg-white shadow-sm">
+                <AccordionTrigger className="hover:no-underline py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-lg font-semibold text-gray-900">पहेली विश्लेषण</h3>
+                      <p className="text-sm text-gray-600">व्यक्तिगत और संयुक्त स्कोर देखें</p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="pb-4">
+                  <div className="space-y-6 mt-2">
+                    {/* Individual Puzzle Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Memory Match */}
+                      <Card className="border-2 border-indigo-100 bg-indigo-50/50">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Brain className="h-5 w-5 text-indigo-600" />
+                            <CardTitle className="text-base">मेमोरी मैच</CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {memoryMatchStats ? (
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">औसत स्कोर:</span>
+                                <span className={`text-xl font-bold ${getScoreColor(memoryMatchStats.avgScore)}`}>
+                                  {memoryMatchStats.avgScore}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">सर्वोत्तम स्कोर:</span>
+                                <span className="text-lg font-semibold text-green-600">{memoryMatchStats.bestScore}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">पूर्ण खेल:</span>
+                                <span className="text-sm font-medium">{memoryMatchStats.completed}/{memoryMatchStats.total}</span>
+                              </div>
+                              <div className="pt-2 mt-2 border-t border-indigo-200">
+                                <p className="text-xs text-gray-700 leading-relaxed">
+                                  {getAnalysisText(memoryMatchStats, "मेमोरी मैच")}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500">अभी तक कोई डेटा उपलब्ध नहीं</p>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Match Pieces */}
+                      <Card className="border-2 border-cyan-100 bg-cyan-50/50">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Grid3X3 className="h-5 w-5 text-cyan-600" />
+                            <CardTitle className="text-base">मैच पीसेज़</CardTitle>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          {matchPiecesStats ? (
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">औसत स्कोर:</span>
+                                <span className={`text-xl font-bold ${getScoreColor(matchPiecesStats.avgScore)}`}>
+                                  {matchPiecesStats.avgScore}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">सर्वोत्तम स्कोर:</span>
+                                <span className="text-lg font-semibold text-green-600">{matchPiecesStats.bestScore}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">पूर्ण खेल:</span>
+                                <span className="text-sm font-medium">{matchPiecesStats.completed}/{matchPiecesStats.total}</span>
+                              </div>
+                              <div className="pt-2 mt-2 border-t border-cyan-200">
+                                <p className="text-xs text-gray-700 leading-relaxed">
+                                  {getAnalysisText(matchPiecesStats, "मैच पीसेज़")}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500">अभी तक कोई डेटा उपलब्ध नहीं</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Combined Analysis */}
+                    <Card className="border-2 border-purple-100 bg-gradient-to-br from-purple-50 to-pink-50">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-5 w-5 text-purple-600" />
+                          <CardTitle className="text-base">संयुक्त विश्लेषण</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-700">कुल औसत स्कोर:</span>
+                            <span className={`text-2xl font-bold ${getScoreColor(averageScore)}`}>
+                              {averageScore}
+                            </span>
+                          </div>
+                          <div className="pt-3 border-t border-purple-200">
+                            <p className="text-sm text-gray-700 leading-relaxed">
+                              {getCombinedAnalysis()}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          )}
 
           {/* Statistics Cards */}
           {totalAttempts > 0 && (

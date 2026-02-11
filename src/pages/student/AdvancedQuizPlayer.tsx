@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Volume2, Video, BookOpen, Puzzle, ChevronLeft, ChevronRight, Flag } from 'lucide-react';
+import { Clock, Volume2, Video, BookOpen, Puzzle, ChevronLeft, ChevronRight, Flag, CheckCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import axios from 'axios';
 import EmbeddableMemoryMatch from '@/components/puzzles/EmbeddableMemoryMatch';
@@ -870,7 +870,7 @@ const AdvancedQuizPlayer: React.FC = () => {
     const isMemory = data?.puzzleType === 'memory_match';
     const puzzleTitle = data?.title || (isMemory ? 'मेमोरी मैच चैलेंज' : data?.puzzleType === 'match_pieces' ? 'मैच पीसेज़' : 'पहेली गेम');
 
-    // If already completed, show the result summary
+    // If already completed, show the result summary (without score - score shown only in final results)
     if (existingResult) {
       return (
         <div className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl text-center border border-green-200">
@@ -879,14 +879,14 @@ const AdvancedQuizPlayer: React.FC = () => {
           </div>
           <h3 className="text-xl font-bold mb-2 text-gray-900">{puzzleTitle} — पूर्ण!</h3>
           <div className="inline-flex items-center gap-2 bg-white rounded-full px-6 py-3 shadow-md mb-3">
-            <span className="text-3xl font-bold text-green-600">{existingResult.score}</span>
-            <span className="text-gray-500">/100</span>
+            <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 mb-2">
             {existingResult.endReason === 'COMPLETED' ? 'गेम पूर्ण' : existingResult.endReason === 'TIME_UP' ? 'समय समाप्त' : 'बाहर निकले'}
             {existingResult.timeTaken && ` — ${existingResult.timeTaken} सेकंड`}
           </p>
-          <p className="text-xs text-green-600 mt-2 font-medium">✓ यह पहेली पहले ही पूरी हो चुकी है</p>
+          <p className="text-xs text-green-600 font-medium">✓ यह पहेली पहले ही पूरी हो चुकी है</p>
+          <p className="text-xs text-gray-500 mt-1">आपका स्कोर क्विज़ परिणाम में दिखाया जाएगा</p>
         </div>
       );
     }

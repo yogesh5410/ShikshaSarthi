@@ -4,6 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { 
   CheckCircle, 
   XCircle, 
@@ -21,7 +27,10 @@ import {
   FastForward,
   Eye,
   Brain,
-  Target
+  Target,
+  BarChart3,
+  Activity,
+  Grid3X3
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -432,6 +441,136 @@ const AdvancedQuizResults: React.FC = () => {
                     <span className="text-gray-600">Skipped</span>
                   </div>
                 </div>
+
+                {/* Puzzle Analysis Accordion */}
+                {type === 'puzzle' && results.answers && stats.total > 0 && (
+                  <Accordion type="single" collapsible className="mt-4">
+                    <AccordionItem value="puzzle-analysis" className="border border-orange-200 rounded-lg px-3 bg-orange-50/30">
+                      <AccordionTrigger className="hover:no-underline py-3">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="h-5 w-5 text-orange-600" />
+                          <span className="text-sm font-semibold text-gray-900">Puzzle Analysis & Scores</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-3">
+                        {(() => {
+                          const puzzleAnswers = results.answers?.filter(a => a.questionType === 'puzzle') || [];
+                          const memoryMatchAnswers = puzzleAnswers.filter(a => a.puzzleData?.puzzleType === 'memory_match');
+                          const matchPiecesAnswers = puzzleAnswers.filter(a => a.puzzleData?.puzzleType === 'match_pieces');
+
+                          const calculatePuzzleStats = (answers: any[], puzzleName: string) => {
+                            if (answers.length === 0) return null;
+                            const avgScore = Math.round(answers.reduce((sum, a) => sum + (a.puzzleData?.score || 0), 0) / answers.length);
+                            const bestScore = Math.max(...answers.map(a => a.puzzleData?.score || 0));
+                            const completed = answers.filter(a => a.puzzleData?.endReason === 'COMPLETED').length;
+                            return { avgScore, bestScore, completed, total: answers.length, puzzleName };
+                          };
+
+                          const memoryMatchStats = calculatePuzzleStats(memoryMatchAnswers, 'मेमोरी मैच');
+                          const matchPiecesStats = calculatePuzzleStats(matchPiecesAnswers, 'मैच पीसेज़');
+
+                          const getScoreColor = (score: number) => {
+                            if (score >= 85) return 'text-green-600';
+                            if (score >= 70) return 'text-blue-600';
+                            if (score >= 55) return 'text-yellow-600';
+                            if (score >= 40) return 'text-orange-600';
+                            return 'text-red-600';
+                          };
+
+                          const getPerformanceText = (score: number) => {
+                            if (score >= 85) return 'उत्कृष्ट';
+                            if (score >= 70) return 'अच्छा';
+                            if (score >= 55) return 'औसत';
+                            return 'सुधार की आवश्यकता';
+                          };
+
+                          const totalPuzzleScore = puzzleAnswers.reduce((sum, a) => sum + (a.puzzleData?.score || 0), 0);
+                          const avgPuzzleScore = puzzleAnswers.length > 0 ? Math.round(totalPuzzleScore / puzzleAnswers.length) : 0;
+
+                          return (
+                            <div className="space-y-4 mt-2">
+                              {/* Individual Puzzle Cards */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {memoryMatchStats && (
+                                  <div className="border-2 border-indigo-100 bg-indigo-50/50 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Brain className="h-4 w-4 text-indigo-600" />
+                                      <h4 className="text-sm font-semibold">{memoryMatchStats.puzzleName}</h4>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">औसत स्कोर:</span>
+                                        <span className={`text-lg font-bold ${getScoreColor(memoryMatchStats.avgScore)}`}>
+                                          {memoryMatchStats.avgScore}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">सर्वोत्तम:</span>
+                                        <span className="text-sm font-semibold text-green-600">{memoryMatchStats.bestScore}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">पूर्ण:</span>
+                                        <span className="text-xs font-medium">{memoryMatchStats.completed}/{memoryMatchStats.total}</span>
+                                      </div>
+                                      <p className="text-xs text-gray-700 pt-1 border-t border-indigo-200">
+                                        {getPerformanceText(memoryMatchStats.avgScore)} प्रदर्शन
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {matchPiecesStats && (
+                                  <div className="border-2 border-cyan-100 bg-cyan-50/50 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Grid3X3 className="h-4 w-4 text-cyan-600" />
+                                      <h4 className="text-sm font-semibold">{matchPiecesStats.puzzleName}</h4>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">औसत स्कोर:</span>
+                                        <span className={`text-lg font-bold ${getScoreColor(matchPiecesStats.avgScore)}`}>
+                                          {matchPiecesStats.avgScore}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">सर्वोत्तम:</span>
+                                        <span className="text-sm font-semibold text-green-600">{matchPiecesStats.bestScore}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-xs text-gray-600">पूर्ण:</span>
+                                        <span className="text-xs font-medium">{matchPiecesStats.completed}/{matchPiecesStats.total}</span>
+                                      </div>
+                                      <p className="text-xs text-gray-700 pt-1 border-t border-cyan-200">
+                                        {getPerformanceText(matchPiecesStats.avgScore)} प्रदर्शन
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Combined Analysis */}
+                              <div className="border-2 border-purple-100 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Activity className="h-4 w-4 text-purple-600" />
+                                  <h4 className="text-sm font-semibold">संयुक्त पहेली विश्लेषण</h4>
+                                </div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs font-medium text-gray-700">कुल औसत स्कोर:</span>
+                                  <span className={`text-xl font-bold ${getScoreColor(avgPuzzleScore)}`}>
+                                    {avgPuzzleScore}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-700 leading-relaxed">
+                                  आपका समग्र पहेली प्रदर्शन {getPerformanceText(avgPuzzleScore)} है। {puzzleAnswers.filter(a => a.puzzleData?.endReason === 'COMPLETED').length}/{puzzleAnswers.length} पहेलियाँ पूरी कीं। निरंतर अभ्यास से और सुधार हो सकता है।
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                )}
               </div>
             );
           })}
