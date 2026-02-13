@@ -165,25 +165,29 @@ const AdvancedQuizResults: React.FC = () => {
         } else {
           // For fresh submissions, wait 15 seconds after quiz end to ensure all submissions are in
           setFetchingComparativeStats(true);
-          setDelayCountdown(15);
+          
+          // Calculate actual time remaining: (endTime + 15 seconds) - currentTime
+          const endTime = new Date(resultData.quizEndTime).getTime();
+          const analyticsTime = endTime + 15000; // endTime + 15 seconds
+          const now = new Date().getTime();
+          const initialDelay = Math.max(0, Math.ceil((analyticsTime - now) / 1000));
+          
+          setDelayCountdown(initialDelay);
           
           const countdownInterval = setInterval(() => {
-            setDelayCountdown((prev) => {
-              if (prev <= 1) {
-                clearInterval(countdownInterval);
-                return 0;
-              }
-              return prev - 1;
-            });
+            const currentTime = new Date().getTime();
+            const remaining = Math.max(0, Math.ceil((analyticsTime - currentTime) / 1000));
+            
+            setDelayCountdown(remaining);
+            
+            if (remaining <= 0) {
+              clearInterval(countdownInterval);
+              fetchComparativeStats();
+              setFetchingComparativeStats(false);
+            }
           }, 1000);
           
-          const delayTimeout = setTimeout(() => {
-            fetchComparativeStats();
-            setFetchingComparativeStats(false);
-          }, 15000); // 15 second delay
-          
           return () => {
-            clearTimeout(delayTimeout);
             clearInterval(countdownInterval);
           };
         }
