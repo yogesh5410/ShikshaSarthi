@@ -371,6 +371,11 @@ const EmbeddableMatchPieces: React.FC<EmbeddableMatchPiecesProps> = ({ onComplet
   }> = ({ piece, size, imageSrc, isSelected, isCorrect }) => {
     const bgX = -(piece.correctCol * size);
     const bgY = -(piece.correctRow * size);
+    
+    // Fallback for image loading
+    const [imageError, setImageError] = React.useState(false);
+    const fallbackImage = "https://via.placeholder.com/300/06b6d4/ffffff?text=Image";
+    
     return (
       <div
         className={`rounded-lg overflow-hidden border-2 transition-all duration-200
@@ -378,12 +383,20 @@ const EmbeddableMatchPieces: React.FC<EmbeddableMatchPiecesProps> = ({ onComplet
           ${isCorrect ? "border-green-500 ring-1 ring-green-300" : ""}`}
         style={{
           width: size, height: size,
-          backgroundImage: `url(${imageSrc})`,
+          backgroundImage: `url(${imageError ? fallbackImage : imageSrc})`,
           backgroundSize: `${size * 3}px ${size * 3}px`,
           backgroundPosition: `${bgX}px ${bgY}px`,
           backgroundRepeat: "no-repeat",
         }}
       >
+        {/* Hidden image to detect loading errors */}
+        <img
+          src={imageSrc}
+          alt=""
+          className="hidden"
+          onError={() => setImageError(true)}
+          onLoad={() => setImageError(false)}
+        />
         {isCorrect && (
           <div className="w-full h-full flex items-center justify-center bg-green-400/20">
             <CheckCircle2 className="w-4 h-4 text-green-600 drop-shadow" />

@@ -4,22 +4,46 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { BarChart3, TrendingUp, Users, Trophy, Clock, Target } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Trophy, Clock, Target, Medal, Crown, BookOpen, Volume2, Video, Puzzle } from "lucide-react";
 import axios from "axios";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar
+} from "recharts";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 interface StudentAnalytics {
   studentId: string;
-  score: number;
-  totalQuestions: number;
-  correctAnswers: number;
-  incorrectAnswers: number;
+  correct: number;
+  incorrect: number;
   unattempted: number;
+  totalQuestions: number;
   percentage: string;
   timeTaken?: number;
   submittedAt: Date;
+  sectionWise?: {
+    mcq: { correct: number; incorrect: number; unattempted: number; total: number; percentage: string };
+    audio: { correct: number; incorrect: number; unattempted: number; total: number; percentage: string };
+    video: { correct: number; incorrect: number; unattempted: number; total: number; percentage: string };
+    puzzle: { correct: number; incorrect: number; unattempted: number; total: number; percentage: string };
+  };
 }
 
 interface QuizAnalytics {
@@ -37,7 +61,19 @@ interface QuizAnalytics {
     endTime: Date;
   };
   totalAttempts: number;
-  students: StudentAnalytics[];
+  studentReports: StudentAnalytics[];
+  sectionRankings?: {
+    mcq: StudentAnalytics[];
+    audio: StudentAnalytics[];
+    video: StudentAnalytics[];
+    puzzle: StudentAnalytics[];
+  };
+  sectionAverages?: {
+    mcq: string;
+    audio: string;
+    video: string;
+    puzzle: string;
+  };
   averageScore: number;
   highestScore: number;
   lowestScore: number;
@@ -262,7 +298,7 @@ export default function QuizAnalytics() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {analytics.students.map((student, index) => {
+                  {analytics.studentReports.map((student, index) => {
                     const percentage = parseFloat(student.percentage);
                     return (
                       <TableRow key={student.studentId}>
@@ -272,13 +308,13 @@ export default function QuizAnalytics() {
                         </TableCell>
                         <TableCell className="font-medium">{student.studentId}</TableCell>
                         <TableCell className="text-center font-bold">
-                          {student.score}
+                          {student.correct}
                         </TableCell>
                         <TableCell className="text-center text-green-600">
-                          {student.correctAnswers}
+                          {student.correct}
                         </TableCell>
                         <TableCell className="text-center text-red-600">
-                          {student.incorrectAnswers}
+                          {student.incorrect}
                         </TableCell>
                         <TableCell className="text-center text-gray-500">
                           {student.unattempted}
@@ -299,7 +335,7 @@ export default function QuizAnalytics() {
                 </TableBody>
               </Table>
 
-              {analytics.students.length === 0 && (
+              {analytics.studentReports.length === 0 && (
                 <div className="text-center py-12 text-gray-500">
                   No students have attempted this quiz yet.
                 </div>
@@ -308,7 +344,7 @@ export default function QuizAnalytics() {
           </Card>
 
           {/* Performance Distribution */}
-          {analytics.students.length > 0 && (
+          {analytics.studentReports.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Performance Distribution</CardTitle>
@@ -321,10 +357,10 @@ export default function QuizAnalytics() {
                     { label: "Average (40-59%)", range: [40, 59], color: "bg-yellow-500" },
                     { label: "Needs Improvement (0-39%)", range: [0, 39], color: "bg-red-500" }
                   ].map((category) => {
-                    const count = analytics.students.filter(
+                    const count = analytics.studentReports.filter(
                       s => parseFloat(s.percentage) >= category.range[0] && parseFloat(s.percentage) <= category.range[1]
                     ).length;
-                    const percentage = ((count / analytics.students.length) * 100).toFixed(1);
+                    const percentage = ((count / analytics.studentReports.length) * 100).toFixed(1);
 
                     return (
                       <div key={category.label} className="space-y-2">
@@ -342,6 +378,144 @@ export default function QuizAnalytics() {
                     );
                   })}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Section-wise Analysis */}
+          {analytics.sectionAverages && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Section-wise Class Performance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart
+                    data={[
+                      { section: 'MCQ', average: parseFloat(analytics.sectionAverages.mcq), questions: analytics.quizInfo.questionTypes.mcq },
+                      { section: 'Audio', average: parseFloat(analytics.sectionAverages.audio), questions: analytics.quizInfo.questionTypes.audio },
+                      { section: 'Video', average: parseFloat(analytics.sectionAverages.video), questions: analytics.quizInfo.questionTypes.video },
+                      { section: 'Puzzle', average: parseFloat(analytics.sectionAverages.puzzle), questions: analytics.quizInfo.questionTypes.puzzle }
+                    ].filter(item => item.questions > 0)}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="section" />
+                    <YAxis domain={[0, 100]} label={{ value: 'Average Score (%)', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="average" fill="#8884d8" name="Class Average (%)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Section-wise Leaderboards */}
+          {analytics.sectionRankings && (
+            <Tabs defaultValue="mcq" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="mcq" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  MCQ
+                </TabsTrigger>
+                <TabsTrigger value="audio" className="flex items-center gap-2">
+                  <Volume2 className="h-4 w-4" />
+                  Audio
+                </TabsTrigger>
+                <TabsTrigger value="video" className="flex items-center gap-2">
+                  <Video className="h-4 w-4" />
+                  Video
+                </TabsTrigger>
+                <TabsTrigger value="puzzle" className="flex items-center gap-2">
+                  <Puzzle className="h-4 w-4" />
+                  Puzzle
+                </TabsTrigger>
+              </TabsList>
+              
+              {(['mcq', 'audio', 'video', 'puzzle'] as const).map(section => (
+                <TabsContent key={section} value={section}>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Medal className="h-5 w-5 text-purple-600" />
+                        {section.toUpperCase()} Section Leaderboard
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {analytics.sectionRankings[section] && analytics.sectionRankings[section].length > 0 ? (
+                        <div className="space-y-2">
+                          {analytics.sectionRankings[section].slice(0, 10).map((student, index) => {
+                            const sectionData = student.sectionWise?.[section];
+                            if (!sectionData || sectionData.total === 0) return null;
+                            
+                            return (
+                              <div 
+                                key={student.studentId}
+                                className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 border border-gray-200"
+                              >
+                                <div className="flex items-center justify-center w-12">
+                                  {index === 0 && <Crown className="h-6 w-6 text-yellow-500" />}
+                                  {index === 1 && <Medal className="h-6 w-6 text-gray-400" />}
+                                  {index === 2 && <Medal className="h-6 w-6 text-orange-400" />}
+                                  {index > 2 && (
+                                    <span className="text-lg font-bold text-gray-600">#{index + 1}</span>
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold text-gray-900">{student.studentId}</div>
+                                  <div className="text-sm text-gray-500">
+                                    {sectionData.correct}/{sectionData.total} correct
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-bold text-lg">{sectionData.percentage}%</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          No students attempted {section.toUpperCase()} questions
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+
+          {/* Overall Performance Radar Chart */}
+          {analytics.studentReports.length > 0 && analytics.sectionAverages && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Overall Performance Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <RadarChart data={[
+                    { section: 'MCQ', average: parseFloat(analytics.sectionAverages.mcq) },
+                    { section: 'Audio', average: parseFloat(analytics.sectionAverages.audio) },
+                    { section: 'Video', average: parseFloat(analytics.sectionAverages.video) },
+                    { section: 'Puzzle', average: parseFloat(analytics.sectionAverages.puzzle) },
+                    { section: 'Overall', average: parseFloat(analytics.averageScore.toString()) }
+                  ]}>
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="section" />
+                    <PolarRadiusAxis domain={[0, 100]} />
+                    <Radar name="Class Average (%)" dataKey="average" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                    <Tooltip />
+                    <Legend />
+                  </RadarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           )}

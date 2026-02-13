@@ -29,9 +29,31 @@ import {
   Target,
   BarChart3,
   Activity,
-  Grid3X3
+  Grid3X3,
+  Medal,
+  Crown,
+  Star,
+  Trophy
 } from 'lucide-react';
 import axios from 'axios';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar
+} from 'recharts';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -42,9 +64,9 @@ interface QuizResult {
     correct: number;
     incorrect: number;
     unattempted: number;
-    percentage: number | string; // Can be either number or string
+    percentage: number | string;
   };
-  answers?: any[]; // Add answers array
+  answers?: any[];
   sectionWise: {
     mcq: { correct: number; incorrect: number; unattempted: number; total: number };
     audio: { correct: number; incorrect: number; unattempted: number; total: number };
@@ -58,6 +80,17 @@ interface QuizResult {
     lowestScore: number;
     yourRank: number;
   };
+  sectionRankings?: {
+    mcq: { rank: number; total: number };
+    audio: { rank: number; total: number };
+    video: { rank: number; total: number };
+    puzzle: { rank: number; total: number };
+  };
+  leaderboard?: Array<{
+    studentId: string;
+    percentage: string;
+    sectionWise: any;
+  }>;
 }
 
 const AdvancedQuizResults: React.FC = () => {
@@ -139,12 +172,8 @@ const AdvancedQuizResults: React.FC = () => {
         return;
       }
 
-      // Calculate stats
-      const scores = analytics.studentReports.map((r: any) => {
-        const total = r.correct + r.incorrect + r.unattempted;
-        return total > 0 ? (r.correct / total) * 100 : 0;
-      });
-      
+      // Calculate overall ranking
+      const scores = analytics.studentReports.map((r: any) => parseFloat(r.percentage));
       const percentage = typeof resultData.score.percentage === 'string' 
         ? parseFloat(resultData.score.percentage) 
         : resultData.score.percentage;
@@ -152,8 +181,29 @@ const AdvancedQuizResults: React.FC = () => {
       const yourScore = percentage;
       const sortedScores = [...scores].sort((a, b) => b - a);
       const yourRank = sortedScores.findIndex(score => Math.abs(score - yourScore) < 0.01) + 1;
-
       const avgScore = scores.reduce((a: number, b: number) => a + b, 0) / scores.length;
+
+      // Calculate section-wise rankings
+      const sectionRankings = {
+        mcq: { rank: 0, total: 0 },
+        audio: { rank: 0, total: 0 },
+        video: { rank: 0, total: 0 },
+        puzzle: { rank: 0, total: 0 }
+      };
+
+      // Process section rankings
+      if (analytics.sectionRankings) {
+        ['mcq', 'audio', 'video', 'puzzle'].forEach(section => {
+          const ranking = analytics.sectionRankings[section];
+          if (ranking && ranking.length > 0) {
+            const myRank = ranking.findIndex((r: any) => r.studentId === resultData.studentId) + 1;
+            sectionRankings[section as keyof typeof sectionRankings] = {
+              rank: myRank > 0 ? myRank : ranking.length,
+              total: ranking.length
+            };
+          }
+        });
+      }
 
       setResults(prev => prev ? {
         ...prev,
@@ -163,7 +213,9 @@ const AdvancedQuizResults: React.FC = () => {
           highestScore: Math.max(...scores),
           lowestScore: Math.min(...scores),
           yourRank: yourRank > 0 ? yourRank : scores.length
-        }
+        },
+        sectionRankings,
+        leaderboard: analytics.studentReports.slice(0, 10) // Top 10
       } : null);
     } catch (error: any) {
       console.error('Error fetching comparative stats:', error);
@@ -827,6 +879,201 @@ const AdvancedQuizResults: React.FC = () => {
                   : `Keep practicing! You can improve your score.`}
               </p>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Section-wise Rankings */}
+      {results?.sectionRankings && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Medal className="h-5 w-5 text-purple-600" />
+              Section-wise Rankings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { key: 'mcq', icon: BookOpen, label: 'MCQ', color: 'blue' },
+                { key: 'audio', icon: Volume2, label: 'Audio', color: 'green' },
+                { key: 'video', icon: Video, label: 'Video', color: 'purple' },
+                { key: 'puzzle', icon: Puzzle, label: 'Puzzle', color: 'orange' }
+              ].map(section => {
+                const ranking = results.sectionRankings?.[section.key as keyof typeof results.sectionRankings];
+                const sectionData = results.sectionWise[section.key as keyof typeof results.sectionWise];
+                const sectionPercentage = sectionData.total > 0 
+                  ? ((sectionData.correct / sectionData.total) * 100).toFixed(1)
+                  : '0';
+                
+                if (!ranking || ranking.total === 0) return null;
+
+                return (
+                  <div key={section.key} className={`p-4 rounded-lg border-2 border-${section.color}-200 bg-${section.color}-50`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <section.icon className={`h-5 w-5 text-${section.color}-600`} />
+                      <h3 className="font-semibold text-gray-900">{section.label}</h3>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Your Rank:</span>
+                        <div className="flex items-center gap-1">
+                          {ranking.rank === 1 && <Crown className="h-4 w-4 text-yellow-500" />}
+                          {ranking.rank === 2 && <Medal className="h-4 w-4 text-gray-400" />}
+                          {ranking.rank === 3 && <Medal className="h-4 w-4 text-orange-400" />}
+                          <span className="font-bold text-lg">#{ranking.rank}</span>
+                          <span className="text-sm text-gray-500">/ {ranking.total}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Score:</span>
+                        <span className={`font-bold text-${section.color}-600`}>{sectionPercentage}%</span>
+                      </div>
+                      <div className="text-xs text-gray-500 text-center pt-2 border-t border-gray-200">
+                        {sectionData.correct}/{sectionData.total} correct
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Leaderboard */}
+      {results?.leaderboard && results.leaderboard.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              Top Performers Leaderboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {results.leaderboard.map((student, index) => {
+                const isCurrentStudent = student.studentId === results.studentId;
+                return (
+                  <div 
+                    key={student.studentId}
+                    className={`flex items-center gap-4 p-3 rounded-lg ${
+                      isCurrentStudent 
+                        ? 'bg-blue-100 border-2 border-blue-400' 
+                        : 'bg-gray-50 border border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center w-12">
+                      {index === 0 && <Crown className="h-6 w-6 text-yellow-500" />}
+                      {index === 1 && <Medal className="h-6 w-6 text-gray-400" />}
+                      {index === 2 && <Medal className="h-6 w-6 text-orange-400" />}
+                      {index > 2 && (
+                        <span className="text-lg font-bold text-gray-600">#{index + 1}</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-semibold ${isCurrentStudent ? 'text-blue-700' : 'text-gray-900'}`}>
+                          {isCurrentStudent ? 'You' : student.studentId}
+                        </span>
+                        {isCurrentStudent && (
+                          <Badge variant="default" className="bg-blue-500">You</Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-lg">{student.percentage}%</div>
+                      <div className="flex gap-2 text-xs text-gray-500 mt-1">
+                        {student.sectionWise && (
+                          <>
+                            <span title="MCQ">📝 {((student.sectionWise.mcq.correct / (student.sectionWise.mcq.total || 1)) * 100).toFixed(0)}%</span>
+                            <span title="Audio">🔊 {((student.sectionWise.audio.correct / (student.sectionWise.audio.total || 1)) * 100).toFixed(0)}%</span>
+                            <span title="Video">📹 {((student.sectionWise.video.correct / (student.sectionWise.video.total || 1)) * 100).toFixed(0)}%</span>
+                            <span title="Puzzle">🧩 {((student.sectionWise.puzzle.correct / (student.sectionWise.puzzle.total || 1)) * 100).toFixed(0)}%</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Show current student if not in top 10 */}
+            {results.allStudentsStats && results.allStudentsStats.yourRank > 10 && (
+              <div className="mt-4 pt-4 border-t border-gray-300">
+                <div className="flex items-center gap-4 p-3 rounded-lg bg-blue-100 border-2 border-blue-400">
+                  <div className="flex items-center justify-center w-12">
+                    <span className="text-lg font-bold text-blue-700">
+                      #{results.allStudentsStats.yourRank}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <span className="font-semibold text-blue-700">You</span>
+                    <Badge variant="default" className="ml-2 bg-blue-500">Your Rank</Badge>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-lg text-blue-700">{getPercentage().toFixed(1)}%</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Comparative Performance Chart */}
+      {results?.sectionWise && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-indigo-600" />
+              Your Section-wise Performance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={[
+                  {
+                    section: 'MCQ',
+                    score: results.sectionWise.mcq.total > 0 
+                      ? ((results.sectionWise.mcq.correct / results.sectionWise.mcq.total) * 100).toFixed(1)
+                      : 0,
+                    total: results.sectionWise.mcq.total
+                  },
+                  {
+                    section: 'Audio',
+                    score: results.sectionWise.audio.total > 0 
+                      ? ((results.sectionWise.audio.correct / results.sectionWise.audio.total) * 100).toFixed(1)
+                      : 0,
+                    total: results.sectionWise.audio.total
+                  },
+                  {
+                    section: 'Video',
+                    score: results.sectionWise.video.total > 0 
+                      ? ((results.sectionWise.video.correct / results.sectionWise.video.total) * 100).toFixed(1)
+                      : 0,
+                    total: results.sectionWise.video.total
+                  },
+                  {
+                    section: 'Puzzle',
+                    score: results.sectionWise.puzzle.total > 0 
+                      ? ((results.sectionWise.puzzle.correct / results.sectionWise.puzzle.total) * 100).toFixed(1)
+                      : 0,
+                    total: results.sectionWise.puzzle.total
+                  }
+                ].filter(item => item.total > 0)}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="section" />
+                <YAxis domain={[0, 100]} label={{ value: 'Score (%)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="score" fill="#8884d8" name="Your Score (%)" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       )}

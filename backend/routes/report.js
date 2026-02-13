@@ -126,5 +126,30 @@
     }
   });
 
+  // Check if student has already submitted a specific quiz
+  router.get("/student/:studentId/quiz/:quizId", async (req, res) => {
+    const { studentId, quizId } = req.params;
+
+    try {
+      const existingReport = await StudentReport.findOne({ 
+        quizId, 
+        studentId: studentId.trim() 
+      });
+      
+      if (existingReport) {
+        res.json({ 
+          submitted: true, 
+          reportId: existingReport._id,
+          submittedAt: existingReport.createdAt
+        });
+      } else {
+        res.status(404).json({ submitted: false });
+      }
+    } catch (err) {
+      console.error("Error checking quiz submission:", err);
+      res.status(500).json({ error: "Error checking submission status" });
+    }
+  });
+
 
   module.exports = router;

@@ -45,7 +45,15 @@ router.post("/", async (req, res) => {
 // Get all quizzes
 router.get("/", async (req, res) => {
   try {
-    const quizzes = await Quiz.find().populate("questions");
+    const quizzes = await Quiz.find();
+    // Try to populate questions (may fail if mixed ID types like puzzle IDs)
+    for (const quiz of quizzes) {
+      try {
+        await quiz.populate("questions");
+      } catch (popErr) {
+        console.log(`Question populate skipped for quiz ${quiz.quizId} (mixed ID types)`);
+      }
+    }
     res.status(200).json(quizzes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -118,7 +126,15 @@ router.delete("/:id", async (req, res) => {
 // Get quizzes created by a specific teacher
 router.get("/teacher/:teacherId", async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ teacherId: req.params.teacherId }).populate("questions");
+    const quizzes = await Quiz.find({ teacherId: req.params.teacherId });
+    // Try to populate questions (may fail if mixed ID types like puzzle IDs)
+    for (const quiz of quizzes) {
+      try {
+        await quiz.populate("questions");
+      } catch (popErr) {
+        console.log(`Question populate skipped for quiz ${quiz.quizId} (mixed ID types)`);
+      }
+    }
     res.status(200).json(quizzes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -128,7 +144,15 @@ router.get("/teacher/:teacherId", async (req, res) => {
 // Get quizzes attempted by a specific student
 router.get("/student/:studentId", async (req, res) => {
   try {
-    const quizzes = await Quiz.find({ attemptedBy: req.params.studentId }).populate("questions");
+    const quizzes = await Quiz.find({ attemptedBy: req.params.studentId });
+    // Try to populate questions (may fail if mixed ID types like puzzle IDs)
+    for (const quiz of quizzes) {
+      try {
+        await quiz.populate("questions");
+      } catch (popErr) {
+        console.log(`Question populate skipped for quiz ${quiz.quizId} (mixed ID types)`);
+      }
+    }
     res.status(200).json(quizzes);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -228,16 +252,8 @@ router.post("/create", async (req, res) => {
 // Get detailed analytics for a quiz
 router.get("/analytics/:quizId", async (req, res) => {
   try {
-    const quiz = await Quiz.findOne({ quizId: req.params.quizId }).populate("questions");
+    const quiz = await Quiz.findOne({ quizId: req.params.quizId });
     if (!quiz) return res.status(404).json({ message: "Quiz not found" });
-
-    // attemptedBy stores studentId strings (custom studentId), so populate using localField/foreignField
-    await quiz.populate({
-      path: 'attemptedBy',
-      model: 'Student',
-      localField: 'attemptedBy',
-      foreignField: 'studentId'
-    });
 
     // Get all student reports for this quiz
     const StudentReport = require("../models/StudentReport");
@@ -251,15 +267,58 @@ router.get("/analytics/:quizId", async (req, res) => {
       const totalQuestions = report.correct + report.incorrect + report.unattempted;
       const percentage = totalQuestions > 0 ? ((report.correct / totalQuestions) * 100) : 0;
       
+      // Calculate section-wise scores
+      const sectionWise = {
+        mcq: { correct: 0, incorrect: 0, unattempted: 0, total: 0, percentage: 0 },
+        audio: { correct: 0, incorrect: 0, unattempted: 0, total: 0, percentage: 0 },
+        video: { correct: 0, incorrect: 0, unattempted: 0, total: 0, percentage: 0 },
+        puzzle: { correct: 0, incorrect: 0, unattempted: 0, total: 0, percentage: 0 }
+      };
+      
+      // Process answers to get section-wise data
+      if (report.answers && Array.isArray(report.answers)) {
+        report.answers.forEach(answer => {
+          const type = answer.questionType;
+          if (sectionWise[type]) {
+            sectionWise[type].total++;
+            if (!answer.selectedAnswer) {
+              sectionWise[type].unattempted++;
+            } else if (answer.isCorrect) {
+              sectionWise[type].correct++;
+            } else {
+              sectionWise[type].incorrect++;
+            }
+          }
+        });
+        
+        // Calculate percentages for each section
+        Object.keys(sectionWise).forEach(key => {
+          const section = sectionWise[key];
+          section.percentage = section.total > 0 
+            ? ((section.correct / section.total) * 100).toFixed(2)
+            : 0;
+        });
+      }
+      
       return {
         studentId: report.studentId,
         correct: report.correct,
         incorrect: report.incorrect,
         unattempted: report.unattempted,
         totalQuestions: totalQuestions,
-        percentage: percentage.toFixed(2)
+        percentage: percentage.toFixed(2),
+        sectionWise: sectionWise,
+        submittedAt: report.createdAt || new Date()
       };
     }).sort((a, b) => parseFloat(b.percentage) - parseFloat(a.percentage));
+    
+    // Calculate section-wise rankings
+    const sectionRankings = {
+      mcq: [...studentReports].sort((a, b) => parseFloat(b.sectionWise.mcq.percentage) - parseFloat(a.sectionWise.mcq.percentage)),
+      audio: [...studentReports].sort((a, b) => parseFloat(b.sectionWise.audio.percentage) - parseFloat(a.sectionWise.audio.percentage)),
+      video: [...studentReports].sort((a, b) => parseFloat(b.sectionWise.video.percentage) - parseFloat(a.sectionWise.video.percentage)),
+      puzzle: [...studentReports].sort((a, b) => parseFloat(b.sectionWise.puzzle.percentage) - parseFloat(a.sectionWise.puzzle.percentage))
+    };
     
     const analytics = {
       quizInfo: {
@@ -272,6 +331,7 @@ router.get("/analytics/:quizId", async (req, res) => {
       },
       totalAttempts: reports.length,
       studentReports: studentReports,
+      sectionRankings: sectionRankings,
       averageScore: reports.length > 0 
         ? (studentReports.reduce((sum, r) => sum + parseFloat(r.percentage), 0) / reports.length).toFixed(2)
         : 0,
@@ -280,7 +340,13 @@ router.get("/analytics/:quizId", async (req, res) => {
         : 0,
       lowestScore: reports.length > 0 
         ? Math.min(...studentReports.map(r => parseFloat(r.percentage)))
-        : 0
+        : 0,
+      sectionAverages: {
+        mcq: reports.length > 0 ? (studentReports.reduce((sum, r) => sum + parseFloat(r.sectionWise.mcq.percentage || 0), 0) / reports.length).toFixed(2) : 0,
+        audio: reports.length > 0 ? (studentReports.reduce((sum, r) => sum + parseFloat(r.sectionWise.audio.percentage || 0), 0) / reports.length).toFixed(2) : 0,
+        video: reports.length > 0 ? (studentReports.reduce((sum, r) => sum + parseFloat(r.sectionWise.video.percentage || 0), 0) / reports.length).toFixed(2) : 0,
+        puzzle: reports.length > 0 ? (studentReports.reduce((sum, r) => sum + parseFloat(r.sectionWise.puzzle.percentage || 0), 0) / reports.length).toFixed(2) : 0
+      }
     };
 
     res.status(200).json(analytics);
@@ -324,6 +390,18 @@ router.post("/submit-advanced", async (req, res) => {
       return res.status(404).json({ error: "Quiz not found" });
     }
 
+    // Check if student has already submitted this quiz
+    const StudentReport = require("../models/StudentReport");
+    const existingSubmission = await StudentReport.findOne({ quizId, studentId: studentId.trim() });
+    
+    if (existingSubmission) {
+      return res.status(400).json({ 
+        error: "You have already submitted this quiz", 
+        message: "Duplicate submission not allowed",
+        existingReport: existingSubmission._id
+      });
+    }
+
     // Add student to attemptedBy if not already there
     if (!quiz.attemptedBy.includes(studentId)) {
       quiz.attemptedBy.push(studentId);
@@ -331,7 +409,6 @@ router.post("/submit-advanced", async (req, res) => {
     }
 
     // Create a student report
-    const StudentReport = require("../models/StudentReport");
     const Student = require("../models/Student");
     
     const student = await Student.findOne({ studentId });

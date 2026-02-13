@@ -91,6 +91,39 @@ const TakeAdvancedQuiz: React.FC = () => {
 
     setLoading(true);
     try {
+      // FIRST: Check if student has already submitted this quiz
+      console.log('Checking for existing submission...');
+      try {
+        const checkResponse = await axios.get(
+          `${API_URL}/reports/student/${studentId}/quiz/${quizId}`
+        );
+        
+        if (checkResponse.data && checkResponse.data.submitted) {
+          toast({
+            title: "❌ Already Submitted",
+            description: `You have already attempted this quiz on ${new Date(checkResponse.data.submittedAt).toLocaleString()}. Duplicate attempts are not allowed.`,
+            variant: "destructive",
+            duration: 6000
+          });
+          setLoading(false);
+          return; // Stop here - don't load quiz
+        }
+      } catch (checkError: any) {
+        // If error is 404, it means no submission exists, which is fine - continue
+        if (checkError.response?.status !== 404) {
+          console.error('Error checking submission:', checkError);
+          toast({
+            title: "Error",
+            description: "Failed to verify submission status. Please try again.",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+        console.log('No previous submission found - OK to proceed');
+      }
+
+      // SECOND: Load the quiz
       const response = await axios.get(`${API_URL}/quizzes/by-id/${quizId}`);
       const quiz = response.data;
       
@@ -100,16 +133,14 @@ const TakeAdvancedQuiz: React.FC = () => {
       const endTime = new Date(quiz.endTime);
       
       if (now < startTime) {
+        // Quiz hasn't started - navigate to player with countdown
+        setQuizInfo(quiz);
         toast({
-          title: "Quiz Not Started",
-          description: `This quiz will start on ${startTime.toLocaleString()}`,
-          variant: "destructive"
+          title: "Quiz Not Started Yet",
+          description: `This quiz will start at ${startTime.toLocaleString()}. You'll see a countdown.`
         });
-        setLoading(false);
-        return;
-      }
-      
-      if (now > endTime) {
+        // Still set the quiz info so user can see instructions and wait
+      } else if (now > endTime) {
         toast({
           title: "Quiz Ended",
           description: `This quiz ended on ${endTime.toLocaleString()}`,
@@ -117,13 +148,17 @@ const TakeAdvancedQuiz: React.FC = () => {
         });
         setLoading(false);
         return;
+      } else {
+        // Quiz is active
+        setQuizInfo(quiz);
+        toast({
+          title: "Quiz Ready",
+          description: `Ready to start: ${quiz.totalQuestions} questions, ${quiz.timeLimit} minutes`
+        });
       }
       
-      setQuizInfo(quiz);
-      toast({
-        title: "Quiz Loaded",
-        description: `Ready to start: ${quiz.totalQuestions} questions, ${quiz.timeLimit} minutes`
-      });
+      setLoading(false);
+      
     } catch (error: any) {
       toast({
         title: "Error",

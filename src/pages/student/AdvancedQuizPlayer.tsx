@@ -72,10 +72,12 @@ const AdvancedQuizPlayer: React.FC = () => {
     lastPlayTime: number;
   }}>({});
   
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const countdownRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
   const questionStartTimeRef = useRef<number>(Date.now());
+  const answersRef = useRef<Answer[]>([]);
+  const questionsRef = useRef<QuestionData[]>([]);
 
   useEffect(() => {
     if (!quizInfo) {
@@ -98,17 +100,48 @@ const AdvancedQuizPlayer: React.FC = () => {
     console.log('Quiz initialized with studentId:', studentId);
 
     loadQuestions();
-    setTimeRemaining(quizInfo.timeLimit * 60); // Convert minutes to seconds
+    
+    // Calculate remaining time based on quiz end time (not just time limit)
+    const nowTime = new Date();
+    const endTime = new Date(quizInfo.endTime);
+    const remainingSeconds = Math.floor((endTime.getTime() - nowTime.getTime()) / 1000);
+    
+    // Use the smaller of: remaining time to end OR configured time limit
+    const configuredTimeLimit = quizInfo.timeLimit * 60;
+    const actualTimeRemaining = Math.min(remainingSeconds, configuredTimeLimit);
+    
+    if (actualTimeRemaining <= 0) {
+      // Quiz time has already expired
+      setTimeRemaining(0);
+      toast({
+        title: "Quiz Ended",
+        description: "The quiz time has expired",
+        variant: "destructive"
+      });
+      setTimeout(() => navigate('/student'), 2000);
+      return;
+    }
+    
+    setTimeRemaining(actualTimeRemaining);
+    console.log(`Time remaining calculated: ${actualTimeRemaining}s (${Math.floor(actualTimeRemaining/60)}m)`);
     
     // Calculate countdown to quiz start
-    const now = new Date();
     const startTime = new Date(quizInfo.startTime);
-    const secondsUntilStart = Math.floor((startTime.getTime() - now.getTime()) / 1000);
+    const secondsUntilStart = Math.floor((startTime.getTime() - nowTime.getTime()) / 1000);
     
     if (secondsUntilStart > 0) {
       setCountdownToStart(secondsUntilStart);
     }
   }, [quizInfo]);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
+  useEffect(() => {
+    questionsRef.current = questions;
+  }, [questions]);
 
   // Countdown timer before quiz starts
   useEffect(() => {
@@ -233,8 +266,17 @@ const AdvancedQuizPlayer: React.FC = () => {
   };
 
   const handleTimeUp = () => {
+    console.log('⏰ TIME UP! Auto-submitting quiz...');
     setQuizEnded(true);
     if (timerRef.current) clearInterval(timerRef.current);
+    
+    toast({
+      title: "⏰ Time's Up!",
+      description: "Quiz time has ended. Auto-submitting your answers...",
+      duration: 4000
+    });
+    
+    // Auto-submit with timeout flag
     handleSubmitQuiz(true);
   };
 
@@ -283,8 +325,17 @@ const AdvancedQuizPlayer: React.FC = () => {
   };
 
   const handleSubmitQuiz = async (timeUp: boolean = false) => {
+    // Use refs to get the latest state values, especially important for auto-submit on timeout
+    const currentAnswers = answersRef.current;
+    const currentQuestions = questionsRef.current;
+    
     try {
-      console.log('Starting quiz submission...');
+      console.log('=== QUIZ SUBMISSION START ===');
+      console.log('Time Up?:', timeUp);
+      console.log('Student ID:', studentId);
+      console.log('Total Questions:', currentQuestions.length);
+      console.log('Answers Provided:', currentAnswers.length);
+      console.log('===============================');
       
       // Validate studentId before submission
       if (!studentId || studentId.trim() === '') {
@@ -305,15 +356,24 @@ const AdvancedQuizPlayer: React.FC = () => {
       // Calculate results
       let correctCount = 0;
       let incorrectCount = 0;
-      let unattemptedCount = questions.length - answers.length;
+      let unattemptedCount = 0; // Will be calculated during evaluation
 
-      console.log('Questions:', questions.length);
-      console.log('Answers:', answers.length);
+      console.log('Questions:', currentQuestions.length);
+      console.log('Answers:', currentAnswers.length);
 
-      const evaluatedAnswers = questions.map((q, index) => {
-        const answer = answers.find(a => a.questionId === q._id);
+      const evaluatedAnswers = currentQuestions.map((q, index) => {
+        const answer = currentAnswers.find(a => a.questionId === q._id);
         
-        if (!answer) {
+        console.log(`Question ${index + 1} (${q.type}):`, {
+          hasAnswer: !!answer,
+          selectedAnswer: answer?.selectedAnswer,
+          questionId: q._id
+        });
+        
+        // Question was not attempted
+        if (!answer || !answer.selectedAnswer) {
+          unattemptedCount++;
+          console.log(`  → UNATTEMPTED`);
           return {
             questionId: q._id,
             questionType: q.type,
@@ -345,8 +405,13 @@ const AdvancedQuizPlayer: React.FC = () => {
         if (q.type === 'puzzle' && answer.puzzleData) {
           const puzzleScore = answer.puzzleData.score || 0;
           const isPuzzleCorrect = puzzleScore >= 50;
-          if (isPuzzleCorrect) correctCount++;
-          else incorrectCount++;
+          if (isPuzzleCorrect) {
+            correctCount++;
+            console.log(`  → CORRECT (Puzzle score: ${puzzleScore})`);
+          } else {
+            incorrectCount++;
+            console.log(`  → INCORRECT (Puzzle score: ${puzzleScore})`);
+          }
 
           return {
             questionId: q._id,
@@ -362,8 +427,13 @@ const AdvancedQuizPlayer: React.FC = () => {
         const correctAnswer = getCorrectAnswer(q);
         const isCorrect = answer.selectedAnswer === correctAnswer;
         
-        if (isCorrect) correctCount++;
-        else incorrectCount++;
+        if (isCorrect) {
+          correctCount++;
+          console.log(`  → CORRECT (Selected: ${answer.selectedAnswer})`);
+        } else {
+          incorrectCount++;
+          console.log(`  → INCORRECT (Selected: ${answer.selectedAnswer}, Correct: ${correctAnswer})`);
+        }
 
         return {
           questionId: q._id,
@@ -384,6 +454,13 @@ const AdvancedQuizPlayer: React.FC = () => {
           videoAnalytics: answer.videoAnalytics
         };
       });
+
+      console.log('=== EVALUATION COMPLETE ===');
+      console.log('Correct:', correctCount);
+      console.log('Incorrect:', incorrectCount);
+      console.log('Unattempted:', unattemptedCount);
+      console.log('Total:', correctCount + incorrectCount + unattemptedCount);
+      console.log('===========================');
 
       const totalTimeTaken = quizInfo.timeLimit * 60 - timeRemaining;
 
@@ -411,12 +488,16 @@ const AdvancedQuizPlayer: React.FC = () => {
 
       // Submit to backend
       const response = await axios.post(`${API_URL}/quizzes/submit-advanced`, submitData);
-      console.log('Submit response:', response.data);
+      console.log('✅ Submit response:', response.data);
+
+      const successMessage = timeUp 
+        ? `Quiz auto-submitted! Score: ${correctCount}/${currentQuestions.length} (${((correctCount/currentQuestions.length)*100).toFixed(0)}%)`
+        : `Quiz submitted successfully! Score: ${correctCount}/${currentQuestions.length}`;
 
       toast({
-        title: "Quiz Submitted",
-        description: `Score: ${correctCount}/${questions.length}`,
-        duration: 3000
+        title: timeUp ? "⏰ Time's Up - Auto Submitted" : "✅ Quiz Submitted",
+        description: successMessage,
+        duration: 4000
       });
 
       // Navigate to results page with data
@@ -429,7 +510,7 @@ const AdvancedQuizPlayer: React.FC = () => {
               correct: correctCount,
               incorrect: incorrectCount,
               unattempted: unattemptedCount,
-              percentage: ((correctCount / questions.length) * 100).toFixed(2)
+              percentage: ((correctCount / currentQuestions.length) * 100).toFixed(2)
             },
             answers: evaluatedAnswers
           }
@@ -437,16 +518,90 @@ const AdvancedQuizPlayer: React.FC = () => {
       });
       
     } catch (error: any) {
-      console.error('Error submitting quiz:', error);
+      console.error('❌ Error submitting quiz:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error details:', error.message);
+      
+      // If it's a duplicate submission error, navigate to results anyway
+      if (error.response?.status === 400 && error.response?.data?.error?.includes('already submitted')) {
+        toast({
+          title: "Already Submitted",
+          description: "This quiz was already submitted.",
+          variant: "destructive"
+        });
+        setTimeout(() => navigate('/student'), 2000);
+        return;
+      }
+      
+      // Show error toast
       toast({
-        title: "Error",
-        description: error.response?.data?.error || error.message || "Failed to submit quiz",
-        variant: "destructive"
+        title: timeUp ? "Auto-Submit Error" : "Submission Error",
+        description: timeUp 
+          ? "Time's up but submission failed. Showing local results..."
+          : (error.response?.data?.error || error.message || "Failed to submit quiz. Please contact support."),
+        variant: "destructive",
+        duration: 5000
       });
-      // Don't keep quiz ended state if submission failed
-      setQuizEnded(false);
+      
+      // If timeUp, still show results locally even if submission failed
+      if (timeUp) {
+        console.log('⚠️ Timeout submission failed, showing local results');
+        
+        // Calculate and show local results
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let unattemptedCount = 0;
+        
+        currentQuestions.forEach((q) => {
+          const answer = currentAnswers.find(a => a.questionId === q._id);
+          if (!answer || !answer.selectedAnswer) {
+            unattemptedCount++;
+          } else if (q.type === 'puzzle' && answer.puzzleData) {
+            // Puzzle scoring
+            const puzzleScore = answer.puzzleData.score || 0;
+            if (puzzleScore >= 50) {
+              correctCount++;
+            } else {
+              incorrectCount++;
+            }
+          } else {
+            // Regular question scoring
+            const correct = getCorrectAnswer(q);
+            if (answer.selectedAnswer === correct) {
+              correctCount++;
+            } else {
+              incorrectCount++;
+            }
+          }
+        });
+        
+        console.log('Local Results - Correct:', correctCount, 'Incorrect:', incorrectCount, 'Unattempted:', unattemptedCount);
+        
+        toast({
+          title: "⚠️ Showing Local Results",
+          description: `Score: ${correctCount}/${currentQuestions.length} (${((correctCount/currentQuestions.length)*100).toFixed(0)}%). Note: Not saved to server.`,
+          duration: 5000
+        });
+        
+        navigate('/student/advanced-quiz-results', {
+          state: {
+            results: {
+              quizId: quizInfo.quizId,
+              studentId,
+              score: {
+                correct: correctCount,
+                incorrect: incorrectCount,
+                unattempted: unattemptedCount,
+                percentage: ((correctCount / currentQuestions.length) * 100).toFixed(2)
+              },
+              submissionFailed: true
+            }
+          }
+        });
+      } else {
+        // Don't keep quiz ended state if submission failed and not timeout
+        setQuizEnded(false);
+      }
     }
   };
 

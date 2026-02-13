@@ -1,0 +1,4 @@
+1. same student is able to give quiz more than once. 
+2. end time must be manual. not auto calcalulated. 
+3. if timeout quiz not submitted. 
+4. quiz loading state page => timer 
