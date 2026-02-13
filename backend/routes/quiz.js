@@ -307,6 +307,7 @@ router.get("/analytics/:quizId", async (req, res) => {
         unattempted: report.unattempted,
         totalQuestions: totalQuestions,
         percentage: percentage.toFixed(2),
+        timeTaken: report.timeTaken || 0, // Include time taken
         sectionWise: sectionWise,
         submittedAt: report.createdAt || new Date()
       };
@@ -320,6 +321,44 @@ router.get("/analytics/:quizId", async (req, res) => {
       puzzle: [...studentReports].sort((a, b) => parseFloat(b.sectionWise.puzzle.percentage) - parseFloat(a.sectionWise.puzzle.percentage))
     };
     
+    // Calculate question-wise analytics
+    const questionAnalytics = {};
+    reports.forEach(report => {
+      if (report.answers && Array.isArray(report.answers)) {
+        report.answers.forEach(answer => {
+          const qId = answer.questionId;
+          if (!questionAnalytics[qId]) {
+            questionAnalytics[qId] = {
+              questionId: qId,
+              questionType: answer.questionType,
+              correct: 0,
+              incorrect: 0,
+              skipped: 0,
+              totalAttempts: 0
+            };
+          }
+          
+          questionAnalytics[qId].totalAttempts++;
+          
+          if (!answer.selectedAnswer || answer.selectedAnswer === null) {
+            questionAnalytics[qId].skipped++;
+          } else if (answer.isCorrect) {
+            questionAnalytics[qId].correct++;
+          } else {
+            questionAnalytics[qId].incorrect++;
+          }
+        });
+      }
+    });
+    
+    // Convert to array and calculate percentages
+    const questionAnalyticsArray = Object.values(questionAnalytics).map(q => ({
+      ...q,
+      correctPercentage: q.totalAttempts > 0 ? ((q.correct / q.totalAttempts) * 100).toFixed(2) : 0,
+      incorrectPercentage: q.totalAttempts > 0 ? ((q.incorrect / q.totalAttempts) * 100).toFixed(2) : 0,
+      skippedPercentage: q.totalAttempts > 0 ? ((q.skipped / q.totalAttempts) * 100).toFixed(2) : 0
+    }));
+    
     const analytics = {
       quizInfo: {
         quizId: quiz.quizId,
@@ -327,11 +366,13 @@ router.get("/analytics/:quizId", async (req, res) => {
         timeLimit: quiz.timeLimit,
         questionTypes: quiz.questionTypes,
         startTime: quiz.startTime,
-        endTime: quiz.endTime
+        endTime: quiz.endTime,
+        questions: quiz.questions // Include question IDs
       },
       totalAttempts: reports.length,
       studentReports: studentReports,
       sectionRankings: sectionRankings,
+      questionAnalytics: questionAnalyticsArray, // Add question-wise analytics
       averageScore: reports.length > 0 
         ? (studentReports.reduce((sum, r) => sum + parseFloat(r.percentage), 0) / reports.length).toFixed(2)
         : 0,
@@ -423,8 +464,10 @@ router.post("/submit-advanced", async (req, res) => {
       correct: score.correct,
       incorrect: score.incorrect,
       unattempted: score.unattempted,
+      timeTaken: timeTaken || 0, // Add time taken
       answers: answers.map((ans) => ({
         questionId: ans.questionId,
+        questionType: ans.questionType,
         selectedAnswer: ans.selectedAnswer,
         isCorrect: ans.isCorrect
       }))

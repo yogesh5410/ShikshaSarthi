@@ -52,7 +52,7 @@ import LoginStudent from "./pages/LoginStudent";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import CreateQuiz from "./pages/teacher/CreateQuiz";
 import CreateQuizNew from "./pages/teacher/CreateQuizNew";
-import QuizAnalytics from "./pages/teacher/QuizAnalytics";
+import QuizAnalytics from "./pages/teacher/QuizAnalyticsFinal"; // Updated to final version
 import Analytics from "./pages/teacher/Analytics";
 import AddMyQuestion from "./pages/teacher/AddMyquestion";
 import QuizDetails from "./pages/teacher/QuizDetails";
