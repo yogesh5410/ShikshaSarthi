@@ -67,6 +67,8 @@ interface QuizResult {
     percentage: number | string;
   };
   answers?: any[];
+  quizEndTime?: string;  // Add quiz end time
+  isPastReport?: boolean;  // Flag to indicate past report viewing
   sectionWise: {
     mcq: { correct: number; incorrect: number; unattempted: number; total: number };
     audio: { correct: number; incorrect: number; unattempted: number; total: number };
@@ -98,17 +100,69 @@ const AdvancedQuizResults: React.FC = () => {
   const navigate = useNavigate();
   const [results, setResults] = useState<QuizResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quizEnded, setQuizEnded] = useState(false);
+  const [timeUntilEnd, setTimeUntilEnd] = useState<string>('');
 
   const resultData = location.state?.results;
+
+  // Check if quiz has ended
+  useEffect(() => {
+    // If this is a past report, always treat as ended
+    if (resultData?.isPastReport) {
+      setQuizEnded(true);
+      return;
+    }
+
+    if (resultData?.quizEndTime) {
+      const checkQuizEnd = () => {
+        const now = new Date().getTime();
+        const endTime = new Date(resultData.quizEndTime).getTime();
+        const diff = endTime - now;
+        
+        if (diff <= 0) {
+          setQuizEnded(true);
+          setTimeUntilEnd('');
+        } else {
+          setQuizEnded(false);
+          // Calculate time remaining
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          
+          if (hours > 0) {
+            setTimeUntilEnd(`${hours}h ${minutes}m ${seconds}s`);
+          } else if (minutes > 0) {
+            setTimeUntilEnd(`${minutes}m ${seconds}s`);
+          } else {
+            setTimeUntilEnd(`${seconds}s`);
+          }
+        }
+      };
+      
+      // Check immediately
+      checkQuizEnd();
+      
+      // Update every second
+      const interval = setInterval(checkQuizEnd, 1000);
+      
+      return () => clearInterval(interval);
+    } else {
+      // If no end time provided, assume quiz has ended
+      setQuizEnded(true);
+    }
+  }, [resultData?.quizEndTime, resultData?.isPastReport]);
 
   useEffect(() => {
     if (resultData) {
       processResults();
-      fetchComparativeStats();
+      // Only fetch comparative stats if quiz has ended
+      if (quizEnded) {
+        fetchComparativeStats();
+      }
     } else {
       navigate('/student/take-advanced-quiz');
     }
-  }, [resultData]);
+  }, [resultData, quizEnded]);
 
   const processResults = () => {
     console.log('Processing results:', resultData);
@@ -823,8 +877,34 @@ const AdvancedQuizResults: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Comparative Analysis */}
-      {results.allStudentsStats && (
+      {/* Timer Notice - Show if quiz hasn't ended */}
+      {!quizEnded && timeUntilEnd && (
+        <Card className="mb-6 border-2 border-orange-300 bg-orange-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Clock className="h-12 w-12 text-orange-600 mx-auto mb-3" />
+              <h3 className="text-xl font-bold text-orange-900 mb-2">
+                Quiz Still In Progress
+              </h3>
+              <p className="text-gray-700 mb-3">
+                Comparative analytics will be available after the quiz ends.
+              </p>
+              <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-orange-300">
+                <Clock className="h-5 w-5 text-orange-600" />
+                <span className="text-lg font-semibold text-orange-900">
+                  Time until quiz ends: {timeUntilEnd}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mt-3">
+                Refresh the page after the quiz ends to see comparative stats and leaderboard
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Comparative Analysis - Only show if quiz has ended */}
+      {quizEnded && results.allStudentsStats && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -941,8 +1021,8 @@ const AdvancedQuizResults: React.FC = () => {
         </Card>
       )}
 
-      {/* Leaderboard */}
-      {results?.leaderboard && results.leaderboard.length > 0 && (
+      {/* Leaderboard - Only show if quiz has ended */}
+      {quizEnded && results?.leaderboard && results.leaderboard.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

@@ -512,7 +512,8 @@ const AdvancedQuizPlayer: React.FC = () => {
               unattempted: unattemptedCount,
               percentage: ((correctCount / currentQuestions.length) * 100).toFixed(2)
             },
-            answers: evaluatedAnswers
+            answers: evaluatedAnswers,
+            quizEndTime: quizInfo.endTime // Pass quiz end time
           }
         }
       });
@@ -594,7 +595,8 @@ const AdvancedQuizPlayer: React.FC = () => {
                 unattempted: unattemptedCount,
                 percentage: ((correctCount / currentQuestions.length) * 100).toFixed(2)
               },
-              submissionFailed: true
+              submissionFailed: true,
+              quizEndTime: quizInfo.endTime // Pass quiz end time
             }
           }
         });

@@ -69,6 +69,25 @@ interface QuestionAnalytics {
   correctPercentage: string;
   incorrectPercentage: string;
   skippedPercentage: string;
+  questionData?: {
+    question: string;
+    options?: string[];
+    correctAnswer?: string | number;
+    questionImage?: string;
+    audio?: string;
+    videoUrl?: string;
+    puzzleType?: string;
+    description?: string;
+    hint?: {
+      text?: string;
+      image?: string;
+      video?: string;
+    };
+    solution?: {
+      text?: string;
+      steps?: string[];
+    };
+  };
 }
 
 interface QuizAnalytics {
@@ -457,6 +476,140 @@ export default function QuizAnalyticsFinal() {
                       </CollapsibleTrigger>
                       <CollapsibleContent>
                         <div className="px-4 pb-4 border-t pt-4">
+                          {/* Question Content Display */}
+                          {q.questionData && (
+                            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                              <h4 className="font-semibold text-sm text-gray-700 mb-3 flex items-center gap-2">
+                                {getQuestionTypeIcon(q.questionType)}
+                                Question Content
+                              </h4>
+                              
+                              {/* Question Text */}
+                              <div className="mb-3">
+                                <p className="text-base font-medium text-gray-800 mb-2">{q.questionData.question}</p>
+                                {q.questionData.description && (
+                                  <p className="text-sm text-gray-600 italic">{q.questionData.description}</p>
+                                )}
+                              </div>
+                              
+                              {/* Puzzle Info */}
+                              {q.questionType === 'puzzle' && q.questionData.puzzleType && (
+                                <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-md">
+                                  <p className="text-sm">
+                                    <span className="font-semibold text-orange-800">Puzzle Type: </span>
+                                    <span className="text-gray-700 capitalize">{q.questionData.puzzleType.replace('_', ' ')}</span>
+                                  </p>
+                                  <p className="text-xs text-gray-600 mt-1">
+                                    Interactive game - Performance evaluated based on completion time and accuracy
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* Video Info */}
+                              {q.questionType === 'video' && (
+                                <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-md">
+                                  <p className="text-sm text-gray-700">
+                                    Video-based question with multiple-choice options
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* Question Image (for MCQ) */}
+                              {q.questionData.questionImage && (
+                                <div className="mb-3">
+                                  <img 
+                                    src={q.questionData.questionImage} 
+                                    alt="Question"
+                                    className="max-w-md rounded-lg border shadow-sm"
+                                  />
+                                </div>
+                              )}
+                              
+                              {/* Audio Player (for Audio questions) */}
+                              {q.questionData.audio && (
+                                <div className="mb-3">
+                                  <audio controls className="w-full max-w-md">
+                                    <source src={q.questionData.audio} type="audio/mpeg" />
+                                    Your browser does not support the audio element.
+                                  </audio>
+                                </div>
+                              )}
+                              
+                              {/* Video Player (for Video questions) */}
+                              {q.questionData.videoUrl && (
+                                <div className="mb-3">
+                                  <video controls className="w-full max-w-md rounded-lg border shadow-sm">
+                                    <source src={q.questionData.videoUrl} type="video/mp4" />
+                                    Your browser does not support the video element.
+                                  </video>
+                                </div>
+                              )}
+                              
+                              {/* Options (for MCQ, Audio, and Video) */}
+                              {q.questionData.options && q.questionData.options.length > 0 && (
+                                <div className="space-y-2 mb-3">
+                                  <p className="text-sm font-semibold text-gray-700">Options:</p>
+                                  {q.questionData.options.map((option, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className={`p-3 rounded-md border ${
+                                        q.questionData?.correctAnswer === option || 
+                                        (typeof q.questionData?.correctAnswer === 'number' && q.questionData.correctAnswer === idx)
+                                          ? 'bg-green-100 border-green-400 font-semibold'
+                                          : 'bg-white border-gray-300'
+                                      }`}
+                                    >
+                                      <span className="mr-2 font-medium text-gray-600">{String.fromCharCode(65 + idx)}.</span>
+                                      {option}
+                                      {(q.questionData?.correctAnswer === option || 
+                                        (typeof q.questionData?.correctAnswer === 'number' && q.questionData.correctAnswer === idx)) && (
+                                        <Badge className="ml-2 bg-green-600">Correct Answer</Badge>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {/* Correct Answer display (if not shown in options) */}
+                              {q.questionData.correctAnswer && !q.questionData.options && q.questionType !== 'puzzle' && (
+                                <div className="p-3 bg-green-100 border border-green-400 rounded-md">
+                                  <span className="font-semibold text-green-800">Correct Answer: </span>
+                                  <span className="text-gray-800">{q.questionData.correctAnswer}</span>
+                                </div>
+                              )}
+                              
+                              {/* Note for puzzles */}
+                              {q.questionType === 'puzzle' && (
+                                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                                  <p className="text-xs text-gray-700">
+                                    <strong>Note:</strong> Puzzle performance is evaluated dynamically based on student interaction patterns, 
+                                    completion time, and accuracy. There is no single "correct answer" - success is measured through gameplay metrics.
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* Solution (for MCQ, Audio, Video) */}
+                              {q.questionData.solution && q.questionType !== 'puzzle' && (
+                                <div className="mt-3 p-4 bg-green-50 border border-green-300 rounded-md">
+                                  <h5 className="font-semibold text-sm text-green-800 mb-2">📚 Solution:</h5>
+                                  {q.questionData.solution.text && (
+                                    <p className="text-sm text-gray-700 mb-2">{q.questionData.solution.text}</p>
+                                  )}
+                                  {q.questionData.solution.steps && q.questionData.solution.steps.length > 0 && (
+                                    <div className="mt-2">
+                                      <p className="font-semibold text-xs text-gray-700 mb-1">Steps:</p>
+                                      <ol className="list-decimal list-inside space-y-1">
+                                        {q.questionData.solution.steps.map((step, idx) => (
+                                          <li key={idx} className="text-sm text-gray-700">{step}</li>
+                                        ))}
+                                      </ol>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Statistics */}
                             <div className="space-y-3">

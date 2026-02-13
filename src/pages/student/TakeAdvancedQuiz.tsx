@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Video, Volume2, BookOpen, Puzzle } from 'lucide-react';
+import { Clock, Video, Volume2, BookOpen, Puzzle, FileText } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -209,7 +209,17 @@ const TakeAdvancedQuiz: React.FC = () => {
     <div className="container mx-auto p-6 max-w-4xl">
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-bold text-center">Take Advanced Quiz</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-3xl font-bold">Take Advanced Quiz</CardTitle>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/student/advanced-quiz-past-reports')}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Past Reports
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {!quizInfo ? (

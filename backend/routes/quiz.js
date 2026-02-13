@@ -262,6 +262,26 @@ router.get("/analytics/:quizId", async (req, res) => {
     
     console.log(`Found ${reports.length} reports for quiz ${quiz.quizId}`);
     
+    // Build a map of questionId to questionType from quiz.questions array
+    const questionTypeMap = {};
+    let questionIndex = 0;
+    
+    // Map questions to their types based on quiz configuration
+    const { mcq, audio, video, puzzle } = quiz.questionTypes;
+    quiz.questions.forEach((qId, idx) => {
+      if (idx < mcq) {
+        questionTypeMap[qId] = 'mcq';
+      } else if (idx < mcq + audio) {
+        questionTypeMap[qId] = 'audio';
+      } else if (idx < mcq + audio + video) {
+        questionTypeMap[qId] = 'video';
+      } else {
+        questionTypeMap[qId] = 'puzzle';
+      }
+    });
+    
+    console.log('Question type map:', questionTypeMap);
+    
     // Calculate statistics from StudentReport model (which has correct, incorrect, unattempted)
     const studentReports = reports.map(report => {
       const totalQuestions = report.correct + report.incorrect + report.unattempted;
@@ -278,16 +298,20 @@ router.get("/analytics/:quizId", async (req, res) => {
       // Process answers to get section-wise data
       if (report.answers && Array.isArray(report.answers)) {
         report.answers.forEach(answer => {
-          const type = answer.questionType;
-          if (sectionWise[type]) {
+          // Use questionType from answer if available, otherwise from questionTypeMap
+          const type = answer.questionType || questionTypeMap[answer.questionId];
+          
+          if (type && sectionWise[type]) {
             sectionWise[type].total++;
-            if (!answer.selectedAnswer) {
+            if (!answer.selectedAnswer || answer.selectedAnswer === null || answer.selectedAnswer === '') {
               sectionWise[type].unattempted++;
             } else if (answer.isCorrect) {
               sectionWise[type].correct++;
             } else {
               sectionWise[type].incorrect++;
             }
+          } else {
+            console.log(`Unknown question type for question ${answer.questionId}: ${type}`);
           }
         });
         
@@ -300,6 +324,14 @@ router.get("/analytics/:quizId", async (req, res) => {
         });
       }
       
+      console.log(`Student ${report.studentId} section-wise:`, sectionWise);
+      
+      // Get time taken - if not in report, it's undefined (will be handled in frontend)
+      let timeTaken = report.timeTaken;
+      if (timeTaken === undefined || timeTaken === null || timeTaken === 0) {
+        timeTaken = undefined; // Set to undefined so frontend shows N/A
+      }
+      
       return {
         studentId: report.studentId,
         correct: report.correct,
@@ -307,7 +339,7 @@ router.get("/analytics/:quizId", async (req, res) => {
         unattempted: report.unattempted,
         totalQuestions: totalQuestions,
         percentage: percentage.toFixed(2),
-        timeTaken: report.timeTaken || 0, // Include time taken
+        timeTaken: timeTaken, // Include time taken (undefined if not available)
         sectionWise: sectionWise,
         submittedAt: report.createdAt || new Date()
       };
@@ -328,9 +360,11 @@ router.get("/analytics/:quizId", async (req, res) => {
         report.answers.forEach(answer => {
           const qId = answer.questionId;
           if (!questionAnalytics[qId]) {
+            // Use questionType from answer if available, otherwise from questionTypeMap
+            const type = answer.questionType || questionTypeMap[qId];
             questionAnalytics[qId] = {
               questionId: qId,
-              questionType: answer.questionType,
+              questionType: type,
               correct: 0,
               incorrect: 0,
               skipped: 0,
@@ -340,7 +374,7 @@ router.get("/analytics/:quizId", async (req, res) => {
           
           questionAnalytics[qId].totalAttempts++;
           
-          if (!answer.selectedAnswer || answer.selectedAnswer === null) {
+          if (!answer.selectedAnswer || answer.selectedAnswer === null || answer.selectedAnswer === '') {
             questionAnalytics[qId].skipped++;
           } else if (answer.isCorrect) {
             questionAnalytics[qId].correct++;
@@ -351,13 +385,138 @@ router.get("/analytics/:quizId", async (req, res) => {
       }
     });
     
-    // Convert to array and calculate percentages
-    const questionAnalyticsArray = Object.values(questionAnalytics).map(q => ({
-      ...q,
-      correctPercentage: q.totalAttempts > 0 ? ((q.correct / q.totalAttempts) * 100).toFixed(2) : 0,
-      incorrectPercentage: q.totalAttempts > 0 ? ((q.incorrect / q.totalAttempts) * 100).toFixed(2) : 0,
-      skippedPercentage: q.totalAttempts > 0 ? ((q.skipped / q.totalAttempts) * 100).toFixed(2) : 0
-    }));
+    // Fetch actual question data
+    const Question = require("../models/Question");
+    const AudioQuestion = require("../models/AudioQuestion");
+    const VideoQuestion = require("../models/VideoQuestion");
+    
+    // Define available puzzles (same as in puzzles.js)
+    const AVAILABLE_PUZZLES = [
+      {
+        _id: "puzzle_memory_match",
+        puzzleType: "memory_match",
+        title: "मेमोरी मैच",
+        description: "कार्ड्स की स्थिति याद करें और जोड़ियाँ ढूँढें। याददाश्त और ध्यान का परीक्षण।"
+      },
+      {
+        _id: "puzzle_match_pieces",
+        puzzleType: "match_pieces",
+        title: "मैच पीसेज़",
+        description: "चित्र के टुकड़ों को जोड़कर मूल चित्र बनाएं। दृश्य पहचान और स्थानिक तर्क का परीक्षण।"
+      }
+    ];
+    
+    // Convert to array and calculate percentages, then fetch question details
+    const questionAnalyticsArray = await Promise.all(
+      Object.values(questionAnalytics).map(async (q) => {
+        let questionData = null;
+        
+        try {
+          // Fetch question based on type
+          if (q.questionType === 'mcq') {
+            questionData = await Question.findById(q.questionId).lean();
+            if (questionData) {
+              questionData.question = questionData.question || 'MCQ Question';
+            }
+          } else if (q.questionType === 'audio') {
+            questionData = await AudioQuestion.findById(q.questionId).lean();
+            if (questionData) {
+              questionData.question = questionData.question || 'Audio Question';
+            }
+          } else if (q.questionType === 'video') {
+            // Video questions can be either full documents or individual questions from parent
+            // Check if ID contains underscore (individual question: parentId_qIndex)
+            if (q.questionId.includes('_q')) {
+              // Individual question from video set
+              const [parentId, qPart] = q.questionId.split('_q');
+              const questionIndex = parseInt(qPart);
+              
+              const parentVideo = await VideoQuestion.findById(parentId).lean();
+              if (parentVideo && parentVideo.questions && parentVideo.questions[questionIndex]) {
+                const specificQ = parentVideo.questions[questionIndex];
+                questionData = {
+                  question: specificQ.question,
+                  options: specificQ.options,
+                  correctAnswer: specificQ.correctAnswer,
+                  videoUrl: parentVideo.videoUrl,
+                  videoTitle: parentVideo.videoTitle,
+                  hint: specificQ.hint,
+                  solution: specificQ.solution,
+                  type: 'video'
+                };
+              }
+            } else {
+              // Try as full video question document
+              questionData = await VideoQuestion.findById(q.questionId).lean();
+              if (questionData) {
+                // If it has multiple questions, use the first one
+                if (questionData.questions && questionData.questions.length > 0) {
+                  const firstQ = questionData.questions[0];
+                  questionData.question = firstQ.question || questionData.videoTitle || 'Video Question';
+                  questionData.options = firstQ.options;
+                  questionData.correctAnswer = firstQ.correctAnswer;
+                  questionData.hint = firstQ.hint;
+                  questionData.solution = firstQ.solution;
+                } else {
+                  questionData.question = questionData.videoTitle || 'Video Question';
+                }
+              }
+            }
+            
+            // Fallback if not found
+            if (!questionData) {
+              questionData = { 
+                question: 'Video Question',
+                videoTitle: 'Video Question',
+                type: 'video'
+              };
+            }
+          } else if (q.questionType === 'puzzle') {
+            // Find puzzle from predefined list
+            const puzzle = AVAILABLE_PUZZLES.find(p => p._id === q.questionId);
+            if (puzzle) {
+              questionData = { 
+                question: puzzle.title,
+                description: puzzle.description,
+                puzzleType: puzzle.puzzleType,
+                type: 'puzzle'
+              };
+            } else {
+              questionData = { 
+                question: 'Interactive Puzzle Game',
+                type: 'puzzle'
+              };
+            }
+          }
+        } catch (fetchError) {
+          console.log(`Could not fetch question ${q.questionId}:`, fetchError.message);
+          // Create minimal placeholder based on type
+          questionData = {
+            question: `${q.questionType.toUpperCase()} Question`,
+            type: q.questionType
+          };
+        }
+        
+        return {
+          ...q,
+          correctPercentage: q.totalAttempts > 0 ? ((q.correct / q.totalAttempts) * 100).toFixed(2) : 0,
+          incorrectPercentage: q.totalAttempts > 0 ? ((q.incorrect / q.totalAttempts) * 100).toFixed(2) : 0,
+          skippedPercentage: q.totalAttempts > 0 ? ((q.skipped / q.totalAttempts) * 100).toFixed(2) : 0,
+          questionData: questionData ? {
+            question: questionData.question || questionData.videoTitle || questionData.title || 'Question',
+            options: questionData.options || [],
+            correctAnswer: questionData.correctAnswer || null,
+            questionImage: questionData.questionImage || null,
+            audio: questionData.audio || null,
+            videoUrl: questionData.videoUrl || null,
+            puzzleType: questionData.puzzleType || null,
+            description: questionData.description || null,
+            hint: questionData.hint || null,
+            solution: questionData.solution || null
+          } : null
+        };
+      })
+    );
     
     const analytics = {
       quizInfo: {
