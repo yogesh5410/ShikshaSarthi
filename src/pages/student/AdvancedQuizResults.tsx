@@ -102,6 +102,8 @@ const AdvancedQuizResults: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [quizEnded, setQuizEnded] = useState(false);
   const [timeUntilEnd, setTimeUntilEnd] = useState<string>('');
+  const [fetchingComparativeStats, setFetchingComparativeStats] = useState(false);
+  const [delayCountdown, setDelayCountdown] = useState<number>(0);
 
   const resultData = location.state?.results;
 
@@ -157,7 +159,34 @@ const AdvancedQuizResults: React.FC = () => {
       processResults();
       // Only fetch comparative stats if quiz has ended
       if (quizEnded) {
-        fetchComparativeStats();
+        // For past reports, fetch immediately
+        if (resultData.isPastReport) {
+          fetchComparativeStats();
+        } else {
+          // For fresh submissions, wait 15 seconds after quiz end to ensure all submissions are in
+          setFetchingComparativeStats(true);
+          setDelayCountdown(15);
+          
+          const countdownInterval = setInterval(() => {
+            setDelayCountdown((prev) => {
+              if (prev <= 1) {
+                clearInterval(countdownInterval);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+          
+          const delayTimeout = setTimeout(() => {
+            fetchComparativeStats();
+            setFetchingComparativeStats(false);
+          }, 15000); // 15 second delay
+          
+          return () => {
+            clearTimeout(delayTimeout);
+            clearInterval(countdownInterval);
+          };
+        }
       }
     } else {
       navigate('/student/take-advanced-quiz');
@@ -903,8 +932,39 @@ const AdvancedQuizResults: React.FC = () => {
         </Card>
       )}
 
-      {/* Comparative Analysis - Only show if quiz has ended */}
-      {quizEnded && results.allStudentsStats && (
+      {/* Loading Analytics - Show during 15 second delay */}
+      {quizEnded && fetchingComparativeStats && delayCountdown > 0 && (
+        <Card className="mb-6 border-2 border-blue-300 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-3"></div>
+              <h3 className="text-xl font-bold text-blue-900 mb-2">
+                Preparing Comparative Analytics
+              </h3>
+              <p className="text-gray-700 mb-3">
+                Waiting for all students to submit their answers for accurate rankings...
+              </p>
+              <div className="inline-flex items-center gap-2 bg-white px-6 py-3 rounded-lg border border-blue-300 shadow-sm">
+                <Clock className="h-6 w-6 text-blue-600 animate-pulse" />
+                <div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {delayCountdown}s
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    remaining
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mt-4">
+                This ensures accurate rankings and statistics based on all submissions
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Comparative Analysis - Only show if quiz has ended and delay is over */}
+      {quizEnded && !fetchingComparativeStats && results.allStudentsStats && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -1021,8 +1081,8 @@ const AdvancedQuizResults: React.FC = () => {
         </Card>
       )}
 
-      {/* Leaderboard - Only show if quiz has ended */}
-      {quizEnded && results?.leaderboard && results.leaderboard.length > 0 && (
+      {/* Leaderboard - Only show if quiz has ended and delay is over */}
+      {quizEnded && !fetchingComparativeStats && results?.leaderboard && results.leaderboard.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
