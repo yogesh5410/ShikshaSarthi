@@ -221,8 +221,15 @@ const AdvancedQuizPlayer: React.FC = () => {
           const response = await axios.get(endpoint);
           console.log(`Loaded ${type} question:`, response.data);
           
+          // For video questions loaded via the individual question endpoint, 
+          // use the unique _id from the response (format: parentId_q0, parentId_q1, etc.)
+          // This ensures each question has a unique ID even if from the same video topic
+          const uniqueQuestionId = (type === 'video' && response.data._id) 
+            ? response.data._id 
+            : questionId;
+          
           return {
-            _id: questionId,
+            _id: uniqueQuestionId,
             type,
             data: response.data
           };
@@ -385,8 +392,8 @@ const AdvancedQuizPlayer: React.FC = () => {
             ...(q.type === 'video' && q.data && {
               questionText: q.data.question,
               options: q.data.options,
-              hint: q.data.hint?.text || null,
-              solution: q.data.solution || null,
+              hint: q.data.hint?.text || q.data.hint || null,
+              solution: q.data.solution?.text || q.data.solution || null,
               parentVideoId: q.data.parentVideoId,
               questionIndex: q.data.questionIndex
             }),
@@ -446,8 +453,8 @@ const AdvancedQuizPlayer: React.FC = () => {
           ...(q.type === 'video' && q.data && {
             questionText: q.data.question,
             options: q.data.options,
-            hint: q.data.hint?.text || null,
-            solution: q.data.solution || null,
+            hint: q.data.hint?.text || q.data.hint || null,
+            solution: q.data.solution?.text || q.data.solution || null,
             parentVideoId: q.data.parentVideoId,
             questionIndex: q.data.questionIndex
           }),

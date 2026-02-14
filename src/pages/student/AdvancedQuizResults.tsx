@@ -332,16 +332,18 @@ const AdvancedQuizResults: React.FC = () => {
     let moderateAnswers = 0; // Between 10-20 seconds
 
     videoQuestions.forEach(q => {
-      totalTimeSpent += q.timeSpent;
+      const timeSpent = q.timeSpent || 0; // Handle undefined/null timeSpent
+      totalTimeSpent += timeSpent;
       if (q.isCorrect) correctAnswers++;
       
-      if (q.timeSpent < 10) veryQuickAnswers++;
-      else if (q.timeSpent >= 20) thoughtfulAnswers++;
+      if (timeSpent < 10) veryQuickAnswers++;
+      else if (timeSpent >= 20) thoughtfulAnswers++;
       else moderateAnswers++;
     });
 
-    const avgTimeSpent = totalTimeSpent / videoQuestions.length;
-    const accuracy = (correctAnswers / videoQuestions.length) * 100;
+    // Prevent division by zero
+    const avgTimeSpent = videoQuestions.length > 0 ? totalTimeSpent / videoQuestions.length : 0;
+    const accuracy = videoQuestions.length > 0 ? (correctAnswers / videoQuestions.length) * 100 : 0;
 
     // Determine learning behavior based on accuracy and time spent
     let behaviorCategory = '';
@@ -581,7 +583,9 @@ const AdvancedQuizResults: React.FC = () => {
                                 <span className="text-sm font-semibold text-gray-600">औसत समय (Avg Time)</span>
                               </div>
                               <div className="text-3xl font-bold text-green-600">
-                                {videoAnalytics.avgTimeSpent.toFixed(0)}s
+                                {!isNaN(videoAnalytics.avgTimeSpent) && isFinite(videoAnalytics.avgTimeSpent) 
+                                  ? videoAnalytics.avgTimeSpent.toFixed(0) 
+                                  : '0'}s
                               </div>
                               <p className="text-xs text-gray-600 mt-2">प्रति प्रश्न</p>
                             </div>
@@ -629,6 +633,10 @@ const AdvancedQuizResults: React.FC = () => {
                               optionsLength: options.length,
                               correctAnswer: correctAnswer,
                               hasSolution: !!solution,
+                              solutionType: typeof solution,
+                              solutionIsString: typeof solution === 'string',
+                              solutionIsObject: typeof solution === 'object',
+                              solutionHasText: solution && typeof solution === 'object' ? !!solution.text : false,
                               solutionData: solution
                             });
                             
@@ -752,9 +760,10 @@ const AdvancedQuizResults: React.FC = () => {
                                       {solution ? (
                                         <>
                                           {/* Solution Text - Full explanation */}
-                                          {solution.text && (
+                                          {/* Handle both string format and object format */}
+                                          {(typeof solution === 'string' ? solution : solution.text) && (
                                             <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
-                                              {solution.text}
+                                              {typeof solution === 'string' ? solution : solution.text}
                                             </div>
                                           )}
                                         </>
