@@ -80,6 +80,20 @@ const AdvancedQuizPastReports: React.FC = () => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_URL}/reports/student/${studentId}`);
+      
+      console.log('=== PAST REPORTS DEBUG ===');
+      console.log('Total reports fetched:', response.data.length);
+      response.data.forEach((report: StudentReport, index: number) => {
+        console.log(`Report ${index + 1}:`, {
+          quizId: report.quizId,
+          timeTaken: report.timeTaken,
+          timeTakenType: typeof report.timeTaken,
+          timeTakenValue: report.timeTaken,
+          createdAt: report.createdAt
+        });
+      });
+      console.log('========================');
+      
       // Sort by most recent first
       const sortedReports = response.data.sort((a: StudentReport, b: StudentReport) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -124,9 +138,17 @@ const AdvancedQuizPastReports: React.FC = () => {
   };
 
   const formatTime = (seconds?: number) => {
-    if (!seconds) return "N/A";
+    if (!seconds || seconds === 0) return "N/A";
+    if (seconds < 0) return "N/A"; // Handle negative values
+    
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
+    
+    // If less than 1 minute, show only seconds
+    if (mins === 0) {
+      return `${secs}s`;
+    }
+    
     return `${mins}m ${secs}s`;
   };
 
@@ -221,7 +243,16 @@ const AdvancedQuizPastReports: React.FC = () => {
                     <div className="text-center p-3 bg-purple-50 rounded-lg">
                       <div className="flex items-center justify-center gap-1">
                         <Clock className="h-4 w-4 text-purple-600" />
-                        <div className="text-lg font-bold text-purple-600">{formatTime(report.timeTaken)}</div>
+                        <div className="text-lg font-bold text-purple-600">
+                          {(() => {
+                            const formattedTime = formatTime(report.timeTaken);
+                            console.log('Display time for quiz', report.quizId, ':', {
+                              rawValue: report.timeTaken,
+                              formatted: formattedTime
+                            });
+                            return formattedTime;
+                          })()}
+                        </div>
                       </div>
                       <p className="text-xs text-gray-600">Time Taken</p>
                     </div>
