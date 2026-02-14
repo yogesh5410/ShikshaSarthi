@@ -13,6 +13,29 @@ const studentReportSchema = new mongoose.Schema({
       questionType: { type: String },
       selectedAnswer: String,
       isCorrect: Boolean,
+      correctAnswer: String,
+      timeSpent: { type: Number, default: 0 }, // Time spent on this question in seconds
+      
+      // Video question specific data (for displaying in past reports)
+      questionText: String,
+      options: [String],
+      hint: String,
+      solution: String,
+      parentVideoId: String,
+      questionIndex: Number,
+      
+      // Video analytics data
+      videoAnalytics: {
+        videoDuration: Number,
+        watchTime: Number,
+        watchPercentage: Number,
+        pauseCount: Number,
+        seekCount: Number,
+        playbackEvents: [{
+          action: String,
+          timestamp: Number
+        }]
+      }
     },
   ],
 }, { timestamps: true }); // Add timestamps to track createdAt and updatedAt

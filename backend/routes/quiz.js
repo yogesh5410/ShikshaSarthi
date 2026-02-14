@@ -624,12 +624,33 @@ router.post("/submit-advanced", async (req, res) => {
       incorrect: score.incorrect,
       unattempted: score.unattempted,
       timeTaken: timeTaken || 0, // Add time taken
-      answers: answers.map((ans) => ({
-        questionId: ans.questionId,
-        questionType: ans.questionType,
-        selectedAnswer: ans.selectedAnswer,
-        isCorrect: ans.isCorrect
-      }))
+      answers: answers.map((ans) => {
+        const answerObj = {
+          questionId: ans.questionId,
+          questionType: ans.questionType,
+          selectedAnswer: ans.selectedAnswer,
+          isCorrect: ans.isCorrect,
+          correctAnswer: ans.correctAnswer,
+          timeSpent: ans.timeSpent || 0
+        };
+        
+        // Add video question specific data if present
+        if (ans.questionType === 'video') {
+          answerObj.questionText = ans.questionText;
+          answerObj.options = ans.options;
+          answerObj.hint = ans.hint;
+          answerObj.solution = ans.solution;
+          answerObj.parentVideoId = ans.parentVideoId;
+          answerObj.questionIndex = ans.questionIndex;
+          
+          // Add video analytics if present
+          if (ans.videoAnalytics) {
+            answerObj.videoAnalytics = ans.videoAnalytics;
+          }
+        }
+        
+        return answerObj;
+      })
     });
 
     await report.save();
