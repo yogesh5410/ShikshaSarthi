@@ -51,6 +51,7 @@ const AdvancedQuizPlayer: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const [initialTimeLimit, setInitialTimeLimit] = useState(0); // Store the actual starting time
   const [loading, setLoading] = useState(true);
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizEnded, setQuizEnded] = useState(false);
@@ -123,6 +124,7 @@ const AdvancedQuizPlayer: React.FC = () => {
     }
     
     setTimeRemaining(actualTimeRemaining);
+    setInitialTimeLimit(actualTimeRemaining); // Store the initial time for accurate calculation later
     console.log(`Time remaining calculated: ${actualTimeRemaining}s (${Math.floor(actualTimeRemaining/60)}m)`);
     
     // Calculate countdown to quiz start
@@ -469,7 +471,23 @@ const AdvancedQuizPlayer: React.FC = () => {
       console.log('Total:', correctCount + incorrectCount + unattemptedCount);
       console.log('===========================');
 
-      const totalTimeTaken = quizInfo.timeLimit * 60 - timeRemaining;
+      // Calculate time taken with validation
+      // Use the STORED initial time limit, not recalculated value
+      const quizTimeLimit = initialTimeLimit || (quizInfo.timeLimit * 60); 
+      const rawTimeTaken = quizTimeLimit - timeRemaining;
+      
+      // Ensure time is valid and within bounds
+      const totalTimeTaken = Math.max(0, Math.min(rawTimeTaken, quizTimeLimit));
+
+      console.log('=== TIME CALCULATION DEBUG ===');
+      console.log('Initial time limit (seconds):', initialTimeLimit);
+      console.log('Quiz time limit from config (seconds):', quizInfo.timeLimit * 60);
+      console.log('Using time limit (seconds):', quizTimeLimit);
+      console.log('Time remaining (seconds):', timeRemaining);
+      console.log('Raw time taken:', rawTimeTaken);
+      console.log('Final time taken (seconds):', totalTimeTaken);
+      console.log('Time taken (minutes):', (totalTimeTaken / 60).toFixed(2));
+      console.log('==============================');
 
       const submitData = {
         quizId: quizInfo.quizId,
