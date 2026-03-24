@@ -104,9 +104,9 @@ const AppRoutes = () => {
       <Route path="/student/profile/:id" element={<StudentProfile />} />
       <Route path="/student/assessment/:id" element={<StudentProfile />} />
       <Route path="/student/experiments" element={<ExperimentSimulation />} />
+      <Route path="/student/experiments/analytics" element={<ExperimentAnalytics />} />
       <Route path="/student/experiments/:subject" element={<ExperimentList />} />
       <Route path="/student/experiment/:experimentName" element={<ExperimentPage />} />
-      <Route path="/student/experiments/analytics" element={<ExperimentAnalytics />} />
       <Route path="/student/experiments/:subject/quiz" element={<LabQuiz />} />
       <Route path="/student/practice" element={<StudentPractice />} />
       <Route path="/student/practice/:subject" element={<SubjectTopics />} />

@@ -56,8 +56,12 @@ const experimentAttemptSchema = new mongoose.Schema({
 
   attemptedAt: {
     type: Date,
-    default: Date.now
+    default: Date.now,
+    index: true
   }
 });
+
+// Compound index for faster analytics retrieval per student
+experimentAttemptSchema.index({ studentId: 1, attemptedAt: -1 });
 
 module.exports = mongoose.model("ExperimentAttempt", experimentAttemptSchema);

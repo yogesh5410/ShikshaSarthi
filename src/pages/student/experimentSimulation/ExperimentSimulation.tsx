@@ -12,6 +12,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { 
   Atom, 
   FlaskConical, 
   Dna, 
@@ -19,7 +27,9 @@ import {
   ArrowLeft,
   Microscope,
   BookOpen,
-  CheckCircle2
+  CheckCircle2,
+  BarChart2,
+  ClipboardList
 } from "lucide-react";
 
 const ExperimentSimulation: React.FC = () => {
@@ -101,7 +111,7 @@ const ExperimentSimulation: React.FC = () => {
                 </div>
             </div>
 
-            {/* Introduction Card to match Puzzles style */}
+            {/* Introduction Card to match Puzzles style
             <Card className="mb-8 border border-indigo-100 bg-white shadow-sm">
                 <CardHeader className="pb-3">
                     <CardTitle className="text-base font-semibold text-gray-900 flex items-center gap-2">
@@ -125,7 +135,72 @@ const ExperimentSimulation: React.FC = () => {
                         </div>
                     </div>
                 </CardContent>
-            </Card>
+            </Card> */}
+
+            {/* Quick Actions for Analytics and Quiz */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {/* Analytics Card */}
+                <Card className="border border-indigo-100 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate('/student/experiments/analytics')}>
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-indigo-100 rounded-xl text-indigo-600 group-hover:scale-110 transition-transform">
+                                <BarChart2 className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg text-gray-900 group-hover:text-indigo-700 transition-colors">My Analytics (मेरी एनालिटिक्स)</h3>
+                                <p className="text-sm text-gray-500">View your lab performance stats</p>
+                            </div>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
+                    </CardContent>
+                </Card>
+
+                {/* Take Quiz Dialog */}
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="border border-green-100 bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
+                            <CardContent className="p-6 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-green-100 rounded-xl text-green-600 group-hover:scale-110 transition-transform">
+                                        <ClipboardList className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-lg text-gray-900 group-hover:text-green-700 transition-colors">Take Lab Quiz (लैब क्विज़ लें)</h3>
+                                        <p className="text-sm text-gray-500">Test your experimental knowledge</p>
+                                    </div>
+                                </div>
+                                <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-green-500 group-hover:translate-x-1 transition-all" />
+                            </CardContent>
+                        </Card>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md bg-white">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold text-gray-900">Select Subject for Quiz</DialogTitle>
+                            <DialogDescription className="text-gray-500">
+                                Choose a subject to start your virtual lab assessment.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-1 gap-3 py-4">
+                            {subjects.map((subject, index) => (
+                                <Button 
+                                    key={index}
+                                    variant="outline" 
+                                    className={`h-20 justify-start px-6 hover:bg-slate-50 border-2 ${subject.borderColor} hover:border-indigo-400 transition-all group`}
+                                    onClick={() => navigate(`/student/experiments/${subject.subject.toLowerCase()}/quiz`)}
+                                >
+                                    <div className={`p-2 rounded-lg ${subject.bgLight} mr-4 group-hover:scale-110 transition-transform`}>
+                                        <subject.icon className={`h-6 w-6 ${subject.subject === 'Physics' ? 'text-blue-600' : subject.subject === 'Chemistry' ? 'text-purple-600' : 'text-green-600'}`} />
+                                    </div>
+                                    <div className="flex flex-col items-start text-left">
+                                        <span className="font-bold text-lg text-gray-800 group-hover:text-indigo-700 transition-colors">{subject.hiSubject}</span>
+                                        <span className="text-xs text-gray-500 font-medium">Start Quiz &rarr;</span>
+                                    </div>
+                                </Button>
+                            ))}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {subjects.map((item, index) => (

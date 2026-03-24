@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BarChart2, Calendar, Clock, Trophy } from "lucide-react";
+import { ArrowLeft, BarChart2, Calendar, Clock, Trophy, FlaskConical } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -128,7 +128,7 @@ const ExperimentAnalytics: React.FC = () => {
                     <Card className="bg-white border-slate-200 shadow-sm">
                         <CardContent className="p-6 flex items-center gap-4">
                             <div className="p-4 bg-green-50 text-green-600 rounded-full">
-                                <Beaker className="h-6 w-6" /> {/* Beaker icon needs import from lucide-react? No, assume available */}
+                                <FlaskConical className="h-6 w-6" />
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-slate-500">Experiments Covered</p>
@@ -138,45 +138,54 @@ const ExperimentAnalytics: React.FC = () => {
                     </Card>
                 </div>
 
-                <div className="mb-4 text-lg font-semibold text-slate-800">Recent Activity</div>
+                <div className="mb-6 flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-slate-800">Recent Activity</h2>
+                </div>
 
                 {attempts.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
-                        <p className="text-slate-500">No quizzes attempted yet. Start an experiment to take a quiz!</p>
-                        <Button onClick={() => navigate('/student/experiments')} variant="link" className="mt-2 text-indigo-600">
-                            View Experiments
+                    <div className="text-center py-16 bg-white rounded-xl border border-dashed border-slate-300">
+                        <div className="bg-slate-50 p-4 rounded-full inline-block mb-4">
+                            <BarChart2 className="h-8 w-8 text-slate-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-700 mb-1">No quizzes attempted yet</h3>
+                        <p className="text-slate-500 mb-6">Start an experiment to take a quiz and track your progress!</p>
+                        <Button onClick={() => navigate('/student/experiments')} className="bg-indigo-600 hover:bg-indigo-700">
+                            Go to Experiments
                         </Button>
                     </div>
                 ) : (
                     <div className="space-y-4">
                         {attempts.map((attempt) => (
-                            <Card key={attempt._id} className="hover:shadow-md transition-shadow cursor-default">
+                            <Card key={attempt._id} className="hover:shadow-md transition-shadow cursor-default border-slate-200">
                                 <CardContent className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <Badge variant="outline" className="border-indigo-200 text-indigo-700 bg-indigo-50">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Badge variant="outline" className="border-indigo-200 text-indigo-700 bg-indigo-50 font-medium">
                                                 {attempt.subject}
                                             </Badge>
-                                            <span className="text-xs text-slate-400 flex items-center gap-1">
+                                            <span className="text-xs text-slate-500 flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-full">
                                                 <Calendar className="h-3 w-3" />
                                                 {new Date(attempt.attemptedAt).toLocaleDateString()}
                                             </span>
                                         </div>
                                         <h3 className="text-lg font-bold text-slate-800">{attempt.experimentName}</h3>
+                                        <p className="text-sm text-slate-500 mt-1">
+                                            {new Date(attempt.attemptedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
                                     </div>
 
-                                    <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+                                    <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end bg-slate-50 md:bg-transparent p-3 md:p-0 rounded-lg">
                                         <div className="text-right">
-                                            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Score</span>
-                                            <span className={`text-xl font-bold ${(attempt.score / attempt.totalQuestions) >= 0.7 ? 'text-green-600' : 'text-orange-500'}`}>
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Score</span>
+                                            <span className={`text-xl font-bold ${(attempt.score / attempt.totalQuestions) >= 0.7 ? 'text-green-600' : (attempt.score / attempt.totalQuestions) >= 0.4 ? 'text-orange-500' : 'text-red-500'}`}>
                                                 {Math.round((attempt.score / attempt.totalQuestions) * 100)}%
                                             </span>
                                         </div>
-                                        <div className="h-10 w-px bg-slate-100 hidden md:block"></div>
+                                        <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
                                         <div className="text-right">
-                                            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Questions</span>
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Correct</span>
                                             <span className="text-lg font-semibold text-slate-700">
-                                                {attempt.score}/{attempt.totalQuestions}
+                                                {attempt.score} <span className="text-slate-400 text-sm">/ {attempt.totalQuestions}</span>
                                             </span>
                                         </div>
                                     </div>
@@ -190,25 +199,5 @@ const ExperimentAnalytics: React.FC = () => {
         </div>
     );
 };
-
-// Simple Beaker Icon locally since I missed importing it in the component top-level code block above
-const Beaker = ({ className }: { className?: string }) => (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <path d="M4.5 3h15" />
-      <path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3" />
-      <path d="M6 14h12" />
-    </svg>
-);
 
 export default ExperimentAnalytics;

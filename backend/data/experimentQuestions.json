@@ -1,0 +1,46 @@
+[
+  {
+    "experimentName": "Vernier Caliper Measurements",
+    "subject": "Physics",
+    "class": "11",
+    "topic": "Measurement",
+    "question": "What is the least count of a standard Vernier Caliper?",
+    "options": ["0.1 mm", "0.01 mm", "0.02 mm", "0.05 mm"],
+    "correctAnswer": "0.1 mm",
+    "explanation": "The least count is calculated as 1 MSD - 1 VSD. For a standard Vernier Caliper, it is usually 0.1 mm or 0.01 cm.",
+    "type": "multiple-choice"
+  },
+  {
+    "experimentName": "Vernier Caliper Measurements",
+    "subject": "Physics",
+    "class": "11",
+    "topic": "Measurement",
+    "question": "Which error occurs if the zero of the main scale does not coincide with the zero of the vernier scale when jaws are closed?",
+    "options": ["Random Error", "Zero Error", "Parallax Error", "Human Error"],
+    "correctAnswer": "Zero Error",
+    "explanation": "Zero error is a systematic error that arises when the instrument is not calibrated correctly at the zero position.",
+    "type": "multiple-choice"
+  },
+    {
+    "experimentName": "Simple Pendulum Experiment",
+    "subject": "Physics",
+    "class": "11",
+    "topic": "Oscillations",
+    "question": "The time period of a simple pendulum depends on:",
+    "options": ["Mass of the bob", "Length of the pendulum", "Amplitude of oscillation (large angles)", "Material of the bob"],
+    "correctAnswer": "Length of the pendulum",
+    "explanation": "For small oscillations, the time period T = 2π√(L/g). It depends on the length (L) and acceleration due to gravity (g), not on mass.",
+    "type": "multiple-choice"
+  },
+  {
+    "experimentName": "Ohm's Law",
+    "subject": "Physics",
+    "class": "12",
+    "topic": "Current Electricity",
+    "question": "According to Ohm's Law, the graph between V and I is:",
+    "options": ["Parabolic", "Straight line passing through origin", "Hyperbolic", "Exponential"],
+    "correctAnswer": "Straight line passing through origin",
+    "explanation": "Ohm's law states V = IR. This represents a linear relationship, resulting in a straight line passing through the origin on a V-I graph.",
+    "type": "multiple-choice"
+  }
+]

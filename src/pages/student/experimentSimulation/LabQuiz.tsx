@@ -26,7 +26,7 @@ interface Question {
 const LabQuiz: React.FC = () => {
     const { subject } = useParams<{ subject: string }>();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const { toast } = useToast();
     
     const [selectedExperiment, setSelectedExperiment] = useState<string | null>(null);
@@ -36,6 +36,18 @@ const LabQuiz: React.FC = () => {
     const [showResults, setShowResults] = useState(false);
     const [score, setScore] = useState(0);
     const [submitLoading, setSubmitLoading] = useState(false);
+    const [startTime, setStartTime] = useState<number>(0);
+
+    // Warn if not logged in
+    useEffect(() => {
+        if (!isAuthenticated && selectedExperiment) {
+             toast({
+                title: "Not Logged In",
+                description: "You are attempting this quiz as a guest. Your results will not be saved to your student profile.",
+                variant: "destructive",
+             });
+        }
+    }, [isAuthenticated, selectedExperiment]);
 
     const subjectExperiments = experiments.filter(
       (exp) => exp.subject.toLowerCase() === subject?.toLowerCase()
@@ -47,6 +59,7 @@ const LabQuiz: React.FC = () => {
              setAnswers({});
              setShowResults(false);
              setScore(0);
+             setStartTime(Date.now());
         } else {
             setQuestions([]);
         }
@@ -87,6 +100,9 @@ const LabQuiz: React.FC = () => {
       const calculatedScore = calculateScore();
       setScore(calculatedScore);
 
+      const endTime = Date.now();
+      const timeTakenInSeconds = Math.floor((endTime - startTime) / 1000);
+
       const expDetails = experiments.find(e => e.experiment_name === selectedExperiment);
 
       const attemptData = {
@@ -94,19 +110,20 @@ const LabQuiz: React.FC = () => {
           studentName: user?.name || "Guest User",
           experimentName: selectedExperiment,
           subject: subject || "Unknown",
+          // Use 'class' from experiment details or fallback (careful with reserved keyword)
           class: expDetails?.class || "11",
           score: calculatedScore,
           totalQuestions: questions.length,
           correctAnswers: calculatedScore,
           wrongAnswers: questions.length - calculatedScore,
-          timeTaken: 120,
+          timeTaken: timeTakenInSeconds,
           questionAnalytics: questions.map((q, index) => ({
               questionId: q._id,
               questionText: q.question,
               selectedAnswer: answers[index] || "",
               correctAnswer: q.correctAnswer,
               isCorrect: answers[index] === q.correctAnswer,
-              timeTaken: 0
+              timeTaken: 0 // We could track per-question time if needed
           }))
       };
 
