@@ -85,12 +85,18 @@ const ExperimentAnalytics: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
             <Header />
-            <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl">
-                <Button variant="ghost" className="mb-6" onClick={() => navigate('/student/experiments')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Experiments
+            <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl relative">
+                <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => navigate('/student/experiments')} 
+                    className="absolute top-4 right-4 md:right-8 rounded-full shadow-sm bg-white/50 backdrop-blur-sm border-slate-200 hover:bg-white hover:text-indigo-600 transition-all z-10"
+                    title="Back to Experiments"
+                >
+                    <ArrowLeft className="h-5 w-5" />
                 </Button>
 
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 mt-8">
                     <div>
                         <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
                             <BarChart2 className="h-8 w-8 text-indigo-600" />
