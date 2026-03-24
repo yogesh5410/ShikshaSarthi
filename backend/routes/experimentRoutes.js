@@ -34,7 +34,15 @@ router.post('/attempt', async (req, res) => {
 router.get('/analytics/:studentId', async (req, res) => {
     try {
         const { studentId } = req.params;
-        const attempts = await ExperimentAttempt.find({ studentId }).sort({ attemptedAt: -1 });
+        if (!studentId || studentId === 'undefined') {
+            return res.status(400).json({ error: "Invalid Student ID" });
+        }
+        
+        // Use lean() for better performance with large datasets
+        const attempts = await ExperimentAttempt.find({ studentId })
+            .sort({ attemptedAt: -1 })
+            .lean();
+            
         res.json(attempts);
     } catch (error) {
          console.error("Error fetching analytics:", error);

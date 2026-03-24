@@ -1,64 +1,102 @@
 const mongoose = require('mongoose');
-const ExperimentQuestion = require('../models/ExperimentQuestion');
+const fs = require('fs');
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const dotenv = require('dotenv');
+const ExperimentQuestion = require('../models/ExperimentQuestion');
 
-const questions = [
-  // Vernier Caliper
-  {
-    experimentName: "Vernier Caliper Measurements",
-    subject: "Physics",
-    class: "11",
-    topic: "Measurement",
-    question: "What is the least count of a standard Vernier Caliper?",
-    options: ["0.1 mm", "0.01 mm", "0.02 mm", "1 mm"],
-    correctAnswer: "0.1 mm",
-    explanation: "Standard Vernier callipers usually have a least count of 0.1mm."
-  },
-  {
-    experimentName: "Vernier Caliper Measurements",
-    subject: "Physics",
-    class: "11",
-    topic: "Measurement",
-    question: "Which formula is used to calculate the total reading in a Vernier Caliper?",
-    options: ["MSR + (VSR x LC)", "MSR - (VSR x LC)", "MSR / (VSR x LC)", "MSR x (VSR + LC)"],
-    correctAnswer: "MSR + (VSR x LC)",
-    explanation: "Total Reading = Main Scale Reading (MSR) + (Vernier Scale Reading (VSR) x Least Count (LC))."
-  },
-  // Simple Pendulum
-  {
-    experimentName: "Simple Pendulum Experiment",
-    subject: "Physics",
-    class: "11",
-    topic: "Oscillations",
-    question: "The time period of a simple pendulum is independent of:",
-    options: ["Length of the string", "Mass of the bob", "Acceleration due to gravity", "Length and Gravity"],
-    correctAnswer: "Mass of the bob",
-    explanation: "For small amplitudes, the period of a simple pendulum depends only on its length and the acceleration due to gravity, not on the mass of the bob."
-  },
-   {
-    experimentName: "Simple Pendulum Experiment",
-    subject: "Physics",
-    class: "11",
-    topic: "Oscillations",
-    question: "If length is increased by 4 times, time period becomes:",
-    options: ["4 times", "2 times", "Half", "Same"],
-    correctAnswer: "2 times",
-    explanation: "T is proportional to square root of L. So if L becomes 4L, T becomes 2T."
-  }
-];
+// Load env vars
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(async () => {
-    console.log('Connected to MongoDB');
-    console.log('Clearing old experiment questions...');
-    await ExperimentQuestion.deleteMany({}); // clear old questions
-    console.log('Seeding new experiment questions...');
-    await ExperimentQuestion.insertMany(questions);
-    console.log('Experiment questions seeded successfully');
-    process.exit(0);
-  })
-  .catch(err => {
-    console.error('Error seeding data:', err);
+// Default MongoDB URI if not in environment
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/shiksha-sarthi';
+
+// Function to connect to MongoDB
+const connectDB = async () => {
+    if (mongoose.connection.readyState >= 1) {
+        return;
+    }
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log('MongoDB successfully connected');
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
     process.exit(1);
-  });
+  }
+};
+
+// Seed function
+const seedQuestions = async () => {
+    try {
+        await connectDB();
+
+        const questionsPath = path.join(__dirname, '../data/experimentQuestions.json');
+        
+        if (!fs.existsSync(questionsPath)) {
+            console.error('Questions data file not found at:', questionsPath);
+            process.exit(1);
+        }
+
+        const questionsData = JSON.parse(fs.readFileSync(questionsPath, 'utf8'));
+        console.log(`Found ${questionsData.length} questions to process.`);
+
+        let stats = {
+            added: 0,
+            updated: 0,
+            skipped: 0,
+            errors: 0
+        };
+
+        for (const qData of questionsData) {
+            try {
+                // Check if question exists (same experiment name and question text)
+                const existingQuestion = await ExperimentQuestion.findOne({
+                    experimentName: qData.experimentName,
+                    question: qData.question
+                });
+
+                if (existingQuestion) {
+                    // Update if necessary
+                    let needsUpdate = false;
+                    
+                    // Simple check on properties (can be expanded)
+                    if (existingQuestion.correctAnswer !== qData.correctAnswer ||
+                        JSON.stringify(existingQuestion.options) !== JSON.stringify(qData.options) || 
+                        existingQuestion.explanation !== qData.explanation) {
+                        needsUpdate = true;
+                    }
+
+                    if (needsUpdate) {
+                         await ExperimentQuestion.findByIdAndUpdate(existingQuestion._id, qData);
+                         console.log(`Updated question: "${qData.question}" for ${qData.experimentName}`);
+                         stats.updated++;
+                    } else {
+                        // console.log(`Skipped (already up to date): "${qData.question}"`);
+                        stats.skipped++;
+                    }
+                } else {
+                    // Create new
+                    await ExperimentQuestion.create(qData);
+                    console.log(`Added new question: "${qData.question}" for ${qData.experimentName}`);
+                    stats.added++;
+                }
+
+            } catch (err) {
+                console.error(`Error processing question "${qData.question}":`, err.message);
+                stats.errors++;
+            }
+        }
+
+        console.log('\n--- Seeding Complete ---');
+        console.log(`Added: ${stats.added}`);
+        console.log(`Updated: ${stats.updated}`);
+        console.log(`Skipped: ${stats.skipped}`);
+        console.log(`Errors: ${stats.errors}`);
+
+        process.exit(0);
+    } catch (error) {
+        console.error('Seeding failed:', error);
+        process.exit(1);
+    }
+};
+
+seedQuestions();

@@ -457,23 +457,35 @@ const StudentDashboard: React.FC = () => {
               </CardFooter>
             </Card>
 
-            <Card className="border-2 border-edu-blue/20 hover:border-edu-blue/40 transition-colors">
+            <Card className="border-2 border-blue-300/20 hover:border-blue-400/40 transition-colors bg-gradient-to-br from-blue-50 to-white">
               <CardHeader>
-                <FlaskConical className="h-10 w-10 text-edu-blue mb-2" />
-                <CardTitle>Experiment Simulation</CardTitle>
-                <CardDescription>
-                  Engage with interactive lab simulations for Physics, Chemistry, and Biology.
-                </CardDescription>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <FlaskConical className="h-10 w-10 text-blue-600 mb-2" />
+                    <CardTitle className="flex items-center gap-2">
+                      Experiment Simulation
+                      <Badge className="bg-gradient-to-r from-blue-500 to-purple-500">POPULAR</Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Engage with interactive lab simulations for Physics, Chemistry, and Biology
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-500">
-                  Engage with interactive lab simulations for Physics, Chemistry, and Biology.
+                <p className="text-sm text-gray-500 mb-2">
+                  Engage with interactive lab simulations for Physics, Chemistry, and Biology:
                 </p>
+                <ul className="text-xs text-gray-600 space-y-1 ml-4">
+                  <li>• Physics Experiments</li>
+                  <li>• Chemistry Reactions</li>
+                  <li>• Biology Models</li>
+                </ul>
               </CardContent>
               <CardFooter>
-                <Link to="/student/experiments">
+                <Link to="/student/experiments" className="w-full">
                   <Button
-                    className="w-full bg-gradient-to-r from-edu-blue to-edu-purple"
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
                   >
                     Start Experiment Simulation
                   </Button>
