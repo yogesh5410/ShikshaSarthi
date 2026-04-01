@@ -34,29 +34,55 @@ const TeacherDashboard: React.FC = () => {
   useEffect(() => {
     const fetchTeacherQuizzes = async () => {
       const teacherCookie = Cookies.get("teacher");
-      if (!teacherCookie) {
-        setError('Teacher cookie not found');
+      let teacherInfo: any = null;
+
+      if (teacherCookie) {
+        try {
+          const parsedCookie = JSON.parse(teacherCookie);
+          teacherInfo = parsedCookie?.teacher || parsedCookie || null;
+        } catch (cookieParseError) {
+          console.warn('Failed to parse teacher cookie, trying localStorage fallback.', cookieParseError);
+        }
+      }
+
+      if (!teacherInfo) {
+        const teacherFromStorage = localStorage.getItem('teacher');
+        const currentUser = localStorage.getItem('currentUser');
+
+        try {
+          if (teacherFromStorage) {
+            const parsedTeacherStorage = JSON.parse(teacherFromStorage);
+            teacherInfo = parsedTeacherStorage?.teacher || parsedTeacherStorage || null;
+          } else if (currentUser) {
+            const parsedCurrentUser = JSON.parse(currentUser);
+            if (parsedCurrentUser?.role === 'teacher' || parsedCurrentUser?.teacherId) {
+              teacherInfo = parsedCurrentUser;
+            }
+          }
+        } catch (storageParseError) {
+          console.warn('Failed to parse teacher data from localStorage.', storageParseError);
+        }
+      }
+
+      if (!teacherInfo) {
+        setError('Teacher session not found. Please login again.');
         setLoading(false);
         return;
       }
 
       try {
-        const parsed = JSON.parse(teacherCookie);
-        const teacherInfo = parsed.teacher;
-        
-        // Extract all teacher information from cookie
+        // Extract all teacher information from available session data
         setTeacherId(teacherInfo.teacherId || teacherInfo.id || "");
         setTeacherName(teacherInfo.name || teacherInfo.teacherName || "");
         setSchoolId(teacherInfo.schoolId || teacherInfo.instituteId || "");
         setTeacherData(teacherInfo);
-        
-        console.log('Teacher data from cookie:', teacherInfo); // Debug log
-        console.log(teacherInfo);
+
+        console.log('Teacher data from session:', teacherInfo);
 
         const teacherIdFromCookie = teacherInfo.teacherId || teacherInfo.id;
-        
+
         if (!teacherIdFromCookie) {
-          throw new Error('Teacher ID not found in cookie');
+          throw new Error('Teacher ID not found in session data');
         }
 
         const response = await fetch(`${API_URL}/teachers/${teacherIdFromCookie}/quizzes`);
