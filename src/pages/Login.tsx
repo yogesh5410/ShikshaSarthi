@@ -119,11 +119,14 @@ const Login: React.FC = () => {
             ...(response.data.teacher || response.data.user),
             role: role
           };
+
+          const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
           Cookies.set('teacher', JSON.stringify({ teacher: userData }), {
             expires: 7,
-            secure: true,
-            sameSite: "strict",
+            secure: isHttps,
+            sameSite: isHttps ? "strict" : "lax",
           });
+          localStorage.setItem('teacher', JSON.stringify({ teacher: userData }));
         } else if (role === 'schooladmin') {
           userData = {
             ...(response.data.user),
