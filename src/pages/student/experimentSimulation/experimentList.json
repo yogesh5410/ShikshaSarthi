@@ -42,183 +42,1097 @@
       "Wear and tear of instrument"
     ],
     "learning_outcome": "Students learn how to use precision measuring instruments and understand the importance of least count and error minimization in measurements.",
-    "simulation_link": "https://phet.colorado.edu/sims/html/john-travoltage/latest/john-travoltage_all.html"
+    "simulation_link": "https://maheshkurmi.github.io/experiments/vernier_calliper.html"
   },
   {
-    "class": "12",
-    "subject": "Physics",
-    "section": "Current Electricity",
-    "experiment_name": "Ohm's Law",
-    "objective": "To verify Ohm’s law and determine resistance of a conductor.",
-    "apparatus": [
-      "Battery",
-      "Resistor",
-      "Ammeter",
-      "Voltmeter",
-      "Key and wires"
-    ],
-    "theory": "Ohm’s law states that current through a conductor is directly proportional to voltage across it at constant temperature.",
-    "formula": [
-      "V = IR",
-      "R = V / I"
-    ],
-    "procedure": [
-      "Set up the circuit.",
-      "Close the key.",
-      "Note current and voltage.",
-      "Repeat for different values.",
-      "Verify linear relation."
-    ],
-    "calculations": [
-      "R = V / I"
-    ],
-    "precautions": [
-      "Avoid loose connections.",
-      "Do not overheat circuit.",
-      "Take steady readings."
-    ],
-    "sources_of_error": [
-      "Instrument error",
-      "Heating effect"
-    ],
-    "learning_outcome": "Understanding V-I relationship.",
-    "simulation_link": "https://phet.colorado.edu/en/simulation/ohms-law"
-  },
+  "class": "11",
+  "subject": "Physics",
+  "section": "Measurement",
+  "experiment_name": "Screw Gauge Measurement of Diameter of a Wire",
+  "objective": "To measure the diameter of a given thin cylindrical wire using a screw gauge and determine its average value accurately.",
+  
+  "apparatus": [
+    "Screw Gauge",
+    "Given Thin Wire"
+  ],
+  
+  "theory": "A screw gauge is a precision instrument used to measure very small dimensions accurately. It works on the principle of conversion of rotational motion into linear motion. When the thimble is rotated, the spindle moves forward or backward. The least count of a screw gauge is given by the ratio of pitch to the number of divisions on the circular scale. The total reading is obtained by adding the main scale reading and the circular scale reading multiplied by the least count, after applying zero correction if present.",
+  
+  "formula": [
+    "Least Count (LC) = Pitch / Number of divisions on circular scale",
+    "Observed Reading = Main Scale Reading + (Circular Scale Reading × LC)",
+    "Corrected Reading = Observed Reading ± Zero Error"
+  ],
+  
+  "procedure": [
+    "Find the pitch of the screw gauge by rotating the thimble and noting the distance moved.",
+    "Determine the least count of the screw gauge.",
+    "Check for zero error by closing the jaws gently and note it.",
+    "Place the wire between the anvil and spindle.",
+    "Rotate the thimble gently until the wire is held properly without applying extra force.",
+    "Note the main scale reading and circular scale reading.",
+    "Repeat the measurement at different points along the wire to avoid irregularities.",
+    "Record at least 5 readings.",
+    "Apply zero correction to each reading.",
+    "Calculate the average diameter of the wire."
+  ],
+  
+  "calculations": [
+    "Calculate least count of the screw gauge.",
+    "Apply zero correction to all observed readings.",
+    "Determine diameter for each reading.",
+    "Find the mean (average) diameter of the wire."
+  ],
+  
+  "precautions": [
+    "Ensure the screw gauge is clean before use.",
+    "Do not apply excessive force while tightening the spindle.",
+    "Check and correct zero error before taking readings.",
+    "Take readings at different points of the wire.",
+    "Avoid parallax error while noting readings."
+  ],
+  
+  "sources_of_error": [
+    "Zero error in the instrument.",
+    "Non-uniform thickness of the wire.",
+    "Excess pressure deforming the wire.",
+    "Improper reading of scales."
+  ],
+  
+  "learning_outcome": "To understand the working of a screw gauge and accurately measure the diameter of a thin wire using precise measurement techniques.",
+  
+  "simulation_link": "https://avhol.com/simulation/screw-gauge-simulation/"
+},
+{
+  "class": "11",
+  "subject": "Physics",
+  "section": "Oscillations",
+  "experiment_name": "Study of Simple Pendulum and Determination of Effective Length using L–T Graph",
+  "objective": "To study the motion of a simple pendulum, understand energy conversion during oscillations, and draw the L–T graph to determine the effective length of a second pendulum.",
+  
+  "apparatus": [
+    "Simple Pendulum (bob and string)",
+    "Stand with clamp",
+    "Stopwatch",
+    "Meter Scale",
+    "Thread"
+  ],
+  
+  "theory": "A simple pendulum consists of a small heavy bob suspended by a light inextensible string. When displaced from its mean position and released, it oscillates with simple harmonic motion for small angles. During motion, energy continuously converts between potential energy (maximum at extreme positions) and kinetic energy (maximum at mean position). The time period of a simple pendulum is given by T = 2π√(L/g), where L is the effective length. A graph between length (L) and square of time period (T²) is a straight line, which helps in determining unknown length.",
+  
+  "formula": [
+    "T = 2π√(L / g)",
+    "T² = (4π² / g) × L",
+    "L = (g × T²) / (4π²)"
+  ],
+  
+  "procedure": [
+    "Suspend the bob using a light string from a rigid support.",
+    "Measure the length of the pendulum from point of suspension to the center of the bob.",
+    "Displace the bob slightly and release it without giving any push.",
+    "Measure time for 10 oscillations using a stopwatch and calculate time period (T).",
+    "Repeat for different lengths and record readings.",
+    "Plot a graph between L and T².",
+    "From the graph, determine the effective length corresponding to the given time period of second pendulum."
+  ],
+  
+  "calculations": [
+    "Calculate time period T = total time / number of oscillations.",
+    "Find T² for each reading.",
+    "Plot L vs T² graph.",
+    "Determine slope and use it to find effective length."
+  ],
+  
+  "precautions": [
+    "Keep angular displacement small (less than 10°).",
+    "Avoid air currents and disturbances.",
+    "Release the bob gently without applying force.",
+    "Measure length accurately from suspension point to center of bob.",
+    "Use consistent number of oscillations for timing."
+  ],
+  
+  "sources_of_error": [
+    "Error in measuring length of pendulum.",
+    "Human reaction time error in stopwatch.",
+    "Air resistance and friction at pivot.",
+    "Large amplitude affecting SHM condition."
+  ],
+  
+  "learning_outcome": "To understand oscillatory motion, observe energy conversion between kinetic and potential energy, and use graphical methods to determine effective length.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/pendulum-lab/latest/pendulum-lab_all.html"
+},
+{
+  "class": "11",
+  "subject": "Physics",
+  "section": "Laws of Motion",
+  "experiment_name": "To Study the Relationship Between Marginal Force of Friction and Normal Reaction",
+  "objective": "To study the relationship between marginal force of friction and normal reaction and to determine the coefficient of friction between a given block and a horizontal surface.",
+  
+  "apparatus": [
+    "Wooden Block",
+    "Horizontal Plane (table)",
+    "Spring Balance",
+    "Set of Weights",
+    "Weight Hanger",
+    "String"
+  ],
+  
+  "theory": "Friction is the force that opposes the relative motion between two surfaces in contact. The limiting or marginal force of friction is the maximum value of static friction just before motion begins. It is directly proportional to the normal reaction between the surfaces. This relation is given by F ∝ R or F = μR, where μ is the coefficient of friction. The value of μ depends on the nature of the surfaces in contact.",
+  
+  "formula": [
+    "F ∝ R",
+    "F = μR",
+    "μ = F / R"
+  ],
+  
+  "procedure": [
+    "Place the wooden block on a horizontal surface.",
+    "Attach a string to the block and connect it to a spring balance.",
+    "Pull the block gently and note the reading just when the block is about to move (marginal friction).",
+    "Add known weights on the block to increase normal reaction.",
+    "Repeat the experiment for different loads.",
+    "Record the corresponding values of marginal friction and normal reaction.",
+    "Plot a graph between frictional force (F) and normal reaction (R)."
+  ],
+  
+  "calculations": [
+    "Calculate normal reaction R = total weight on the block.",
+    "Note marginal friction from spring balance readings.",
+    "Plot graph between F and R.",
+    "Determine coefficient of friction using μ = F / R or slope of graph."
+  ],
+  
+  "precautions": [
+    "Pull the block gently and horizontally.",
+    "Note the reading exactly at the point when motion just begins.",
+    "Ensure the surface is clean and dry.",
+    "Avoid jerks while pulling the block.",
+    "Keep the string parallel to the surface."
+  ],
+  
+  "sources_of_error": [
+    "Error in reading spring balance.",
+    "Uneven or rough surface conditions.",
+    "Jerky motion affecting readings.",
+    "Inaccurate measurement of weights."
+  ],
+  
+  "learning_outcome": "To understand the dependence of friction on normal reaction and determine the coefficient of friction using experimental observations.",
+  
+  "simulation_link": "https://ophysics.com/f1.html"
+},
+{
+  "class": "11",
+  "subject": "Physics",
+  "section": "Vectors",
+  "experiment_name": "Understanding Vector Basics and Vector Addition",
+  "objective": "To understand the basic concepts of vectors, their representation, and perform vector addition using graphical methods.",
+  
+  "apparatus": [
+    "PhET Simulation (Vector Addition)",
+    "Notebook",
+    "Pencil",
+    "Scale (for graphical method)"
+  ],
+  
+  "theory": "A vector is a physical quantity that has both magnitude and direction. Vectors are represented graphically by arrows, where the length represents magnitude and the direction shows orientation. Vector addition can be performed using methods such as the head-to-tail method and parallelogram law. The resultant vector is obtained by combining two or more vectors and represents their net effect.",
+  
+  "formula": [
+    "Resultant (R) = A + B",
+    "R = √(A² + B² + 2AB cosθ)",
+    "tanθ = (B sinθ) / (A + B cosθ)"
+  ],
+  
+  "procedure": [
+    "Open the PhET vector addition simulation.",
+    "Create vectors by assigning magnitude and direction.",
+    "Observe how vectors are represented graphically.",
+    "Place vectors using head-to-tail method to perform addition.",
+    "Use the simulation tools to display the resultant vector.",
+    "Verify the resultant using graphical method on paper.",
+    "Change magnitudes and directions to observe different results.",
+    "Analyze how angle between vectors affects the resultant."
+  ],
+  
+  "calculations": [
+    "Measure magnitudes of given vectors.",
+    "Determine angle between vectors.",
+    "Calculate resultant using formula.",
+    "Compare calculated result with simulation output."
+  ],
+  
+  "precautions": [
+    "Use consistent scale while drawing vectors.",
+    "Ensure correct direction of vectors.",
+    "Measure angles accurately.",
+    "Avoid approximation errors in graphical method."
+  ],
+  
+  "sources_of_error": [
+    "Error in measuring angles and lengths.",
+    "Improper scaling in graphical method.",
+    "Rounding errors in calculations."
+  ],
+  
+  "learning_outcome": "To understand vector representation, perform vector addition, and analyze the effect of magnitude and direction on the resultant vector.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/vector-addition/latest/vector-addition_all.html"
+},
+{
+  "class": "11",
+  "subject": "Physics",
+  "section": "Oscillations",
+  "experiment_name": "Determination of Force Constant of a Spiral Spring",
+  "objective": "To determine the force constant of a spiral spring by studying the relationship between applied weight and extension using a graph.",
+  
+  "apparatus": [
+    "Spiral Spring",
+    "Weight Hanger",
+    "Set of Weights",
+    "Meter Scale",
+    "Stand with Clamp",
+    "Pointer"
+  ],
+  
+  "theory": "When a force is applied to a spring, it undergoes extension. According to Hooke’s Law, the extension produced in a spring is directly proportional to the applied force, provided the elastic limit is not exceeded. Mathematically, F ∝ x or F = kx, where k is the force constant of the spring. A graph plotted between force (weight) and extension is a straight line passing through the origin, and its slope gives the force constant.",
+  
+  "formula": [
+    "F = kx",
+    "k = F / x",
+    "F = mg"
+  ],
+  
+  "procedure": [
+    "Suspend the spiral spring vertically from a rigid support.",
+    "Attach a weight hanger to the lower end of the spring.",
+    "Measure the initial length of the spring without any load.",
+    "Add a known weight and measure the new length of the spring.",
+    "Calculate the extension produced.",
+    "Repeat the experiment by adding different weights.",
+    "Record the corresponding extension for each weight.",
+    "Plot a graph between force (F) and extension (x)."
+  ],
+  
+  "calculations": [
+    "Calculate force using F = mg for each load.",
+    "Determine extension (x = final length − initial length).",
+    "Plot graph between F and x.",
+    "Find slope of graph to determine force constant k."
+  ],
+  
+  "precautions": [
+    "Do not exceed the elastic limit of the spring.",
+    "Ensure the spring is hung vertically.",
+    "Take readings at eye level to avoid parallax error.",
+    "Add weights gently to avoid oscillations.",
+    "Measure lengths accurately."
+  ],
+  
+  "sources_of_error": [
+    "Parallax error in measuring length.",
+    "Inaccurate measurement of weights.",
+    "Spring not obeying Hooke’s law perfectly.",
+    "Oscillations affecting readings."
+  ],
+  
+  "learning_outcome": "To understand Hooke’s Law and determine the force constant of a spring using graphical analysis.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/masses-and-springs/latest/masses-and-springs_all.html"
+},
+{
+  "class": "12",
+  "subject": "Physics",
+  "section": "Current Electricity",
+  "experiment_name": "Verification of Ohm's Law",
+  "objective": "To verify Ohm’s Law by establishing the relationship between current and voltage for a given conductor and to determine the resistance of the conductor from the V-I graph.",
+  
+  "apparatus": [
+    "DC Battery or Power Supply",
+    "Resistor (given conductor)",
+    "Ammeter (0–500 mA)",
+    "Voltmeter (0–5 V)",
+    "Rheostat",
+    "Plug Key",
+    "Connecting Wires"
+  ],
+  
+  "theory": "Ohm’s Law states that the current flowing through a conductor is directly proportional to the potential difference across its ends, provided that temperature and other physical conditions remain constant. Thus, V ∝ I or V = IR, where R is the resistance of the conductor. Resistance depends on the nature, length, and cross-sectional area of the conductor. The V-I graph for an ohmic conductor is a straight line passing through the origin, and its slope represents the resistance.",
+  
+  "formula": [
+    "V = IR",
+    "R = V / I"
+  ],
+  
+  "procedure": [
+    "Set up the circuit by connecting the battery, rheostat, ammeter, and resistor in series.",
+    "Connect the voltmeter in parallel across the resistor.",
+    "Check that all connections are tight and correct.",
+    "Close the key to allow current to flow.",
+    "Adjust the rheostat to obtain a small current reading.",
+    "Note the readings of ammeter (current) and voltmeter (voltage).",
+    "Vary the rheostat to change current and take 5–6 sets of readings.",
+    "Record all observations carefully.",
+    "Plot a graph between voltage (V) and current (I)."
+  ],
+  
+  "calculations": [
+    "Calculate resistance using R = V / I for each reading.",
+    "Find the average resistance.",
+    "Determine resistance from slope of V-I graph (R = ΔV / ΔI)."
+  ],
+  
+  "precautions": [
+    "Ensure all connections are tight and clean.",
+    "Ammeter must be connected in series and voltmeter in parallel.",
+    "Avoid heating of the resistor by keeping current low.",
+    "Take readings quickly to maintain constant temperature.",
+    "Check zero error before taking readings."
+  ],
+  
+  "sources_of_error": [
+    "Zero error in instruments.",
+    "Loose connections in the circuit.",
+    "Heating effect changing resistance.",
+    "Parallax error while taking readings."
+  ],
+  
+  "learning_outcome": "To understand and verify the linear relationship between voltage and current and determine resistance using experimental data.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/ohms-law/latest/ohms-law_all.html"
+},
+{
+  "class": "12",
+  "subject": "Physics",
+  "section": "Current Electricity",
+  "experiment_name": "Determination of Resistance of a Given Wire using Meter Bridge",
+  "objective": "To determine the resistance of a given wire using a meter bridge and hence understand the working of a Wheatstone bridge.",
+  
+  "apparatus": [
+    "Meter Bridge",
+    "Galvanometer",
+    "Resistance Box",
+    "Given Resistance Wire",
+    "Battery (Cell)",
+    "Jockey",
+    "Plug Key",
+    "Connecting Wires",
+    "Sand Paper"
+  ],
+  
+  "theory": "A meter bridge is a practical application of the Wheatstone bridge principle. It consists of a uniform wire of one meter length. When the bridge is balanced, no current flows through the galvanometer, and the ratio of resistances is equal to the ratio of lengths of the wire segments. If R is the known resistance and X is the unknown resistance, then at balance point, R/X = l/(100 − l), where l is the balancing length. This principle is used to determine the unknown resistance accurately. :contentReference[oaicite:0]{index=0}",
+  
+  "formula": [
+    "R / X = l / (100 − l)",
+    "X = R (100 − l) / l"
+  ],
+  
+  "procedure": [
+    "Set up the meter bridge circuit with known resistance (R) in one gap and unknown resistance (X) in the other.",
+    "Connect the galvanometer between the central terminal and jockey.",
+    "Close the key to allow current to flow.",
+    "Move the jockey gently along the wire to find the point where galvanometer shows zero deflection (balance point).",
+    "Note the balancing length (l) from one end.",
+    "Repeat the experiment by changing the value of known resistance (R).",
+    "Record multiple readings and take the mean value.",
+    "Calculate the unknown resistance using the formula."
+  ],
+  
+  "calculations": [
+    "Note balancing length l for each observation.",
+    "Calculate unknown resistance using X = R (100 − l) / l.",
+    "Find the average value of resistance."
+  ],
+  
+  "precautions": [
+    "Ensure tight and clean connections.",
+    "Do not press the jockey too hard on the wire.",
+    "Avoid heating of the wire by keeping current low.",
+    "Take readings when galvanometer shows exact zero deflection.",
+    "Keep the balance point near the middle of the wire for accuracy."
+  ],
+  
+  "sources_of_error": [
+    "End error in meter bridge wire.",
+    "Loose connections in circuit.",
+    "Inaccurate reading of balancing length.",
+    "Heating of wire affecting resistance."
+  ],
+  
+  "learning_outcome": "To understand the working of Wheatstone bridge and accurately determine unknown resistance using a meter bridge.",
+  
+  "simulation_link": "https://explerify.com/simulator/electronics/resistance-of-a-wire-with-meter-bridge/simulator.html"
+},
+{
+  "class": "12",
+  "subject": "Physics",
+  "section": "Current Electricity",
+  "experiment_name": "Determination of Internal Resistance of a Primary Cell using Potentiometer",
+  "objective": "To determine the internal resistance of a given primary cell using a potentiometer.",
+  
+  "apparatus": [
+    "Potentiometer",
+    "Primary Cell",
+    "Galvanometer",
+    "Resistance Box",
+    "Key",
+    "Jockey",
+    "Connecting Wires",
+    "Battery (for potentiometer circuit)"
+  ],
+  
+  "theory": "A potentiometer is a device used to measure potential difference accurately without drawing current from the source. The potential drop along a uniform wire is directly proportional to its length. When the circuit is open, the balancing length (l1) gives the emf of the cell. When the circuit is closed through a known resistance, the balancing length (l2) gives the terminal voltage. The internal resistance (r) of the cell is given by r = R[(l1 / l2) − 1], where R is the external resistance.",
+  
+  "formula": [
+    "E ∝ l1",
+    "V ∝ l2",
+    "r = R[(l1 / l2) − 1]"
+  ],
+  
+  "procedure": [
+    "Set up the potentiometer circuit with a battery to maintain a steady current through the wire.",
+    "Connect the primary cell in the secondary circuit with a galvanometer and jockey.",
+    "Keep the key open and find the balancing length (l1) for emf.",
+    "Now close the key to include a known resistance in the circuit.",
+    "Find the new balancing length (l2) for terminal voltage.",
+    "Repeat the experiment with different values of resistance.",
+    "Record all readings carefully.",
+    "Calculate internal resistance using the formula."
+  ],
+  
+  "calculations": [
+    "Note balancing length l1 for emf.",
+    "Note balancing length l2 for terminal voltage.",
+    "Substitute values in r = R[(l1 / l2) − 1].",
+    "Find average internal resistance."
+  ],
+  
+  "precautions": [
+    "Ensure all connections are tight and clean.",
+    "Do not pass high current through the potentiometer wire.",
+    "Touch the wire lightly with jockey to avoid damage.",
+    "Ensure steady current throughout the experiment.",
+    "Take accurate readings of balancing lengths."
+  ],
+  
+  "sources_of_error": [
+    "Non-uniform potentiometer wire.",
+    "Loose connections in circuit.",
+    "Error in reading balancing length.",
+    "Fluctuation in current supply."
+  ],
+  
+  "learning_outcome": "To understand the working of a potentiometer and determine the internal resistance of a cell accurately.",
+  
+  "simulation_link": "https://ejss.s3-ap-southeast-1.amazonaws.com/potentiometer_Simulation.xhtml"
+},
+{
+  "class": "12",
+  "subject": "Physics",
+  "section": "Current Electricity",
+  "experiment_name": "Determination of Resistance of a Galvanometer by Half-Deflection Method",
+  "objective": "To determine the resistance of a given galvanometer using the half-deflection method.",
+  
+  "apparatus": [
+    "Galvanometer",
+    "Battery (Cell)",
+    "High Resistance Box",
+    "Shunt Resistance Box",
+    "Plug Key",
+    "Connecting Wires"
+  ],
+  
+  "theory": "The half-deflection method is used to determine the resistance of a galvanometer. Initially, a current is passed through the galvanometer producing a certain deflection. A known resistance is then connected in parallel (shunt) so that the deflection reduces to half. At this condition, the shunt resistance is approximately equal to the resistance of the galvanometer. This is based on the principle of division of current in parallel circuits.",
+  
+  "formula": [
+    "Ig ∝ θ",
+    "Rg ≈ S (when deflection becomes half)"
+  ],
+  
+  "procedure": [
+    "Connect the galvanometer in series with a battery and a high resistance box.",
+    "Adjust the resistance to obtain a suitable deflection in the galvanometer.",
+    "Note the initial deflection (θ).",
+    "Now connect a shunt resistance in parallel with the galvanometer.",
+    "Adjust the shunt resistance until the deflection becomes half (θ/2).",
+    "Note the value of shunt resistance.",
+    "Repeat the experiment for different initial deflections.",
+    "Calculate the resistance of the galvanometer."
+  ],
+  
+  "calculations": [
+    "Note initial deflection θ.",
+    "Adjust shunt resistance until deflection becomes θ/2.",
+    "Take shunt resistance value as galvanometer resistance (Rg ≈ S).",
+    "Find average value of galvanometer resistance."
+  ],
+  
+  "precautions": [
+    "Ensure proper and tight connections.",
+    "Do not pass excessive current through the galvanometer.",
+    "Adjust resistance to get a steady deflection.",
+    "Read deflection without parallax error.",
+    "Make fine adjustments for exact half deflection."
+  ],
+  
+  "sources_of_error": [
+    "Inaccurate adjustment of half deflection.",
+    "Loose connections in the circuit.",
+    "Error in resistance box readings.",
+    "Fluctuations in current."
+  ],
+  
+  "learning_outcome": "To understand the principle of current division and determine the resistance of a galvanometer using the half-deflection method.",
+  
+  "simulation_link": "https://explerify.com/simulator/electronics/resistance-of-a-galvanometer-with-half-defleciton/simulator.html"
+},
+{
+  "class": "12",
+  "subject": "Physics",
+  "section": "Ray Optics",
+  "experiment_name": "Study of Image Formation by Mirrors using Simulation",
+  "objective": "To study image formation by concave and convex mirrors and observe the nature, position, and size of images using a simulation.",
+  
+  "apparatus": [
+    "PhET Simulation (Geometric Optics - Mirrors)",
+    "Notebook",
+    "Pencil"
+  ],
+  
+  "theory": "In geometrical optics, light travels in straight lines and undergoes reflection from mirrors. According to the law of reflection, angle of incidence equals angle of reflection. Concave mirrors can form real and inverted images or virtual and erect images depending on object position, while convex mirrors always form virtual and diminished images. Image formation can be understood using ray diagrams. :contentReference[oaicite:0]{index=0}",
+  
+  "formula": [
+    "1/f = 1/v + 1/u",
+    "Magnification (m) = v / u"
+  ],
+  
+  "procedure": [
+    "Open the PhET geometric optics simulation and select mirror mode.",
+    "Choose concave or convex mirror.",
+    "Place the object at different positions (beyond C, at C, between C and F, at F, between F and P).",
+    "Observe the image formation for each position.",
+    "Note the nature (real/virtual), size, and position of the image.",
+    "Repeat for convex mirror.",
+    "Analyze how image properties change with object distance."
+  ],
+  
+  "calculations": [
+    "Note object distance (u) and image distance (v).",
+    "Verify mirror formula 1/f = 1/v + 1/u.",
+    "Calculate magnification using m = v/u."
+  ],
+  
+  "precautions": [
+    "Observe ray diagrams carefully.",
+    "Keep consistent sign convention while noting values.",
+    "Change only one parameter at a time.",
+    "Avoid confusion between concave and convex mirrors."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect observation of image position.",
+    "Sign convention errors.",
+    "Improper interpretation of simulation results."
+  ],
+  
+  "learning_outcome": "To understand reflection of light and analyze image formation by concave and convex mirrors using ray diagrams.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/geometric-optics/latest/geometric-optics_all.html"
+},
+{
+  "class": "12",
+  "subject": "Physics",
+  "section": "Ray Optics",
+  "experiment_name": "Study of Image Formation by Lenses using Simulation",
+  "objective": "To study image formation by convex and concave lenses and observe the nature, position, and size of images using a simulation.",
+  
+  "apparatus": [
+    "PhET Simulation (Geometric Optics - Lenses)",
+    "Notebook",
+    "Pencil"
+  ],
+  
+  "theory": "Lenses form images by refraction of light. A convex (converging) lens brings parallel rays to a focus and can form real or virtual images, while a concave (diverging) lens always forms virtual and diminished images. Image formation depends on object position and focal length. Ray diagrams help in understanding image characteristics. :contentReference[oaicite:1]{index=1}",
+  
+  "formula": [
+    "1/f = 1/v + 1/u",
+    "Magnification (m) = v / u"
+  ],
+  
+  "procedure": [
+    "Open the PhET geometric optics simulation and select lens mode.",
+    "Choose convex or concave lens.",
+    "Place the object at different distances from the lens.",
+    "Observe how the image is formed on the screen or virtually.",
+    "Note image nature, size, and position.",
+    "Repeat for different focal lengths.",
+    "Compare behavior of convex and concave lenses."
+  ],
+  
+  "calculations": [
+    "Note object distance (u) and image distance (v).",
+    "Verify lens formula 1/f = 1/v + 1/u.",
+    "Calculate magnification using m = v/u."
+  ],
+  
+  "precautions": [
+    "Use correct sign convention.",
+    "Observe ray paths carefully.",
+    "Avoid confusion between real and virtual images.",
+    "Keep track of focal length while changing parameters."
+  ],
+  
+  "sources_of_error": [
+    "Misinterpretation of virtual images.",
+    "Incorrect reading of distances in simulation.",
+    "Sign convention mistakes."
+  ],
+  
+  "learning_outcome": "To understand refraction of light and analyze image formation by convex and concave lenses using graphical methods.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/geometric-optics/latest/geometric-optics_all.html"
+},
+{
+  "class": "11",
+  "subject": "Chemistry",
+  "section": "Acids, Bases and Salts",
+  "experiment_name": "Determination of pH of Different Solutions using Simulation",
+  "objective": "To determine the pH of various solutions and classify them as acidic, basic, or neutral using a simulation.",
+  
+  "apparatus": [
+    "PhET Simulation (pH Scale)",
+    "Computer / Mobile Device",
+    "Notebook",
+    "Pencil"
+  ],
+  
+  "theory": "The pH scale is used to measure the acidity or basicity of a solution. It ranges from 0 to 14, where values less than 7 indicate acidic nature, 7 indicates neutral solution, and values greater than 7 indicate basic nature. pH is related to the concentration of hydrogen ions in the solution. Lower pH means higher concentration of hydrogen ions. In solutions, the balance between hydronium (H3O+) and hydroxide (OH−) ions determines the pH. :contentReference[oaicite:0]{index=0}",
+  
+  "formula": [
+    "pH = -log[H⁺]",
+    "[H⁺][OH⁻] = 10⁻¹⁴"
+  ],
+  
+  "procedure": [
+    "Open the PhET pH scale simulation.",
+    "Select different substances provided in the simulation (like water, coffee, soap, etc.).",
+    "Measure the pH value using the pH meter in the simulation.",
+    "Observe the color change corresponding to pH value.",
+    "Note whether the solution is acidic, basic, or neutral.",
+    "Compare pH values of different substances.",
+    "Study how dilution with water affects pH.",
+    "Record all observations carefully."
+  ],
+  
+  "calculations": [
+    "Note the pH value of each solution.",
+    "Classify solutions as acidic (pH < 7), neutral (pH = 7), or basic (pH > 7).",
+    "Compare relative strength based on pH values."
+  ],
+  
+  "precautions": [
+    "Observe pH values carefully in the simulation.",
+    "Select correct substances for comparison.",
+    "Do not confuse acidic and basic ranges.",
+    "Record values accurately."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect observation of pH values.",
+    "Misinterpretation of simulation results.",
+    "Confusion in classification of solutions."
+  ],
+  
+  "learning_outcome": "To understand the concept of pH, differentiate between acids, bases, and neutral substances, and analyze how concentration affects pH.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/ph-scale/latest/ph-scale_all.html"
+},
+{
+  "class": "11",
+  "subject": "Chemistry",
+  "section": "Some Basic Concepts of Chemistry",
+  "experiment_name": "Balancing Chemical Equations using Simulation",
+  "objective": "To understand and balance chemical equations and verify the law of conservation of mass using a simulation.",
+  
+  "apparatus": [
+    "PhET Simulation (Balancing Chemical Equations)",
+    "Computer / Mobile Device",
+    "Notebook",
+    "Pencil"
+  ],
+  
+  "theory": "A chemical equation represents a chemical reaction showing reactants and products. According to the law of conservation of mass, matter is neither created nor destroyed during a chemical reaction, so the number of atoms of each element must be equal on both sides of the equation. Balancing a chemical equation involves adjusting coefficients (not subscripts) so that the number of atoms of each element is the same in reactants and products. The simulation helps visualize atoms and molecules, making it easier to understand how balancing works. :contentReference[oaicite:0]{index=0}",
+  
+  "formula": [
+    "Number of atoms of each element (Reactants) = Number of atoms of each element (Products)"
+  ],
+  
+  "procedure": [
+    "Open the PhET balancing chemical equations simulation.",
+    "Select a chemical reaction from the simulation.",
+    "Observe the number of atoms of each element on both sides.",
+    "Adjust coefficients of reactants and products using controls.",
+    "Ensure the number of atoms of each element becomes equal on both sides.",
+    "Use visual tools like balance scale or bar charts to verify balancing.",
+    "Repeat for different chemical equations.",
+    "Record balanced equations."
+  ],
+  
+  "calculations": [
+    "Count number of atoms of each element on reactant side.",
+    "Count number of atoms on product side.",
+    "Adjust coefficients until both sides are equal.",
+    "Verify conservation of mass."
+  ],
+  
+  "precautions": [
+    "Do not change subscripts while balancing equations.",
+    "Adjust only coefficients of compounds.",
+    "Check atom count carefully for each element.",
+    "Verify final equation is fully balanced."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect counting of atoms.",
+    "Changing subscripts instead of coefficients.",
+    "Incomplete balancing of all elements."
+  ],
+  
+  "learning_outcome": "To understand chemical reactions, apply the law of conservation of mass, and develop skill in balancing chemical equations.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/balancing-chemical-equations/latest/balancing-chemical-equations_all.html"
+},
+{
+  "class": "11",
+  "subject": "Chemistry",
+  "section": "Acids, Bases and Salts",
+  "experiment_name": "Study of Acid-Base Solutions using Simulation",
+  "objective": "To study the properties of acids and bases, differentiate between strong and weak acids/bases, and analyze the effect of concentration on pH using a simulation.",
+  
+  "apparatus": [
+    "PhET Simulation (Acid-Base Solutions)",
+    "Computer / Mobile Device",
+    "Notebook",
+    "Pencil"
+  ],
+  
+  "theory": "Acids are substances that release hydrogen ions (H⁺) in aqueous solutions, while bases release hydroxide ions (OH⁻). The strength of an acid or base depends on its degree of dissociation in water. Strong acids/bases dissociate completely, whereas weak ones dissociate partially. The pH of a solution depends on both the strength and concentration of the acid or base. The simulation helps visualize ions present in solution and allows measurement of pH and conductivity. :contentReference[oaicite:0]{index=0}",
+  
+  "formula": [
+    "pH = -log[H⁺]",
+    "pOH = -log[OH⁻]",
+    "pH + pOH = 14"
+  ],
+  
+  "procedure": [
+    "Open the PhET acid-base solutions simulation.",
+    "Select an acid or base from the available options.",
+    "Observe the type (strong or weak) and its dissociation in water.",
+    "Use the pH meter or indicator to measure pH value.",
+    "Observe the concentration of ions present in the solution.",
+    "Change concentration and observe how pH changes.",
+    "Compare strong and weak acids/bases at same concentration.",
+    "Record observations carefully."
+  ],
+  
+  "calculations": [
+    "Note pH values of different solutions.",
+    "Compare strong and weak acids/bases based on pH.",
+    "Analyze effect of concentration on pH.",
+    "Verify relation pH + pOH = 14."
+  ],
+  
+  "precautions": [
+    "Observe simulation readings carefully.",
+    "Do not confuse strength with concentration.",
+    "Compare solutions under similar conditions.",
+    "Record values accurately."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect observation of pH values.",
+    "Misinterpretation of ion concentration.",
+    "Confusion between strong/weak and concentrated/dilute."
+  ],
+  
+  "learning_outcome": "To understand the concept of acids and bases, differentiate between strong and weak electrolytes, and study how concentration affects pH and ionization.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/acid-base-solutions/latest/acid-base-solutions_all.html"
+},
+{
+  "class": "11",
+  "subject": "Chemistry",
+  "section": "Some Basic Concepts of Chemistry",
+  "experiment_name": "Study of Concentration of Solutions using Simulation",
+  "objective": "To understand and estimate the concentration of solutions and study the effect of solute and solvent on concentration using a simulation.",
+  
+  "apparatus": [
+    "PhET Simulation (Concentration)",
+    "Computer / Mobile Device",
+    "Notebook",
+    "Pencil"
+  ],
+  
+  "theory": "Concentration of a solution is defined as the amount of solute dissolved in a given volume of solution. It is commonly expressed in terms of molarity, which is the number of moles of solute per liter of solution. Concentration can be changed by altering the amount of solute or the volume of solvent. The simulation allows visualization of how adding solute or solvent changes concentration and shows saturation when no more solute can dissolve. :contentReference[oaicite:0]{index=0}",
+  
+  "formula": [
+    "Molarity (M) = Number of moles of solute / Volume of solution (in liters)"
+  ],
+  
+  "procedure": [
+    "Open the PhET concentration simulation.",
+    "Select a solute and add it to water.",
+    "Observe the change in color indicating concentration.",
+    "Measure concentration using the concentration meter.",
+    "Add more solute and note the change in concentration.",
+    "Add water to dilute the solution and observe changes.",
+    "Continue adding solute until saturation is reached.",
+    "Record all observations."
+  ],
+  
+  "calculations": [
+    "Note number of moles of solute added.",
+    "Measure volume of solution.",
+    "Calculate molarity using M = moles / volume.",
+    "Compare calculated values with simulation readings."
+  ],
+  
+  "precautions": [
+    "Observe concentration values carefully.",
+    "Do not confuse saturation with high concentration.",
+    "Maintain correct units while calculating molarity.",
+    "Record observations accurately."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect reading of concentration meter.",
+    "Confusion between molarity and amount of solute.",
+    "Misinterpretation of saturation point."
+  ],
+  
+  "learning_outcome": "To understand the concept of concentration, molarity, and the effect of solute and solvent on solution properties.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/concentration/latest/concentration_all.html"
+},{
+  "class": "12",
+  "subject": "Chemistry",
+  "section": "Solutions",
+  "experiment_name": "Understanding Molarity of Solutions using Simulation",
+  "objective": "To understand the concept of molarity and study how the amount of solute and volume of solution affect concentration.",
+  
+  "apparatus": [
+    "PhET Simulation (Molarity)",
+    "Computer / Mobile Device",
+    "Notebook",
+    "Pencil"
+  ],
+  
+  "theory": "Molarity is a measure of concentration defined as the number of moles of solute dissolved in one litre of solution. It is represented by 'M'. Molarity depends on volume, so it changes with temperature. Increasing the amount of solute increases molarity, while increasing the volume of solvent decreases molarity. The simulation helps visualize how concentration changes with addition of solute and dilution.",
+  
+  "formula": [
+    "Molarity (M) = Moles of solute / Volume of solution (in litres)"
+  ],
+  
+  "procedure": [
+    "Open the PhET molarity simulation.",
+    "Select a solute and add it to the solvent.",
+    "Observe the concentration displayed by the simulation.",
+    "Note the number of moles of solute added.",
+    "Change the volume of the solution by adding solvent.",
+    "Observe how molarity changes with dilution.",
+    "Add more solute to see the increase in molarity.",
+    "Record all observations carefully."
+  ],
+  
+  "calculations": [
+    "Note moles of solute added.",
+    "Measure volume of solution in litres.",
+    "Calculate molarity using M = moles / volume.",
+    "Compare calculated values with simulation readings."
+  ],
+  
+  "precautions": [
+    "Do not confuse molarity with molality.",
+    "Use correct units (litres for volume).",
+    "Observe simulation readings carefully.",
+    "Record values accurately."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect reading of concentration values.",
+    "Confusion between volume and mass units.",
+    "Misinterpretation of simulation data."
+  ],
+  
+  "learning_outcome": "To understand molarity as a concentration unit and analyze how it varies with solute amount and solution volume.",
+  
+  "simulation_link": "https://phet.colorado.edu/sims/html/molarity/latest/molarity_all.html"
+},
   {
-    "class": "11",
-    "subject": "Chemistry",
-    "section": "Physical Chemistry",
-    "experiment_name": "pH Determination",
-    "objective": "To determine the pH of given solutions using pH paper or universal indicator.",
-    "apparatus": [
-      "pH paper",
-      "Test tubes",
-      "Dropper",
-      "Solutions"
-    ],
-    "theory": "pH is a measure of acidity or basicity of a solution and is defined as the negative logarithm of hydrogen ion concentration.",
-    "formula": [
-      "pH = -log[H+]"
-    ],
-    "procedure": [
-      "Take solution in test tube.",
-      "Dip pH paper.",
-      "Compare color with chart.",
-      "Note pH value."
-    ],
-    "calculations": [
-      "pH determined from color scale."
-    ],
-    "precautions": [
-      "Do not touch pH paper.",
-      "Use clean droppers."
-    ],
-    "sources_of_error": [
-      "Color misinterpretation",
-      "Contamination"
-    ],
-    "learning_outcome": "Understanding acidity and pH scale.",
-    "simulation_link": "https://phet.colorado.edu/en/simulation/ph-scale"
-  },
-  {
-    "class": "12",
-    "subject": "Chemistry",
-    "section": "Volumetric Analysis",
-    "experiment_name": "Acid-Base Titration",
-    "objective": "To determine concentration of NaOH using standard acid solution.",
-    "apparatus": [
-      "Burette",
-      "Pipette",
-      "Conical flask",
-      "Indicator",
-      "NaOH and acid solution"
-    ],
-    "theory": "In neutralization, acid reacts with base to form salt and water. The equivalence point is detected using an indicator.",
-    "formula": [
-      "N1V1 = N2V2"
-    ],
-    "procedure": [
-      "Fill burette with NaOH.",
-      "Pipette acid into flask.",
-      "Add indicator.",
-      "Titrate till color change.",
-      "Note readings."
-    ],
-    "calculations": [
-      "Use N1V1 = N2V2"
-    ],
-    "precautions": [
-      "Avoid air bubbles.",
-      "Read at eye level."
-    ],
-    "sources_of_error": [
-      "End point error",
-      "Reading error"
-    ],
-    "learning_outcome": "Understanding titration technique.",
-    "simulation_link": "https://vlab.amrita.edu/?sub=2&brch=193"
-  },
-  {
-    "class": "11",
-    "subject": "Biology",
-    "section": "Plant Physiology",
-    "experiment_name": "Osmosis using Potato Osmoscope",
-    "objective": "To demonstrate osmosis using potato.",
-    "apparatus": [
-      "Potato",
-      "Sugar solution",
-      "Beaker"
-    ],
-    "theory": "Osmosis is movement of water across a semipermeable membrane from higher concentration to lower concentration.",
-    "formula": [],
-    "procedure": [
-      "Prepare potato cup.",
-      "Fill with sugar solution.",
-      "Place in water.",
-      "Observe level change."
-    ],
-    "calculations": [],
-    "precautions": [
-      "Use fresh potato.",
-      "Avoid leakage."
-    ],
-    "sources_of_error": [
-      "Improper setup",
-      "Leakage"
-    ],
-    "learning_outcome": "Understanding osmosis.",
-    "simulation_link": "https://vlab.amrita.edu/?sub=3&brch=271"
-  },
-  {
-    "class": "12",
-    "subject": "Biology",
-    "section": "Cell Biology",
-    "experiment_name": "Mitosis in Onion Root Tip",
-    "objective": "To observe stages of mitosis in onion root cells.",
-    "apparatus": [
-      "Microscope",
-      "Slide",
-      "Onion root tip",
-      "Stain"
-    ],
-    "theory": "Mitosis is a cell division process producing identical daughter cells through different stages.",
-    "formula": [],
-    "procedure": [
-      "Prepare slide of root tip.",
-      "Stain the cells.",
-      "Observe under microscope.",
-      "Identify stages."
-    ],
-    "calculations": [],
-    "precautions": [
-      "Handle slide carefully.",
-      "Focus properly."
-    ],
-    "sources_of_error": [
-      "Improper staining",
-      "Microscope error"
-    ],
-    "learning_outcome": "Understanding cell division.",
-    "simulation_link": "https://vlab.amrita.edu/?sub=3&brch=271"
-  }
+  "class": "11",
+  "subject": "Biology",
+  "section": "Morphology of Flowering Plants",
+  "experiment_name": "Study of Flowering Plant Dissection",
+  "objective": "To study the structure of a flower by dissection and identify its different parts and their functions.",
+  
+  "apparatus": [
+    "Virtual Lab Simulation (Flower Dissection)",
+    "Computer / Mobile Device",
+    "Notebook",
+    "Forceps (in real experiment)",
+    "Needle / Blade (optional)"
+  ],
+  
+  "theory": "A flower is the reproductive part of a flowering plant and is considered a modified shoot. It consists of four main whorls: sepals, petals, stamens, and carpels. Sepals protect the flower in bud stage, petals attract pollinators, stamens are the male reproductive parts producing pollen, and carpels are the female reproductive parts containing ovules. During reproduction, pollen reaches the stigma leading to fertilization and formation of seeds. :contentReference[oaicite:0]{index=0}",
+  
+  "formula": [
+    "No specific formula"
+  ],
+  
+  "procedure": [
+    "Open the virtual flower dissection simulation.",
+    "Observe the external structure of the flower carefully.",
+    "Start removing outermost parts (sepals) one by one.",
+    "Next remove petals and observe their structure.",
+    "Expose the stamens and identify anther and filament.",
+    "Remove stamens to observe the central pistil.",
+    "Identify stigma, style, and ovary in the pistil.",
+    "Observe ovules inside the ovary.",
+    "Record all observations and label the parts."
+  ],
+  
+  "calculations": [
+    "Identify and label all floral parts.",
+    "Compare structure and function of each part.",
+    "Classify flower as complete or incomplete based on parts present."
+  ],
+  
+  "precautions": [
+    "Observe each part carefully before removing.",
+    "Follow correct sequence from outer to inner whorls.",
+    "Handle parts gently to avoid damage.",
+    "Label all parts correctly."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect identification of floral parts.",
+    "Skipping observation steps.",
+    "Misinterpretation of structures in simulation."
+  ],
+  
+  "learning_outcome": "To understand the structure of a flower, identify its reproductive parts, and learn the role of each part in plant reproduction.",
+  
+  "simulation_link": "https://www.cuhk.edu.hk/lifesciences/IVFDL/virtual_p301_lower_long.html"
+},
+{
+  "class": "11",
+  "subject": "Biology",
+  "section": "Purification of Compounds",
+  "experiment_name": "Study of Chromatography using Virtual Lab",
+  "objective": "To separate the components of a mixture using chromatography and understand the principle of separation.",
+  
+  "apparatus": [
+    "Virtual Lab Simulation (Chromatography)",
+    "Computer / Mobile Device",
+    "Chromatography Paper (conceptual)",
+    "Solvent (mobile phase)",
+    "Mixture Sample",
+    "Notebook"
+  ],
+  
+  "theory": "Chromatography is a technique used to separate components of a mixture based on their different affinities towards a stationary phase and a mobile phase. The stationary phase remains fixed, while the mobile phase moves through it carrying the components. Different substances travel at different speeds due to differences in adsorption or solubility, leading to separation. :contentReference[oaicite:0]{index=0}",
+  
+  "formula": [
+    "Rf = Distance travelled by solute / Distance travelled by solvent front"
+  ],
+  
+  "procedure": [
+    "Open the chromatography virtual lab simulation.",
+    "Select a mixture sample to separate.",
+    "Apply the sample on the stationary phase (paper/column).",
+    "Allow the solvent (mobile phase) to move through the medium.",
+    "Observe how different components move at different rates.",
+    "Note the separation of components into distinct bands or spots.",
+    "Measure the distance travelled by each component and solvent front.",
+    "Record observations."
+  ],
+  
+  "calculations": [
+    "Measure distance travelled by each component.",
+    "Measure distance travelled by solvent front.",
+    "Calculate Rf value using Rf = distance of solute / distance of solvent.",
+    "Compare Rf values for different components."
+  ],
+  
+  "precautions": [
+    "Ensure correct placement of sample.",
+    "Do not disturb the setup during separation.",
+    "Observe distances carefully.",
+    "Record readings accurately."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect measurement of distances.",
+    "Improper observation of separated spots.",
+    "Disturbance during experiment.",
+    "Misinterpretation of results."
+  ],
+  
+  "learning_outcome": "To understand the principle of chromatography and learn how mixtures can be separated based on differences in their movement through stationary and mobile phases.",
+  
+  "simulation_link": "https://www.ncbionetwork.org/iet/chromatography/"
+},
+{
+  "class": "11",
+  "subject": "Biology",
+  "section": "Structural Organisation in Animals",
+  "experiment_name": "Study of Dissection of a Vertebrate (Frog)",
+  "objective": "To study the internal structure of a vertebrate by virtual dissection of a frog and identify major organs and systems.",
+  
+  "apparatus": [
+    "Virtual Lab Simulation (Frog Dissection)",
+    "Computer / Mobile Device",
+    "Notebook",
+    "Dissection tools (conceptual)"
+  ],
+  
+  "theory": "Frog is a vertebrate belonging to class Amphibia. Vertebrates are animals having a backbone and well-developed organ systems. Frogs possess organs such as heart, lungs, liver, stomach, and intestines, which perform specific life functions. Dissection helps in understanding the internal organization and functioning of these systems such as digestive, circulatory, and respiratory systems.",
+  
+  "formula": [
+    "No specific formula"
+  ],
+  
+  "procedure": [
+    "Open the virtual frog dissection simulation.",
+    "Observe the external features of the frog.",
+    "Begin dissection by carefully opening the body cavity.",
+    "Identify major internal organs such as heart, lungs, liver, stomach, and intestines.",
+    "Observe the arrangement and structure of each organ.",
+    "Study different systems like digestive and circulatory systems.",
+    "Record observations and label the organs."
+  ],
+  
+  "calculations": [
+    "Identify and label major organs.",
+    "Compare structure of different organ systems.",
+    "Relate structure of organs to their functions."
+  ],
+  
+  "precautions": [
+    "Follow correct sequence of dissection.",
+    "Observe organs carefully before proceeding.",
+    "Do not skip any steps in the simulation.",
+    "Label all organs correctly."
+  ],
+  
+  "sources_of_error": [
+    "Incorrect identification of organs.",
+    "Skipping observation steps.",
+    "Misinterpretation of structures in simulation."
+  ],
+  
+  "learning_outcome": "To understand the internal structure of vertebrates and identify major organs and their functions through frog dissection.",
+  
+  "simulation_link": "https://dcc.ilc.org/snc2d/14/the_frog_a_virtual_dissec/the_frog_a_virtual_dissec.html"
+}
 ]

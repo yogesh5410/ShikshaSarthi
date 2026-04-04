@@ -8,7 +8,7 @@ const ExperimentQuestion = require('../models/ExperimentQuestion');
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Default MongoDB URI if not in environment
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/shiksha-sarthi';
+const MONGODB_URI = process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/shiksha-sarthi';
 
 // Function to connect to MongoDB
 const connectDB = async () => {
