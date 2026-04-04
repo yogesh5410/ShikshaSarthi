@@ -86,6 +86,7 @@ import AttemptQuiz from "./pages/student/AttemptQuiz";
 import Authorization from "./pages/Authorization";
 import MemoryMatchGrid from "./components/puzzles/memoryMatchGrid/MemoryMatchGrid";
 import MatchPieces from "./components/puzzles/matchPieces/MatchPieces";
+import GyanKiYatra from "./pages/student/GyanKiYatra";
 
 const queryClient = new QueryClient();
 
@@ -142,6 +143,7 @@ const AppRoutes = () => {
       <Route path="/student/puzzle-history" element={<PuzzleHistory />} />
       <Route path="/student/puzzles/memory-match" element={<MemoryMatchGrid/>} />
       <Route path="/student/puzzles/match-pieces" element={<MatchPieces/>} />
+      <Route path="/student/puzzles/gyan-ki-yatra" element={<GyanKiYatra />} />
       <Route path="/student/multimedia/miscellaneous" element={<MAT />} />
       <Route path="/student/mat" element={<MAT />} />
       <Route path="/student/mat/:module" element={<MATPractice />} />

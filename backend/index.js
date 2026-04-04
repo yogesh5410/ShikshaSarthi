@@ -93,7 +93,6 @@ app.get("/app/version", (_req, res) => {
   });
 });
 
-
 const PORT = process.env.PORT || 5000;
 
 // Listen on all network interfaces for LAN access

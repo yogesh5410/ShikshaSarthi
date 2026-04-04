@@ -25,7 +25,9 @@ import {
   TrendingUp,
   ArrowRight,
   RotateCcw,
-  Award
+  Award,
+  Send,
+  Zap
 } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -252,12 +254,61 @@ const MATPractice: React.FC = () => {
                 onAnswer={(optionIndex) => {
                   if (!submitted) {
                     setSelectedAnswer(optionIndex);
-                    handleSubmit();
                   }
                 }}
                 showCorrectAnswer={submitted}
                 selectedAnswer={selectedAnswer}
               />
+              
+              {/* Submit button for animated questions */}
+              {!submitted && selectedAnswer !== null && (
+                <div className="mt-6 flex justify-center">
+                  <Button
+                    onClick={handleSubmit}
+                    size="lg"
+                    className="px-8"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    जवाब जमा करें
+                  </Button>
+                </div>
+              )}
+
+              {/* Result display for animated questions */}
+              {submitted && result && (
+                <Card className={`mt-6 ${result.isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      {result.isCorrect ? (
+                        <>
+                          <CheckCircle2 className="h-6 w-6 text-green-600" />
+                          <span className="text-lg font-semibold text-green-800">सही उत्तर!</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-6 w-6 text-red-600" />
+                          <span className="text-lg font-semibold text-red-800">गलत उत्तर</span>
+                        </>
+                      )}
+                      <Badge variant={result.isCorrect ? "default" : "destructive"} className="ml-auto">
+                        +{result.pointsEarned} अंक
+                      </Badge>
+                    </div>
+                    
+                    {result.timeBonus > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-green-700 mb-2">
+                        <Zap className="h-4 w-4" />
+                        <span>समय बोनस: +{result.timeBonus} अंक</span>
+                      </div>
+                    )}
+                    
+                    <div className="mt-4 text-sm text-gray-700">
+                      <p><strong>अर्जित अंक:</strong> {result.pointsEarned}</p>
+                      <p><strong>समय लिया:</strong> {result.timeTaken} सेकंड</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               
               {/* Navigation buttons for animated questions */}
               {submitted && (
