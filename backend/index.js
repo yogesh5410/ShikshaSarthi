@@ -65,6 +65,10 @@ app.use("/api/feedback-forms", feedbackFormRoutes);
 app.use("/api/feedback-responses", feedbackResponseRoutes);
 // https://shiksha-sarthi-nmms-prep-cn64.vercel.app
 
+app.get("/hi", (req, res) => {
+  res.send("Welcome to the NMMS Prep API!");
+});
+
 
 
 const PORT = process.env.PORT || 5000;
