@@ -1,8 +1,8 @@
 {
-  "status": "success",
-  "lastRunAt": "2026-03-26T18:21:16.832Z",
-  "lastSuccessAt": "2026-03-26T18:21:17.014Z",
-  "lastSync": "2026-03-26T18:21:16.855Z",
+  "status": "running",
+  "lastRunAt": "2026-04-12T19:06:06.013Z",
+  "lastSuccessAt": "2026-04-12T19:06:02.108Z",
+  "lastSync": "2026-04-12T19:06:01.723Z",
   "lastError": null,
   "inProgress": false
 }

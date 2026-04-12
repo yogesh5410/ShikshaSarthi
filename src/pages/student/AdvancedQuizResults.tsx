@@ -558,7 +558,6 @@ const AdvancedQuizResults: React.FC = () => {
     }
   ];
   const hasSectionPerformanceData = sectionPerformanceData.some((item) => item.total > 0);
-
   return (
     <div className="container mx-auto p-3 sm:p-6 max-w-6xl">
       <Card className="mb-6">
